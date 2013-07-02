@@ -1,10 +1,6 @@
-(ns hs-robotwar.core
-  (:gen-class))
+(ns hs-robotwar.core)
 
-(defn -main
-  []
-  ;; work around dangerous default behaviour in Clojure
-  (alter-var-root #'*read-eval* (constantly false)))
+
 
 (def error-type-map
   {:parse-error "Parse Error"
