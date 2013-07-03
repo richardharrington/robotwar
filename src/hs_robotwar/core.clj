@@ -35,31 +35,27 @@
                                         (recur rest-of-line "" pos (conj-to-result partial-token))
                                         (recur rest-of-line "" pos result))
         (= \- first-char) (when (and (int-str? (str (second line)))
-                                      (not (or (int-str? previous-token)
-                                               (registers previous-token))))
+                                     (not (or (int-str? previous-token)
+                                              (registers previous-token))))
                                ; if true => the minus sign is the beginning of a number
-                               (recur rest-of-line (str first-char) (new-pos) result))
+                            (recur rest-of-line (str first-char) (new-pos) result))
         (operators first-char) (recur rest-of-line "" (new-pos) (conj-to-result (str first-char)))
         :else (recur rest-of-line (str partial-token first-char) pos result)))))
   
   
-; (def prettyprint-tokens [token-seq]
-;   (map #(println (:column %) (:string %))))  
-; [{:string "IF", :column 0} 
-;  {:string "DAMAGE", :column 0} 
-;  {:string "#", :column 0} 
-;  {:string "D", :column 10} 
-;  {:string "GOTO", :column 10} 
-;  {:string "MOVE", :column 10}]
+(defn pretty-print-tokens [token-seq]
+  (clojure.string/join 
+    "\n"
+    (map #(format "%2d %s" (:column %) (:string %)) 
+         token-seq)))
+
+(defn ppt [token-seq]
+  (println (pretty-print-tokens token-seq)))
+
 
         
         
         
-        
-           
-           
-  
-
 
 ; (def error-type-map
 ;   {:parse-error "Parse Error"
