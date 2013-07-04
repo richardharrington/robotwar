@@ -3,7 +3,7 @@
 (def registers (set (concat (map #(-> % char str) (range 65 91))
                             ["AIM" "SHOT" "RADAR" "DAMAGE" "SPEEDX" "SPEEDY" "RANDOM" "INDEX"])))
 
-(def operators #{\= \< \> \# \+ \- \* \/})
+(def operators #{"=" "<" ">" "#" "+" "-" "*" "/"})
 
 (defn int-str?
   [string]
@@ -14,41 +14,34 @@
   (loop
     [line initial-line
      partial-token ""
-     pos 0
+     saved-pos 0
      result []]
     (let [conj-with-metadata (fn [coll s n] 
                                (conj coll {:string s, :column n}))
-          new-pos (fn [] (- (count initial-line) (count line)))
+          close-partial-token (fn [] (conj-with-metadata result partial-token saved-pos))
+          current-pos (- (count initial-line) (count line))
           previous-token (last result)
           parsing-token? (not (empty? partial-token))
-          first-char (first line)
-          rest-of-line (rest line)]
+          head (str (first line))
+          tail (rest line)]
+      (println head (class head))
       (cond
-        (or (empty? line) (= \; first-char)) (if parsing-token?
-                                                 (conj-with-metadata result partial-token pos)
-                                                 result)
-        (#{\space \tab} first-char) (if parsing-token?
-                                        (recur rest-of-line "" pos (conj-with-metadata result 
-                                                                                       partial-token 
-                                                                                       pos))
-                                        (recur rest-of-line "" pos result))
-        (= \- first-char) (when (and (int-str? (str (second line)))
-                                     (not (or (int-str? previous-token)
-                                              (registers previous-token))))
-                            ; when true => the minus sign is the beginning of a number
-                            (recur rest-of-line (str first-char) (new-pos) result))
-        (operators first-char) (if parsing-token?
-                                 (recur rest-of-line
-                                        ""
-                                        (new-pos)
-                                        (conj-with-metadata (conj-with-metadata result partial-token pos)
-                                                            (str first-char)
-                                                            (new-pos)))
-                                 (recur rest-of-line "" (new-pos) (conj-with-metadata result 
-                                                                                    (str first-char) 
-                                                                                    (new-pos))))
-        :else (recur rest-of-line (str partial-token first-char) pos result)))))
-  
+        (or (empty? line) (= ";" head)) (if parsing-token?
+                                          (close-partial-token)
+                                          result)
+        (#{" " "\t"} head) (if parsing-token?
+                             (recur tail "" saved-pos (close-partial-token))
+                             (recur tail "" saved-pos result))
+        (= "-" head) (when (and (int-str? (str (second line)))
+                                (not (or (int-str? (previous-token :string))
+                                         (registers previous-token))))
+                       ; when true => the minus sign is the beginning of a number
+                       (recur tail head current-pos result))
+        (operators head) (if parsing-token?
+                           (recur line "" saved-pos (close-partial-token))
+                           (recur tail "" current-pos (conj-with-metadata result head current-pos)))
+        :else (recur tail (str partial-token head) saved-pos result)))))
+
   
 (defn pretty-print-tokens [token-seq]
   (clojure.string/join 
