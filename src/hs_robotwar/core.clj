@@ -1,10 +1,5 @@
 (ns hs-robotwar.core)
 
-(defn add-column-metadata
-  [s n]
-  {:string s, 
-   :column n})
-
 (def registers (set (concat (map #(-> % char str) (range 65 91))
                             ["AIM" "SHOT" "RADAR" "DAMAGE" "SPEEDX" "SPEEDY" "RANDOM" "INDEX"])))
 
@@ -21,7 +16,8 @@
      partial-token ""
      pos 0
      result []]
-    (let [conj-to-result (fn [s] (conj result (add-column-metadata s pos)))
+    (let [conj-with-metadata (fn [coll s n] 
+                               (conj coll {:string s, :column n}))
           new-pos (fn [] (- (count initial-line) (count line)))
           previous-token (last result)
           parsing-token? (not (empty? partial-token))
@@ -29,17 +25,28 @@
           rest-of-line (rest line)]
       (cond
         (or (empty? line) (= \; first-char)) (if parsing-token?
-                                                 (conj-to-result partial-token)
+                                                 (conj-with-metadata result partial-token pos)
                                                  result)
         (#{\space \tab} first-char) (if parsing-token?
-                                        (recur rest-of-line "" pos (conj-to-result partial-token))
+                                        (recur rest-of-line "" pos (conj-with-metadata result 
+                                                                                       partial-token 
+                                                                                       pos))
                                         (recur rest-of-line "" pos result))
         (= \- first-char) (when (and (int-str? (str (second line)))
                                      (not (or (int-str? previous-token)
                                               (registers previous-token))))
-                               ; if true => the minus sign is the beginning of a number
+                            ; when true => the minus sign is the beginning of a number
                             (recur rest-of-line (str first-char) (new-pos) result))
-        (operators first-char) (recur rest-of-line "" (new-pos) (conj-to-result (str first-char)))
+        (operators first-char) (if parsing-token?
+                                 (recur rest-of-line
+                                        ""
+                                        (new-pos)
+                                        (conj-with-metadata (conj-with-metadata result partial-token pos)
+                                                            (str first-char)
+                                                            (new-pos)))
+                                 (recur rest-of-line "" (new-pos) (conj-with-metadata result 
+                                                                                    (str first-char) 
+                                                                                    (new-pos))))
         :else (recur rest-of-line (str partial-token first-char) pos result)))))
   
   
