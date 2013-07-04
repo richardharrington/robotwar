@@ -1,6 +1,6 @@
 (ns hs-robotwar.core)
 
-(def registers (set (concat (map #(-> % char str) (range 65 91))
+(def registers (set (concat (map #(-> % char str) (range (int \A) (inc (int \Z))))
                             ["AIM" "SHOT" "RADAR" "DAMAGE" "SPEEDX" "SPEEDY" "RANDOM" "INDEX"])))
 
 (def operators #{"=" "<" ">" "#" "+" "-" "*" "/"})
@@ -28,7 +28,6 @@
           parsing-token? (not (empty? partial-token))
           head (str (first line))
           tail (rest line)]
-      (println head current-pos parsing-token? previous-token)
       (cond
         (or (empty? line) (= ";" head)) (if parsing-token?
                                           (close-partial-token)
@@ -42,10 +41,11 @@
                            ; make sure we're not a unary minus sign operator
                            ; by making sure that if we are a minus sign, 
                            ; the previous token is, or could represent, a number.
-                           (when (or (not= "-" head) 
-                                     (digit? (last previous-token))
-                                     (registers previous-token))
-                             (recur tail "" current-pos (conj-with-metadata result head current-pos))))
+                           (if (or (not= "-" head) 
+                                   (digit? (last previous-token))
+                                   (registers previous-token))
+                             (recur tail "" current-pos (conj-with-metadata result head current-pos))
+                             (recur tail (str partial-token head) saved-pos result)))
         :else (recur tail (str partial-token head) saved-pos result)))))
 
   
