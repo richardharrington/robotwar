@@ -5,9 +5,13 @@
 
 (def operators #{"=" "<" ">" "#" "+" "-" "*" "/"})
 
+(defn digit?
+  [string-or-char]
+  (re-find #"\d" (str string-or-char)))
+
 (defn int-str?
   [string]
-  (re-find #"^-?\d+$" string))
+  (re-find #"^-?\d+$" (str string)))
 
 (defn lex
   [initial-line]
@@ -20,11 +24,11 @@
                                (conj coll {:string s, :column n}))
           close-partial-token (fn [] (conj-with-metadata result partial-token saved-pos))
           current-pos (- (count initial-line) (count line))
-          previous-token (last result)
+          previous-token (:string (last result) "")
           parsing-token? (not (empty? partial-token))
           head (str (first line))
           tail (rest line)]
-      (println head (class head))
+      (println head current-pos parsing-token? previous-token)
       (cond
         (or (empty? line) (= ";" head)) (if parsing-token?
                                           (close-partial-token)
@@ -32,14 +36,16 @@
         (#{" " "\t"} head) (if parsing-token?
                              (recur tail "" saved-pos (close-partial-token))
                              (recur tail "" saved-pos result))
-        (= "-" head) (when (and (int-str? (str (second line)))
-                                (not (or (int-str? (previous-token :string))
-                                         (registers previous-token))))
-                       ; when true => the minus sign is the beginning of a number
-                       (recur tail head current-pos result))
         (operators head) (if parsing-token?
+                           ; go back to the same point, but with the partial token closed
                            (recur line "" saved-pos (close-partial-token))
-                           (recur tail "" current-pos (conj-with-metadata result head current-pos)))
+                           ; make sure we're not a unary minus sign operator
+                           ; by making sure that if we are a minus sign, 
+                           ; the previous token is, or could represent, a number.
+                           (when (or (not= "-" head) 
+                                     (digit? (last previous-token))
+                                     (registers previous-token))
+                             (recur tail "" current-pos (conj-with-metadata result head current-pos))))
         :else (recur tail (str partial-token head) saved-pos result)))))
 
   
@@ -51,6 +57,8 @@
 
 (defn ppt [token-seq]
   (println (pretty-print-tokens token-seq)))
+
+(def p (comp ppt lex))
 
 
         
