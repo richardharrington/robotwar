@@ -52,21 +52,30 @@
                                              (conj-with-metadata result head current-pos))
         :else                         (recur tail (str partial-token head) saved-pos result)))))
 
+
+(def parse
+  "will be filled in later -- right now just a pass-through for the repl"
+  identity)
+
 (defn pretty-print-tokens [token-seq]
   (clojure.string/join 
     "\n"
     (map #(format "%2d %s" (:column %) (:string %)) 
          token-seq)))
 
-(defn ppt [token-seq]
+(defn evaluate [token-seq]
   (println (pretty-print-tokens token-seq)))
 
-(def p (comp ppt lex))
 
+(defn repl
+  "make it so"
+  []
+  (loop [input (read-line)]
+    (when (not= input "exit")
+      (println (evaluate (parse (lex input))))
+      (recur (read-line)))))
 
-        
-        
-        
+  
 
 ; (def error-type-map
 ;   {:parse-error "Parse Error"
@@ -129,19 +138,3 @@
 ;     [expr (error :parse-error "Not a number")]))
   
 
-; (defn evaluate
-;   "evaluates an ast (right now just prints it).
-;   Checks to see if it's a string because that's
-;   the way errors are passed. We'll change that."
-;   [ast]
-;   (if (string? ast)
-;     ast
-;     (apply str (interpose " " ast))))
-  
-
-; (defn repl
-;   "make it so"
-;   []
-;   (loop []
-;     (println (evaluate (parse (lex (read-line)))))
-;     (recur)))
