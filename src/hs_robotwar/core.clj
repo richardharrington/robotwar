@@ -26,8 +26,32 @@
           current-pos (- (count initial-line) (count line))
           previous-token (:string (last result) "")
           parsing-token? (not (empty? partial-token))
+          ; a binary operator is any character on the operator list,
+          ; unless it's a minus sign that is actually a unary operator
+          ; because the token before it could not be a number
+          binary-op? #(and (operators %)
+                           (or (not= % "-")
+                               (digit? (last previous-token))
+                               (register previous-token)))
           head (str (first line))
           tail (rest line)]
+      (match [head parsing-token?]
+        ["" true ]                    (close-partial-token)
+        ["" false]                    result
+        [(:or " " "\t") true ]        (recur tail "" saved-pos (close-partial-token))
+        [(:or " " "\t") false]        (recur tail "" saved-pos result)
+        [(_ :guard binary-op?) true ] (recur line "" saved-pos (close-partial-token))
+        [(_ :guard binary-op?) false] (recur tail 
+                                             "" 
+                                             current-pos 
+                                             (conj-with-metadata result head current-pos))
+        :else                         (recur tail (str partial-token head) saved-pos result)))))
+        
+             
+             
+             
+             
+             
       (cond
         (or (empty? line) (= ";" head)) (if parsing-token?
                                           (close-partial-token)
