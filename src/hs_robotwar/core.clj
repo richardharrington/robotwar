@@ -1,5 +1,10 @@
 (ns hs-robotwar.core)
 
+(use '[clojure.core.match :only (match)])
+
+
+
+
 (def registers (set (concat (map #(-> % char str) (range (int \A) (inc (int \Z))))
                             ["AIM" "SHOT" "RADAR" "DAMAGE" "SPEEDX" "SPEEDY" "RANDOM" "INDEX"])))
 
@@ -32,7 +37,7 @@
           binary-op? #(and (operators %)
                            (or (not= % "-")
                                (digit? (last previous-token))
-                               (register previous-token)))
+                               (registers previous-token)))
           head (str (first line))
           tail (rest line)]
       (match [head parsing-token?]
@@ -46,33 +51,7 @@
                                              current-pos 
                                              (conj-with-metadata result head current-pos))
         :else                         (recur tail (str partial-token head) saved-pos result)))))
-        
-             
-             
-             
-             
-             
-      (cond
-        (or (empty? line) (= ";" head)) (if parsing-token?
-                                          (close-partial-token)
-                                          result)
-        (#{" " "\t"} head) (if parsing-token?
-                             (recur tail "" saved-pos (close-partial-token))
-                             (recur tail "" saved-pos result))
-        (operators head) (if parsing-token?
-                           ; go back to the same point, but with the partial token closed
-                           (recur line "" saved-pos (close-partial-token))
-                           ; make sure we're not a unary minus sign operator
-                           ; by making sure that if we are a minus sign, 
-                           ; the previous token is, or could represent, a number.
-                           (if (or (not= "-" head) 
-                                   (digit? (last previous-token))
-                                   (registers previous-token))
-                             (recur tail "" current-pos (conj-with-metadata result head current-pos))
-                             (recur tail (str partial-token head) saved-pos result)))
-        :else (recur tail (str partial-token head) saved-pos result)))))
 
-  
 (defn pretty-print-tokens [token-seq]
   (clojure.string/join 
     "\n"
