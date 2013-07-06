@@ -37,14 +37,15 @@
       (match [head parsing-token?]
         [(:or \; nil) true ]          (close-partial-token)
         [(:or \; nil) false]          result
-        [(:or \space \t) true ]       (recur tail [] saved-pos (close-partial-token))
-        [(:or \space \t) false]       (recur tail [] saved-pos result)
-        [(_ :guard binary-op?) true ] (recur line [] saved-pos (close-partial-token))
+        [(:or \space \t) true ]       (recur tail [] nil (close-partial-token))
+        [(:or \space \t) false]       (recur tail [] nil result)
+        [(_ :guard binary-op?) true ] (recur line [] nil (close-partial-token))
         [(_ :guard binary-op?) false] (recur tail 
                                              [] 
-                                             current-pos 
+                                             nil 
                                              (conj-with-metadata result (str head) current-pos))
-        :else                         (recur tail (conj partial-token head) saved-pos result)))))
+        [_ true ]                     (recur tail (conj partial-token head) saved-pos result)
+        [_ false]                     (recur tail (conj partial-token head) current-pos result)))))
 
 
 (def parse
