@@ -3,54 +3,48 @@
 (use '[clojure.core.match :only (match)])
 
 
-
-
 (def registers (set (concat (map #(-> % char str) (range (int \A) (inc (int \Z))))
                             ["AIM" "SHOT" "RADAR" "DAMAGE" "SPEEDX" "SPEEDY" "RANDOM" "INDEX"])))
 
-(def operators #{"=" "<" ">" "#" "+" "-" "*" "/"})
+(def operators #{\= \< \> \# \+ \- \* \/})
 
 (defn digit?
-  [string-or-char]
-  (re-find #"\d" (str string-or-char)))
-
-(defn int-str?
-  [string]
-  (re-find #"^-?\d+$" (str string)))
+  [ch]
+  (re-find #"\d" (str ch)))
 
 (defn lex
   [initial-line]
   (loop
     [line initial-line
-     partial-token ""
+     partial-token []
      saved-pos 0
      result []]
     (let [conj-with-metadata (fn [coll s n] 
-                               (conj coll {:string s, :column n}))
-          close-partial-token (fn [] (conj-with-metadata result partial-token saved-pos))
+                               (conj coll {:token s, :column n}))
+          close-partial-token (fn [] (conj-with-metadata result (apply str partial-token) saved-pos))
           current-pos (- (count initial-line) (count line))
-          previous-token (:string (last result) "")
+          previous-token (:token (last result) "")
           parsing-token? (not (empty? partial-token))
           ; a binary operator is any character on the operator list,
           ; unless it's a minus sign that is actually a unary operator
           ; because the token before it could not be a number
           binary-op? #(and (operators %)
-                           (or (not= % "-")
+                           (or (not= % \-)
                                (digit? (last previous-token))
                                (registers previous-token)))
-          head (str (first line))
+          head (first line)
           tail (rest line)]
       (match [head parsing-token?]
-        ["" true ]                    (close-partial-token)
-        ["" false]                    result
-        [(:or " " "\t") true ]        (recur tail "" saved-pos (close-partial-token))
-        [(:or " " "\t") false]        (recur tail "" saved-pos result)
-        [(_ :guard binary-op?) true ] (recur line "" saved-pos (close-partial-token))
+        [(:or \; nil) true ]          (close-partial-token)
+        [(:or \; nil) false]          result
+        [(:or \space \t) true ]       (recur tail [] saved-pos (close-partial-token))
+        [(:or \space \t) false]       (recur tail [] saved-pos result)
+        [(_ :guard binary-op?) true ] (recur line [] saved-pos (close-partial-token))
         [(_ :guard binary-op?) false] (recur tail 
-                                             "" 
+                                             [] 
                                              current-pos 
-                                             (conj-with-metadata result head current-pos))
-        :else                         (recur tail (str partial-token head) saved-pos result)))))
+                                             (conj-with-metadata result (str head) current-pos))
+        :else                         (recur tail (conj partial-token head) saved-pos result)))))
 
 
 (def parse
@@ -60,7 +54,7 @@
 (defn pretty-print-tokens [token-seq]
   (clojure.string/join 
     "\n"
-    (map #(format "%2d %s" (:column %) (:string %)) 
+    (map #(format "%2d %s" (:column %) (:token %)) 
          token-seq)))
 
 (defn evaluate [token-seq]
@@ -99,7 +93,7 @@
 ;   [s, idx]
 ;   (if (empty? s)
 ;     nil
-;     {:string s
+;     {:token s
 ;      :idx idx}))
 
 ; (defn tokens-with-column-numbers
