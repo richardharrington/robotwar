@@ -39,8 +39,12 @@
         [(:or \; nil) false]          result
         [(:or \space \t) true ]       (recur tail [] nil (close-partial-token))
         [(:or \space \t) false]       (recur tail [] nil result)
-        [(_ :guard binary-op?) true ] (recur line [] nil (close-partial-token))
-        [(_ :guard binary-op?) false] (recur tail 
+        ; if it's an operator of any kind and we're currently parsing a token, 
+        ; close the partial token and recur on the same character.
+        [(_ :guard operators) true]   (recur line [] nil (close-partial-token))
+        ; we don't have to check here if the binary operator is false because
+        ; if it weren't, it would have been caught by the less restrictive line above.
+        [(_ :guard binary-op?) _]     (recur tail 
                                              [] 
                                              nil 
                                              (conj-with-metadata result (str head) current-pos))
