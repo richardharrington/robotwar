@@ -34,7 +34,8 @@
 (def tokens3 [{:token "IF", :pos 0} 
               {:token "X", :pos 3} 
               {:token "<", :pos 4} 
-              {:token "-5", :pos 5} 
+              {:token "-", :pos 5} 
+              {:token "5", :pos 6} 
               {:token "GOTO", :pos 8} 
               {:token "SCAN", :pos 13}])
 

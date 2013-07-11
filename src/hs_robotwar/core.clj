@@ -27,13 +27,6 @@
           current-pos (- (count initial-line) (count line))
           previous-token (:token (last result) "")
           parsing-token? (not (empty? partial-token))
-          ; a binary operator is any character on the operator list,
-          ; unless it's a minus sign that is actually a unary operator
-          ; because the token before it could not be a number
-          binary-op? #(and (operators %)
-                           (or (not= % \-)
-                               (digit? (last previous-token))
-                               (registers previous-token)))
           head (first line)
           tail (rest line)]
       (match [head parsing-token?]
@@ -41,12 +34,10 @@
         [(:or \; nil) false]          result
         [(:or \space \t) true ]       (recur tail [] nil (close-partial-token))
         [(:or \space \t) false]       (recur tail [] nil result)
-        ; if it's an operator of any kind and we're currently parsing a token, 
+        ; if it's an operator and we're currently parsing a token, 
         ; close the partial token and recur on the same character.
-        [(_ :guard operators) true]   (recur line [] nil (close-partial-token))
-        ; we don't have to check here if the binary operator is false because
-        ; if it weren't, it would have been caught by the less restrictive line above.
-        [(_ :guard binary-op?) _]     (recur tail 
+        [(_ :guard operators) true ]  (recur line [] nil (close-partial-token))
+        [(_ :guard operators) false]  (recur tail 
                                              [] 
                                              nil 
                                              (conj-with-metadata result (str head) current-pos))
