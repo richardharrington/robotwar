@@ -12,16 +12,18 @@
   [ch]
   (re-find #"\d" (str ch)))
 
-(defn lex
+(defn conj-with-metadata 
+  [coll s n] 
+    (conj coll {:token s, :pos n}))
+
+(defn lex-line
   [initial-line]
   (loop
     [line initial-line
      partial-token []
      saved-pos 0
      result []]
-    (let [conj-with-metadata (fn [coll s n] 
-                               (conj coll {:token s, :column n}))
-          close-partial-token (fn [] (conj-with-metadata result (apply str partial-token) saved-pos))
+    (let [close-partial-token (fn [] (conj-with-metadata result (apply str partial-token) saved-pos))
           current-pos (- (count initial-line) (count line))
           previous-token (:token (last result) "")
           parsing-token? (not (empty? partial-token))
@@ -51,10 +53,21 @@
         [_ true ]                     (recur tail (conj partial-token head) saved-pos result)
         [_ false]                     (recur tail (conj partial-token head) current-pos result)))))
 
+(defn lex
+  [src-code]
+  (mapcat lex-line (clojure.string/split src-code #"\n")))
 
 (def parse
   "will be filled in later -- right now just a pass-through for the repl"
   identity)
+
+(defn compile-to-obj-code
+  "takes a stream of tokens and converts them into robotwar virtual machine code"
+  [tokens]
+  (loop [tokens tokens
+         done? false
+         obj-code []]
+    ))
 
 (defn pretty-print-tokens [token-seq]
   (clojure.string/join 

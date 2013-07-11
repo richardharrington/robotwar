@@ -14,32 +14,46 @@
   (testing "digit str"
     (is (digit? \6))))
 
+(def line1 "IF DAMAGE # D GOTO MOVE")
+(def line2 "AIM-17 TO AIM")
+(def line3 "IF X<-5 GOTO SCAN")
+
+(def tokens1 [{:token "IF", :pos 0} 
+              {:token "DAMAGE", :pos 3} 
+              {:token "#", :pos 10} 
+              {:token "D", :pos 12} 
+              {:token "GOTO", :pos 14} 
+              {:token "MOVE", :pos 19}])
+
+(def tokens2 [{:token "AIM", :pos 0} 
+              {:token "-", :pos 3} 
+              {:token "17", :pos 4} 
+              {:token "TO", :pos 7} 
+              {:token "AIM", :pos 10}])
+
+(def tokens3 [{:token "IF", :pos 0} 
+              {:token "X", :pos 3} 
+              {:token "<", :pos 4} 
+              {:token "-5", :pos 5} 
+              {:token "GOTO", :pos 8} 
+              {:token "SCAN", :pos 13}])
+
 (deftest lex-simple
   (testing "lexing of simple line"
-    (is (= (lex "IF DAMAGE # D GOTO MOVE")
-           [{:token "IF", :column 0} 
-            {:token "DAMAGE", :column 3} 
-            {:token "#", :column 10} 
-            {:token "D", :column 12} 
-            {:token "GOTO", :column 14} 
-            {:token "MOVE", :column 19}]))))
+    (is (= (lex-line line1) 
+           tokens1))))
 
 (deftest lex-scrunched-chars
   (testing "lexing with no whitespace between operators and operands"
-    (is (= (lex "AIM-17 TO AIM")
-           [{:token "AIM", :column 0} 
-            {:token "-", :column 3} 
-            {:token "17", :column 4} 
-            {:token "TO", :column 7} 
-            {:token "AIM", :column 10}]))))
+    (is (= (lex-line line2)
+           tokens2)))) 
 
 (deftest lex-negative-numbers
   (testing "lexing with unary negative operator"
-    (is (= (lex "IF X<-5 GOTO SCAN")
-           [{:token "IF", :column 0} 
-            {:token "X", :column 3} 
-            {:token "<", :column 4} 
-            {:token "-5", :column 5} 
-            {:token "GOTO", :column 8} 
-            {:token "SCAN", :column 13}]))))
+    (is (= (lex-line line3)
+           tokens3))))
 
+(deftest lex-multi-line
+  (testing "lexing multiple lines"
+    (is (= (lex (clojure.string/join "\n" [line1 line2 line3]))
+           (concat tokens1 tokens2 tokens3)))))
