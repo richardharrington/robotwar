@@ -59,7 +59,7 @@
 (defn pretty-print-tokens [token-seq]
   (clojure.string/join 
     "\n"
-    (map #(format "%2d %s" (:column %) (:token %)) 
+    (map #(format "%2d %s" (:pos %) (:token %)) 
          token-seq)))
 
 (defn evaluate [token-seq]
