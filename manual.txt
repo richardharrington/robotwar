@@ -1,0 +1,1106 @@
+
+                      ROBOTWAR
+
+Welcome to the battlefield of the future! It is the year 2002. Wars
+still rage, but finally, they have been officially declared hazardous to
+human health. Now, the only warriors are robots - built in secret and
+programmed to fight each other to the death!
+
+Your country has just developed the most efficient battle robot to date.
+It should be unbeatable - but part of its micro-computer "brain" is
+still blank. Only when a strategy is programmed into its memory will the
+robot be able to fight.
+
+The task set before you is to program a robot that no other robot can
+destroy.
+
+RobotWar is a fascinating and highly competitive game where robots
+battle each other to the death! RobotWar is not a game using manual
+dexterity, instead the robots are controlled by pre-programmed
+strategies and highly spectator interest.
+
+As well as providing hours of entertainment, RobotWar is designed to
+teach and sharpen the skills of creative computer programming. Whether
+you are a beginner or an accomplished programmer, RobotWar will prove to
+be fun and challenging.
+
+Robot war players design and write robot programs. The program is
+written with the help of a text-editor, and then translated by an
+assembler into robot-understandable instructions. The program can then
+be tested on a simulated robot to make sure it is working properly. Once
+the player is assured that the program is running as planned, it is
+installed in a battle robot and sent out to do battle with the other
+robots.
+
+From the main menu, several options are selectable.  These options are
+described below:
+
+Option 1
+This will access the Battle branch where the player can setup and
+execute one robot battle. See "robots and robot battles".
+
+Option 2
+This will access the robotwar assembler and testing branch where the
+programs are translated and checked for errors, or tested on a simulated
+robot. See "the assembler" and "the test bench".
+
+Option 3
+This will access the text-editor where an existing program can be edited
+or a new program can be written. See "writing and editing source code".
+
+Option 4
+This is a simple control that turns the battle sounds on or off.
+Pressing the 4 key will change the position of the sound switch.
+
+Option 5
+This will access the disk storage branch where a disk can be initialized
+for storing robot code. See "storing robots on auxiliary disks".
+
+Option 6
+This will cause the computer to exit from the robotwar program to
+applesoft basic.
+
+Option 7
+This will access the match scheduling branch where the player can
+schedule and execute a series of battles. See "robots and robot
+battles".
+
+Option 8
+This will allow the player to run a previously scheduled or interrupted
+match (a series of battles). If you resume a previously interrupted
+match it will begin with the battle after the one which was
+interrupted.
+
+Note: If no option is selected from the main menu, the program will
+automatically select option 8.  Robots and Robot Battles Locomotion
+
+Each robot is moved by tracks mounted on a 1.5 meter square chassis. The
+two independent motors, driving the tracks, enable the robot to move
+vertically (north/south) and horizontally (east/west).
+
+Power Supply
+The power supply will take the severest damage from the enemy shells. It
+is built into the central body of the robot, along with damage sensors.
+These sensors monitor the damage to the power supply and when 100%
+damage is attained, the robot will explode.
+
+Radar
+On top of the robot is a radar unit that emits a beam in any desired
+directions. This beam reflects from walls and other robots and returns
+to the robot. The beam is accurately timed, enabling the robot to find
+it's position and to spot enemy robots.
+
+Guns and Ammunition
+Your robot is equipped with one gun that swivels through 360 degrees and
+is automatically loaded. It uses time-fused shells that can be set to
+explode at any specified distance.  The gun also has a cooling period
+between each shot to keep it from overheating.
+
+The Brain
+Inside the robot is a micro-computer "brain" that executes the
+instructions exactly as they have been programmed. The brain has several
+parts: an accumulator where a robot performs all arithmetic operations,
+a program storage area where the instructions are stored in memory, and
+registers where numbers are stored. the brain links to input sensors
+monitoring damage and position as well as to the drive motors, radar,
+and gun. While the robot is on the battlefield the brain is in complete
+control!
+
+The battlefield
+Robot battles take place on a square battlefield inside four strong
+walls. Each wall is 260 meters long and strong enough that a robot
+cannot crash or shoot through it. As many as five robots can fight at
+once, but only one will emerge as the winner.
+
+There is an observations station, directly above the battlefield,
+enclosed in blast-proof glass to protect you and the other observers.
+
+Damage
+Robots are eliminated from battle by incurring over 100% damage. When a
+shell hits a robot or explodes nearby, the robot is damaged. The extent
+of that damage depends on the proximity of the shell to the robot. A
+shell exploding directly on top of a robot can do 30% damage.
+
+A robot can also be damaged through collisions with walls or other
+robots. The extend of damage would depend on the angle of collision. A
+head-on collision between two robots can do 25% damage to both robots.
+
+The Scoring System
+Each robot has a score associated with it. As each battle is fought the
+robots earn points which are added to it's cumulative score. Every time
+a robot's program is changed, it's score is reset to 0.
+
+Robots earn points in the following manner. during a battle, every time
+a robot is destroyed, 1 point is earned by all of the survivors. Thus in
+a five-robot battle, the first to be destroyed receives 0 points. For
+outlasting that first robot, all other robots on the battlefield earn 1
+point. For outlasting 4 other robots, the winner of a 5-robot battle
+earns 4 points!
+
+Controlling Robots
+A robot computer contains 34 registers. The 34 registers are divided
+into three categories:
+
+1. Memory registers which are used to contain numbers for latter
+recall.
+
+2. Input/Output (I/O) registers which are used to monitor and control
+specific robot functions.
+
+3. The Index/Data pair of registers which are used to access the other
+registers by their numbers instead of their names.
+
+1. Memory Registers
+There are 24 memory registers used to store numbers. The memory
+registers are named A through W and Z. (X and Y are not included - they
+are input registers as described below).
+
+2. Input/Output Registers
+There are nine I/O registers that allow the computer to control the
+robot's actions. Each controls or monitors a specific robot function as
+described below:
+
+  a) The X register:
+The X register is used to monitor the horizontal position of the robot.
+It always contains the current horizontal position of the robot on the
+battlefield, as a number from 0 to 256. o is at the extreme left of the
+battlefield and 256 is at the extreme right.
+
+  b) The Y register:
+The y register is used to monitor the vertical position of the robot. 0
+is at the top of the battlefield and 256 is at the bottom.
+
+  c) The AIM Register:
+The AIM register is used to monitor and control the angle at which the
+gun is aimed. when a number from 0 to 359 is stored in the Aim register,
+the robot's gun will turn to that angle. 0 aims the gun due north, 90
+aims it due east, etc. The AIM register always contains the current
+angular position of the gun.
+
+  d) The RADAR register:
+The RADAR register is used to control the radar unit on top of the robot
+and monitor the results of the radar beam.  Storing a number from 0 to
+359 in the RADAR register, sends a beam out in that direction.
+
+  e) The SHOT register:
+The SHOT register is used to fire the robot's gun and monitor the state
+of readiness of the gun. Storing a new number in the SHOT register: Sets
+the timer on the shell so that it will travel that number of meters
+before exploding, and then fires it. After a shot is fired the SHOT
+register will contain the state of the gun's cooling process. When the
+SHOT register contains a zero the gun is ready to be fired again.
+
+  f) The DAMAGE register:
+The DAMAGE register is used to monitor the amount of damage detected by
+the damage sensors. the DAMAGE register starts at 100 at the beginning
+of each battle and decreases towards 0 as damage is incurred. When the
+register reaches 0, the robot is completely destroyed and will disappear
+from the battlefield. The DAMAGE register always contains the current
+extend of damage.
+
+  g) the SPEEDX register:
+This register is used to control and monitor the horizontal speed of the
+robot. The number stored in the SPEEDX register can range from -255 to
+255 and controls the direction and speed of the robot. A negative number
+moves the robot to the left at that many decimeters/second, and a
+positive number moves the robot to the right at that many
+decimeters/second. If a zero is stored in this register the robot will
+stop moving in the horizontal direction. The SPEEDX register always
+contains the horizontal speed of the robot.
+
+  h) The SPEEDY register:
+Acts the same as the SPEEDX register, only in the vertical direction. A
+positive number is in a downward direction and a negative number is in
+an upward direction.
+
+  i) The Random register:
+This register is used to control the random number generator. Storing a
+number in the RANDOM register sets the limit for the generator. Then,
+each time the RANDOM register is accessed, it will contain a different
+integer (whole number) between 0 and th random number limit which was
+previously set.
+
+
+[----------------------------------------------------------]
+| (0,0)                                           (256,0)  |
+|                                                          |
+|                                                          |
+|                             o                            |
+|                          o 0   o                         |
+|                       315  | 45                          |
+|                      o   \ |/       o                    |
+|                   270------.------90                     |
+|                         o/ |\   o                        |
+|                      225   | 135                         |
+|                            |  o                          |
+|                            180                           |
+|                                                          |
+|                                                          |
+| (0,256)                                       (256,256)  |
+[----------------------------------------------------------]
+
+
+3. The index/Data Registers
+
+The robot registers are usually referenced by their names. The
+Index/Data pair allows registers to be accessed by number instead of
+name.
+
+
+Storing a number from 0 to 34 in the INDEX register causes the
+corresponding register to be used whenever the DATA register is
+referenced.
+
+For example, assume the INDEX register contains 27. When the DATA
+register is referenced in an instruction, register #27 (AIM) will be
+substituted for DATA.
+
+Number    Name    Type
+ 1-23     A-W     Storage
+  24       X      Current X position
+  25       Y      Current Y position
+  26       Z      Storage
+  27      AIM     Aims gun
+  28      SHOT    fires the gun
+  29      RADAR   pulses the radar
+  30      DAMAGE  monitors damage
+  31      SPEEDX  control horizontal speed
+  32      SPEEDY  control vertical speed
+  33      RANDOM  random number generator
+  34      INDEX   Index other registers
+
+
+The Language of Robots
+
+The Source Code
+Robot  programs  are  written  in source code and then translated by the
+assembler into robot-understandable object code. Source code is composed
+of comments, labels, and instructions.
+
+1. Comments:
+Comments are used for documenting the source code.  Comments can  appear
+anywhere in the program as long as they are preceded by a semi-colon.
+
+  ] A TO B ;This stores a in b
+
+This is an example of a comment on the same line as an instruction.
+
+2. Labels:
+A label is a reference point used to identify sections within a program.
+Labels  are used in instructions to change the order of execution of the
+program.
+
+A label is composed of a group of 2  or  more  alpha-numeric  characters
+immediately  following  a  RETURN symbol (]). A label must start with an
+alpha character (A to Z) and must be less than  32  characters  long.  A
+label  can  not  be  the  same  as  any of the register names or command
+words.
+
+3. Instructions
+Instructions are used  to  control  the  robot's  micro-computer  brain.
+Instructions  may  contain  register  names,  command  words and numbers
+(-1024 to +1024)
+
+
+Command words:  a) 'TO' stores a value in a register
+
+b) 'IF'  compares  two  values  and  alters  program  flow.   use  these
+conditions:
+   = equal
+   # not equal
+   < less than
+   > greater than
+
+c) 'GOTO' jumps to a label in the prog.
+
+d) 'GOSUB' calls a subroutine
+
+e) 'ENDSUB' returns from a subroutine
+
+f) math operators
+   + adds two values
+   - subtracts two values
+   * multiplies two values
+   / divides two values
+
+
+Restrictions:
+
+a) no parentheses allowed
+
+b) use only integer numbers between +1024 and -1024
+
+c) you must use a condition sign when using an 'IF'
+
+d)  you  may  store  negative NUMBERS in a register, but you can't store
+negative REGISTERS in a register.
+
+e) all math operations are done from left to right
+
+
+The TO command
+
+The TO command is used to store a value in a register.
+
+  ] 240 TO A
+
+This example line of  source  code  causes  the  computer  to  load  the
+accumulator with a value of 240 and the store it in the A register.
+
+
+  ] B TO A
+
+This  example  causes  the  computer  to  load  the accumulator with the
+contents of the B register and then store it in the A register.
+
+
+  ] 0 TO SPEEDX TO SPEEDY
+
+This example causes the computer to load  the  accumulator  with  0  and
+store  it  first  in  the  SPEEDX  and  register  and then in the SPEEDY
+register. This could be used to stop a robot's movement.
+
+
+NOTE: Negative numbers can be stored as in the following example:
+
+  ] -240 TO SPEEDX
+
+But, you CANNOT store the negative of a register  in  that  manner.  For
+example:
+
+  ] -B TO A
+
+Will NOT store the negative of B in A. To store a negative of a register
+subtract the register from zero. For example:
+
+  ] 0 -B TO A
+
+Arithmetic commands (+ - * /)
+
+Arithmetic  operations  can  be  performed  on  a  value  stored  in the
+accumulator. Whenever the program encounters one of the arithmetic signs
+it performs the calculation using the contents of  the  accumulator  and
+the value that follows. It then stores the results of the calculation in
+the accumulator.
+
+  ] 240 + 100 TO A
+
+This  example loads 240 into the accumulator, adds 100 to it, and stores
+the result (340) in the A register.
+
+The IF command
+
+The IF command is used to  compare  a  value  with  the  contents  of  a
+register.  It  can  test  to see if a register is less than (<), greater
+than (>), equal to (=), or not equal to (#) a value. If  the  comparison
+is  true  the  computer  executes  the  next  TO,  GOTO, GOSUB or ENDSUB
+command. If the comparison is false the  computer  skips  the  next  TO,
+GOTO, GOSUB or ENDSUB commands.
+
+The GOTO command
+
+A  GOTO  command causes the program to change it's sequence of execution
+by going to a designated label and continuing its execution from  there.
+A GOTO instruction must always be followed by a label.
+
+The GOSUB command
+
+Another  way to change the execution sequence is to use a GOSUB command.
+A GOSUB instruction is similar to a GOTO command. GOSUB must  always  be
+followed  by  a  label.  GOSUB  will  cause  the  program  to  go to the
+designated label and continue the execution until it reaches an  ENDSUB.
+When  it encounters the ENDSUB, the program will then return to the next
+instruction after the GOSUB.
+
+Caution:
+
+Some illegal statements will be translated by the  assembler,  but  then
+will do odd things when executed.
+
+
+Programming a Robot
+
+In order to make a robot perform, you must construct a program using the
+RobotWar language and your own strategy.  This chapter gives examples of
+how  instructions  can  be  constructed,  suing  registers. numbers, and
+commands, and how those instructions can be  labeled  and  sequenced  to
+create program routines.
+
+Movement
+
+Moving  about  the battlefield is an action a robot performs. To start a
+robot moving, store a value in the speedx or speedy register.
+
+  ] 20 to speedx
+
+  ] 250 to speedy
+
+would start the robot moving down and to the right.  However, the  robot
+would  continue  to move in those directions, and would eventually hit a
+wall. Therefore, you must stop it at some point, by storing  a  zero  in
+the speedx and speedy registers.
+
+  ] 0 to speedx
+
+
+A  robot  can  only  accelerate  or  brake at 40 decimeters/second. Even
+though 120 is entered into  speedx  register,  it  takes  3  seconds  of
+acceleration  to  obtain  that  speed.  Conversely,  if  your  robot  is
+travelling at 120 decimeters/sec it takes 3 seconds to stop  the  robot,
+after storing 0 in the speedx register.
+
+A movement routine can be established, by incorporating the starting and
+stopping procedures into a test loop.
+
+  ] 256 TO SPEEDX
+
+  ]MOVER1
+
+  ] IF X > 230 GOTO STOP
+
+  ]STOP
+
+  ] 0 TO SPEEDX
+
+Moves  the  robot  to  the  right  until it's X position is tested to be
+greater than 230 and then it stops.
+
+Monitoring Damage
+
+Monitoring damage is vital to a robot's survival. When a robot detects a
+hit, it usually moves to avoid being repeatedly hit  by  the  enemy.  By
+using   the   DAMAGE   register,  a  damage  detection  routine  can  be
+established. This routine is usually  nested  inside  another  routine's
+loop so that the robot can be checking for damage while it is performing
+some other action.
+
+  ] DAMAGE TO D
+
+Saves current damage in register D.
+
+  ]DAM1
+
+  ] IF DAMAGE # D GOTO MOVE
+
+
+When  any  damage  is  incurred,  the  DAMAGE  register will change, but
+register D will not. Therefor, any difference between the two  registers
+will  indicate  that  the  robot  has  been  hit.  In  this  example any
+difference will cause the program to go to the label MOVE.
+
+Scanning
+
+Another important action a robot performs is  scanning.   When  a  robot
+scans  it  is  using  it's  radar  beams to detect the location of other
+robots and walls. To emit a radar beam, store a number,  between  0  and
+359 in the RADAR register.
+
+  ] 90 TO RADAR
+
+Will  send  a  radar  beam in the 90-degree direction, and when the beam
+returns, it's value will be stored in the RADAR register. A  routine  to
+determine if the robot has spotted another robot is:
+
+  ]LOOK
+
+  ] AIM + 5 TO AIM
+
+  ] AIM TO RADAR
+
+  ] IF RADAR < 0 GOTO SHOOT
+
+  ] GOTO LOOK
+
+When  the  program  executes this routine, it first encounters the label
+LOOK and goes on to the next instruction. This instruction (AIM +  5  TO
+AIM)  increments  the angle in which the gun is aimed, five degrees. The
+next instruction (AIM TO RADAR) aligns the angle of  the  radar  to  the
+angle  of the gun, emits a radar beam in that direction, and then stores
+the results of that beam in the RADAR register.
+
+The next instruction (IF RADAR < O GOTO SHOOT) analyzes the  results  of
+the  radar's findings. If the RADAR register contains a positive number,
+there are no robots in that direction and the comparison will be  false.
+Since  the comparison is false, the next command will be ignored and the
+program will go on to the next command (GOTO LOOK).  This  command  will
+cause  the  program to go to the label LOOK. This completes the loop and
+the scan routine will continue until a robot is found.
+
+If the RADAR  register  contains  a  negative  number,  After  the  beam
+returns,  the comparison (IF RADAR < 0) will be true. Therefor, the next
+command (GOTO SHOOT) will be executed. In this case the program sequence
+would branch to the instruction following the label SHOOT.
+
+Shooting
+
+
+It is usual procedure to execute a shooting routine  when  an  enemy  is
+spotted.
+
+  ]SHOOT
+
+  ] 0 - RADAR TO SHOT
+
+  ] GOTO LOOK
+
+Is  an example of a simple shoot routine. Since a robot has been spotted
+by radar, a negative number is presently stored in the  RADAR  register.
+The  enemy  robot  is that number (ignoring the negative sign) of meters
+away. In order to obtain a positive number of the distance, the  program
+subtracts  RADAR  from 0. This new positive number is then stored in the
+SHOT register. Storing the number in the SHOT register causes the gun to
+fire a shell that has been set to  explode  at  that  distance,  in  the
+direction indicated by the contents of the AIM register.
+
+Random Number Generation
+
+
+The  RANDOM register is used to generate random numbers.  A few examples
+of random number routines are:
+
+  ] 100 TO RANDOM
+
+  ] RANDOM TO A
+
+This routine stores 100 in the RANDOM register, which sets the limit for
+the generator. The generator then returns a random number from 0  to  99
+and  stores it in the RANDOM register. That value is then stored in A by
+the TO command.  From then on each  time  the  contents  of  the  RANDOM
+register  is stored in a register, the generator will return a different
+number. The limit of the generator will only change when a new value  is
+stored in the RANDOM register by using the TO command.
+
+  ] B + 1 - A TO RANDOM
+
+  ] RANDOM + A TO C
+
+This  routine  stores  a  random  number  between  A  and  B  into the C
+register.
+
+A Sample robot in source code
+
+;SAMPLE ROBOT 'RANDOM'
+
+]  250 TO RANDOM            ;INITIALIZE RANDOM -- 250
+MAXIMUM
+]
+]START
+]  DAMAGE TO D              ;SAVE CURRENT DAMAGE
+]
+]SCAN
+]  IF DAMAGE # D GOTO MOVE  ;TEST -- MOVE IF HURT
+]  AIM+17 TO AIM            ;CHANGE AIM IF OK
+]
+]SPOT
+]  AIM TO RADAR             ;LINE RADAR WITH LAUNCHER
+]  IF RADAR>0 GOTO SCAN     ;CONTINUE SCAN IF NO ROBOT
+]  0-RADAR TO SHOT          ;CONVERT RADAR READING TO
+]DISTANCE AND FIRE
+]  GOTO SPOT                ;CHECK IF ROBOT STILL THERE
+]
+]MOVE
+]  RANDOM TO H
+]  RANDOM TO V              ;PICK RANDOM PLACE TO GO
+]
+]MOVEX
+]  H-X*100 TO SPEEDX        ;TRAVEL TO NEW X POSITION
+]  IF H-X>10 GOTO MOVEX     ;TEST X POSITION
+]  IF H-X<-10 GOTO MOVEX    ;TEST X POSITION
+]  0 TO SPEEDX              ;STOP HORIZONTAL MOVEMENT
+]
+]MOVEY
+]  V-Y*100 TO SPEEDY        ;TRAVEL TO NEW Y POSITION
+]  IF V-Y>10 GOTO MOVEY     ;TEST Y POSITION
+]  IF V-Y<-10 GOTO MOVEY    ;TEST Y POSITION
+]  0 TO SPEEDY              ;STOP VERTICAL MOVEMENT
+]  GOTO START               ;START SCANNING AGAIN
+]
+
+Writing and Editing Source Code
+
+Robot programs are entered into the computer using a text editor.
+
+The text editor may be entered by selecting option 3 from the Main Menu,
+or by selecting option 6 from the Assembler menu.
+
+Text-Editor Procedure
+
+When you first enter the text editor, you will see a blank  screen  with
+some numbers at the bottom and a flashing square at the top. The numbers
+at the bottom show the length of the text, and the file name under which
+it  is  stored.  The  flashing  square  is called the cursor, and is the
+computer equivalent of a pen for writing  characters.  As  you  use  the
+text-editor  you  will  be  operating in two modes; the add mode and the
+cursor mode. The add mode is used to delete text at the cursor, move the
+cursor around in the text, adjust  the  position  of  the  text  on  the
+screen,  load  source  code files from the catalog, and save source code
+files to the catalog.
+
+The blank screen indicates that the current text-editor file  is  empty.
+At  this  point  there are two available options. One option is to begin
+writing a new source code, and the other option is to edit a robot  that
+has already been stored.
+
+
+Ctrl-A  to  enter  the add mode. The letter "A" will appear in the lower
+RIGHT corner of the screen. You can now create a new source code file.
+
+Esc Esc exits you from the add mode.
+
+Ctrl-S to save the file on the disk. The word "SAVE" will appear on  the
+left  side of the screen. To save the new robot program you just created
+you must give it a name. The name can be no longer than 7 characters and
+must not be the same as any other robot on the disk.
+
+Ctrl-L loads a file from the disk. The word "LOAD" will  appear  on  the
+left side of the screen.
+
+Cursor Mode
+
+
+You  are  now  ready  to  perform  the  second available option when the
+text-editor has been loaded, which is editing the source code file. When
+editing source code you will use the cursor mode to delete text  at  the
+cursor,  move  the cursor around in the text, adjust the position of the
+text on the screen, load source code files, and save source code  files.
+These functions are described below:
+
+1. Cursor Movement
+
+The  cursor  can  be moved to any location in the file by using the five
+keys on the right side of the keyboard.
+
+A) The RETURN key moves the cursor up one line
+
+B) The left and right arrow keys.
+
+C) The slash (/) key moves the cursor down one line.
+
+To move the cursor all the way in any direction on the screen, press the
+Esc key and then the direction key.
+
+Once you have positioned the cursor where you want it, there are several
+options. Either exit to the add mode, and write some text or stay in the
+cursor mode and use a cursor function.
+
+
+2. Moving Text
+
+There are also methods of moving the text itself, when in the cursor
+mode. The direction, in which the text moves, is set by pressing the '+'
+key (a forward direction) or the '-' key (a backward direction) prior to
+pressing the L, P, or A keys.
+
+A) The L key will move the text up or down one line.
+
+B) The P key will move the text up or down one full page.
+
+C) The A key will set the text in continuous scrolling motion.
+
+You can move to the beginning or end of the text by pressing the Esc key
+first and then the '-' key or the '+' key respectively.
+
+3. Deleting Text
+
+This function deletes text from the screen and the memory if the Apple,
+but not from the disk. There are three methods of deleting text:
+
+A) Ctrl-D Any character may be deleted by positioning the cursor over
+the character and pressing Ctrl-D.
+
+B) Ctrl-G Any line, or portion of a line, may be deleted by positioning
+the cursor over a character and pressing Ctrl-G. This will delete the
+character and the rest of the line that follows it.
+
+C) Esc Ctrl-Z All of the text, presently in the text-editor may be
+deleted by pressing Esc and then Ctrl-Z.  You will have to confirm the
+command by pressing the # key.  This protects against accidental
+erasures.
+
+4. Block Operations
+
+This function allows you to mark a portion of the current source code,
+and then manipulate that block to another place in the file. You must
+designate the beginning and the end of a block by placing block markers
+at those two points. To insert a block marker immediately after the
+cursor, press Ctrl-V to mark the beginning and end of th block, and it
+will be represented on the screen by a flashing ')' sign. Only one block
+can exist in a file at any one time and any attempt to insert a block
+mark when a block has already been defined will result in the error
+message "BLOCK ALREADY MARKED".
+
+When a block is marked, press Esc V and the block options will be
+displayed on the bottom of the screen. They are Copy, Delete, and
+Unmark.
+
+To copy a block, move the cursor to the location in the file where you
+want to insert the copy of the block and press C. This is a
+non-destructive copy.
+
+To delete a block. Pressing D will remove the block and the block
+markers from memory.
+
+To unmark the block press U. You may also remove markers with normal
+delete commands. Remember, these changes only exits in the memory and
+not on the disk.
+
+5. Find Operations
+
+Fo find all occurrences of a word or phrase in a file, use the find
+command. Press Ctrl-F and you will be prompted wit the "FIND:>" message.
+At this point, type in the word or phrase you wish to locate and press
+return.
+
+The first occurrence of the word or phrase will be displayed in the
+center of the screen. To find all subsequent occurrences press Ctrl-F
+and Return.
+
+You need not enter the word each time, the search will always begin at
+the current cursor location and search in the direction that the
+indicator in the lower left corner of the screen shows.
+
+6. Printing Source Code Files
+
+To print the source code on a printer, press Ctrl-P. The screen will
+prompt you to type in the printer slot number.  Once this has been done,
+and the RETURN key has been pressed, the text will print out.
+
+7. Adding Text
+
+Position the cursor to where you want to begin adding text and enter the
+add mode by pressing Ctrl-A. To return from add mode to cursor mode,
+press Esc twice.
+
+8. Loading files
+
+To load a file into memory which was previously saved on disk press
+Ctrl-L. The loading operation works similar to loading any other file.
+
+9. Saving Files
+
+To save a file on disk, press Ctrl-S. Use the space bar to select the
+file name from disk, or type one in. Press RETURN when done.
+
+10. Entering the Assembler
+
+To save the current robot program and enter the assembler, press Ctrl-R.
+This will save the text as it appears in the memory on the disk, and
+then exit the text-editor to the assembler. Before a robot can be
+assembled, it must have been given a name by being saved to disk.
+
+The Assembler
+
+The Assembler translates source code programs into robot-understandable
+object code. It also checks for errors in the source code and displays a
+message if one is found.
+
+The assembler can be entered from the Main Menu by selecting option 2,
+or from the editor by pressing Ctrl-R.  If the assembler is entered from
+the editor, a robot source program is loaded and ready to assemble.
+
+It is possible to assemble a robot from source code on the disk, or load
+an assembled robot from disk to test.  There is also an option to print
+the assembled robot on the printer.
+
+Assembly Errors
+
+There are eight errors that the RobotWar assembler can detect. When the
+assembler detects an error it will display a message such as:
+
+NO DATA FIELD IN LINE 27
+
+     10 + TO C
+
+           ^
+
+
+The error message indicates the type of error, the program line number
+and the position in the line (^) where it occurred. Following are the
+possible error messages:
+
+1. NO DATA FIELD - There is no register or number after a command.
+
+2. UNKNOWN ITEM - You have tried to use a register or a label that is
+not defined.
+
+3. LARGE NUMBER - You have tried to store a number greater than 1,024,
+or less than -1,024 into a register.
+
+4. PROGRAM TOO LONG - Program is too big for the allotted program
+storage area. Programs have a maximum length of 256 object code
+instructions.
+
+5. FATAL JUNK - You have included something that the computer cannot
+understand, like an illegal statement.
+
+6. STORE IN NUMBER - You have tried to store a value in a number instead
+of a register.
+
+7. RESERVED LABEL - You have tried to use a register name as a label.
+
+8. NO PROGRAM CODE - There are no instructions in the program.  Object
+Code Exercise
+
+The following pages list the object code's commands and registers and
+the translation of the sample robot's source code. Using the list and
+the two codes for the sample robot, compare and identify the source code
+and it's object code translation. It will be very useful to understand
+the object code when learning to use the test bench in the next
+chapter.
+
+List of Object Code Instructions
+
+Instruction Action
+
+   ,  Load accumulator with next data item
+
+   IF Load accumulator with next data item
+
+   +  Add next data item to accumulator
+
+   -  Subtract next data item from accumulator
+
+   *  Multiply accumulator by next data item
+
+   /  divide accumulator by next data item
+
+   =  Skips the next command unless the accumulator is equal to next
+      data item
+
+   >  Skips the next command unless the accumulator is greater than the
+      next data item
+
+   <  Skips the next command unless the accumulator is less than next
+      data item
+
+   #  Skips the next command if the accumulator is equal to next data
+      item
+
+ TO       Store accumulator in next dat item
+ GOTO     Branch to the address given
+ GOSUB    GOSUB to the address give
+ ENDSUB   REturn from a subroutine
+
+Assembly of Robot Sample
+
+Code   Building
+====   ========
+SCAN
+0      ,      AIM
+1      +      5
+2      TO     AIM
+3      ,      AIM
+4      TO     RADAR
+LOOP
+5      IF     RADAR
+6      <      0
+7      GOSUB  FIRE
+8      GOTO   SCAN
+FIRE
+9      ,      0
+10     -      RADAR
+11     TO     SHOT
+12     ENDSUB
+
+Code   Statistics
+===    ==========
+140    Letters
+13     Instructions
+3      Labels
+2      References
+
+
+The Test Bench
+
+The test bench is a micro-computer simulator of a robot.  With the test
+bench, you can monitor a robot's performance without actually putting it
+on the battlefield. This simulator will prove an important device, as
+you learn to debug robots, because it allows you to monitor the object
+code and the contents of the registers.
+
+Load a robot into the test bench by selecting option 2 from the
+assembler menu or from the main menu.
+
+Operating the Test Bench
+
+As the test bench runs the program, each instruction (in object code)
+will appear on the left side of the screen as it is executed. On the
+right side of the screen are displayed the robot's position and register
+contents. Also shown are the instruction number being executed (program
+counter) and the accumulator.
+
+Controlling the Test Bench
+
+The test bench can be interrupted by pressing the space bar. Press the
+space bar again to execute one more instruction. This can be useful when
+analyzing a program to see if it is acting as you had planned. Pressing
+RETURN will start the test bench running again. To change the speed of
+the test bench, press a number from 0 to 9.
+
+Simulating Radar
+
+Pressing the R key will cause the radar display to light up and the
+RADAR register will display a negative number to simulate an enemy robot
+in view. This will allow your program to go into it's "enemy spotted"
+routine.
+
+Simulating Damage
+
+Each time the G key is pressed, a random amount, up to 10% will be
+subtracted from the DAMAGE register. This allows th program the
+opportunity to use it's damage detection routine. The DAMAGE register
+will also indicate damage if the simulated robot crashes into a wall.
+The test bench will automatically stop when the DAMAGE register reaches
+0.
+
+Tracing Registers
+
+The trace is used to check the contents of registers not normally
+displayed on the test bench. Press the T key to access the tracer. The
+test bench will stop, and the following question will be displayed:
+"NAME REGISTER TO TRACE?" Enter the name of the register you want to
+trace and press RETURN. The test bench will continue, with the contents
+of the traced register displayed on the line above "X POSITION".
+
+The Esc key will exit from the test bench.
+
+Storing Robots
+
+There is a limited amount of space on the RobotWar disk to store robot
+files. However, robot files can be transferred to and from auxiliary
+storage disks.
+
+Auxiliary storage disks are used only to store robot files. Robot files
+on auxiliary disks must be transferred back to the RobotWar program disk
+before they can be tested, assembled, edited, or battled.
+
+There is a utility in the menu to initialize a data disk. Only disks
+initialized by RobotWar can be used as data disks.
+
+To save or load a robot to or from a data disk simply remove the
+RobotWar disk after entering the robot name and before pressing return.
+After the file is loaded, swap the disks back again before continuing
+with the program.
+
+To delete a robot from a disk, exit to basic, and delete the file with
+the DOS 3.3 command DELETE filename and press RETURN. When done, enter
+PR#6 to re-start RobotWar.
+
+Summary of Editor Keys Cursor Mode:
+
+Moving keys
+
+     +    Set forward direction
+
+     -    Set backward direction
+
+ Esc +    Move to end of text
+
+ Esc -    Move to beginning of text
+
+     A    Sets text in continuous scrolling motion
+
+RETURN    Move cursor up one line
+Esc RETURN    Move cursor to top of page
+
+     /    Move cursor one line down
+
+ Esc /    Move cursor to bottom of page
+
+    <-    Move one space left
+
+    ->    Move one space right
+
+Esc ->    Move cursor to right end of line
+
+Esc <-    Move cursor to left margin
+
+     P    Move up or down one full page
+
+     L    Move text up or down one line
+
+Text deleting keys
+
+
+Ctrl-D    Delete the character at the cursor
+
+Ctrl-G    Delete the line at the cursor
+
+Esc Ctrl-Z    Delete the whole file
+
+File handling keys
+
+
+Ctrl-L    Clear memory and load a source file
+
+Ctrl-S    Save text as a source file
+
+Ctrl-R    Save current file and enters assembler
+
+Control keys
+
+Esc Ctrl-Q    Exits to main menu
+
+Ctrl-F    Executes FIND operation
+
+Ctrl-P    Prints file in memory
+
+Ctrl-V    Places block marker at cursor
+
+ Esc-V    Displays block options
+
+           C-Copy block
+
+           D-Delete block
+
+           U-Remove block markers
+
+Add Mode
+
+Text adding keys
+
+
+Ctrl-A    Start adding text
+   Esc Esc    Stop adding text
+
+    <-    Backspace, erases as it goes
+
+    ->    Moves text to the right
+
+RETURN    Acts as a carriage return
+
+
+From the Assembler
+
+Space Bar     Stop the assembler or move it one step
+   RETURN     Start the assembler operating again
+
+  0-9     Adjust the speed at which the assembler is
+scrolling
+
+From the Test Bench
+
+   RETURN     Start the assembler operating again
+
+  0-9     Adjust the speed at which the assembler is
+scrolling
+
+    R     Simulate Radar
+
+    G     Simulate a shell hit
+
+    T     Trace a Register
+
+  Esc     Exit the test bench
+
+ the DOS 3.3 command DELETE filename and press RETURN. When
+done, enter PR#6 to re-start RobotWar.
+
+Summary of Editor Keys
+Cursor Mode:
+
+Moving keys
+
+     +    Set forward direction
+
+     -    Set backward direct
