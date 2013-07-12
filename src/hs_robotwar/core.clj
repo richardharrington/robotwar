@@ -16,16 +16,14 @@
 (defn lex-line
   [initial-line]
   (loop
-    [line initial-line
+    [[head & tail :as line] initial-line
      partial-token []
      saved-pos 0
      result []]
     (let [close-partial-token (fn [] (conj-with-metadata result (apply str partial-token) saved-pos))
           current-pos (- (count initial-line) (count line))
           previous-token (:token (last result) "")
-          parsing-token? (not (empty? partial-token))
-          head (first line)
-          tail (rest line)]
+          parsing-token? (not (empty? partial-token))]
       (match [head parsing-token?]
         [(:or \; nil) true ]          (close-partial-token)
         [(:or \; nil) false]          result
