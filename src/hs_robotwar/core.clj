@@ -1,13 +1,16 @@
 (ns hs-robotwar.core)
 
 (use '[clojure.core.match :only (match)])
+(use '[clojure.set :only (union)])
 
-
-(def registers (set (concat (map #(-> % char str) (range (int \A) (inc (int \Z))))
-                            ["AIM" "SHOT" "RADAR" "DAMAGE" "SPEEDX" "SPEEDY" "RANDOM" "INDEX"])))
 
 (def operators #{\= \< \> \# \+ \- \* \/})
 
+(def registers (union (set (map #(-> % char str) (range (int \A) (inc (int \Z)))))
+                      #{"AIM" "SHOT" "RADAR" "DAMAGE" "SPEEDX" "SPEEDY" "RANDOM" "INDEX"}))
+
+(def commands (union (set (map str operators))
+                     #{"TO" "IF" "GOTO" "GOSUB" "ENDSUB"})) 
 
 (defn conj-with-metadata 
   [coll s n] 
