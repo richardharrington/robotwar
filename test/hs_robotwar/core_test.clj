@@ -2,18 +2,6 @@
   (:require [clojure.test :refer :all]
             [hs-robotwar.core :refer :all]))
 
-(deftest digit?-negative
-  (testing "not a digit"
-    (is (not (digit? \f)))))
-
-(deftest digit?-char-positive
-  (testing "digit char"
-    (is (digit? "6"))))
-
-(deftest digit?-str-positive
-  (testing "digit str"
-    (is (digit? \6))))
-
 (def line1 "IF DAMAGE # D GOTO MOVE")
 (def line2 "AIM-17 TO AIM")
 (def line3 "IF X<-5 GOTO SCAN")

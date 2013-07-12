@@ -8,9 +8,6 @@
 
 (def operators #{\= \< \> \# \+ \- \* \/})
 
-(defn digit?
-  [ch]
-  (re-find #"\d" (str ch)))
 
 (defn conj-with-metadata 
   [coll s n] 
