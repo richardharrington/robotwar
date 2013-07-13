@@ -52,13 +52,13 @@
 (defn str->int
   "Like Integer/parseInt, but returns nil on failure"
   [s]
-  (and (re-find #"^-?\d+$" s)
+  (and (re-matches #"-?\d+" s)
        (Integer/parseInt s)))
 
 (defn valid-word
    "Capital letters and numbers, starting with a capital letter"
   [s]
-  (re-find #"^[A-Z]+\d*$" s))
+  (re-matches #"[A-Z]+\d*" s))
 
 (defn ignoring-args-thunk [x] (fn [& _] x))
 
