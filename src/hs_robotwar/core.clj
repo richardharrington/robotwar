@@ -2,6 +2,7 @@
 
 (use '[clojure.core.match :only (match)])
 (use '[clojure.set :only (union)])
+(use '[clojure.string :only (split join)])
 
 
 (def operators #{\= \< \> \# \+ \- \* \/})
@@ -50,7 +51,7 @@
 
 (defn lex
   [src-code]
-  (mapcat lex-line (clojure.string/split src-code #"\n")))
+  (mapcat lex-line (split src-code #"\n")))
 
 (defn str->int
   "Like Integer/parseInt, but returns nil on failure"
@@ -99,7 +100,7 @@
 
 
 (defn pretty-print-tokens [token-seq]
-  (clojure.string/join 
+  (join 
     "\n"
     (map #(format "%2d %s %s" (:pos %) (:type %) (:val %)) 
          token-seq)))
