@@ -104,7 +104,7 @@
 (deftest parse-token-error
   (testing "parsing error token"
     (is (= (parse-token {:token-str "-GOTO", :pos 23})
-           {:val "-GOTO", :type :error, :pos 23}))))
+           {:val "Invalid word or symbol", :type :error, :pos 23}))))
           
 
  

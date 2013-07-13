@@ -3,6 +3,7 @@
 (use '[clojure.core.match :only (match)])
 (use '[clojure.set :only (union)])
 
+
 (def operators #{\= \< \> \# \+ \- \* \/})
 
 (def registers (union (set (map #(-> % char str) (range (int \A) (inc (int \Z)))))
@@ -62,6 +63,10 @@
   [s]
   (re-find #"^[A-Z]+\d*$" s))
 
+(defn ignoring-args-thunk [x] (fn [& _] x))
+
+(def return-err (ignoring-args-thunk "Invalid word or symbol"))
+
 (defn parse-token
   "takes a single token and adds the appropriate metadata"
   [{token-str :token-str, pos :pos}]
@@ -73,7 +78,7 @@
      [commands   :command]
      [str->int   :number]
      [valid-word :label]
-     [identity   :error]]))
+     [return-err :error]]))
 
 (def value-type? #{:number :register})
 
