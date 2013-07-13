@@ -4,14 +4,27 @@
 (use '[clojure.set :only (union)])
 (use '[clojure.string :only (split join)])
 
+(def operators "-+*/=#<>")
 
-(def operators #{\= \< \> \# \+ \- \* \/})
+(def lex-re (re-pattern (str  "[" operators "]|[^" operators "\\s]+")))
+(def operators-set (set (map str operators)))
 
 (def registers (union (set (map #(-> % char str) (range (int \A) (inc (int \Z)))))
                       #{"AIM" "SHOT" "RADAR" "DAMAGE" "SPEEDX" "SPEEDY" "RANDOM" "INDEX"}))
 
-(def commands (union (set (map str operators))
-                     #{"TO" "IF" "GOTO" "GOSUB" "ENDSUB"})) 
+(def commands (union operators-set #{"TO" "IF" "GOTO" "GOSUB" "ENDSUB"})) 
+
+; TODO: FINISH THIS METHOD, AND CONVERT THE WHOLE LEXER TO REGEX
+(defn re-seq-with-pos
+  [initial-s]
+  (let [len (count initial-s)]
+    (loop [s initial-s, pos 0, acc []]
+      (cond
+        (empty? s) acc
+        (
+
+
+
 
 (defn conj-with-metadata 
   [coll s n] 
