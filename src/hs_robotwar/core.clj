@@ -14,7 +14,7 @@
 
 (defn conj-with-metadata 
   [coll s n] 
-    (conj coll {:token s, :pos n}))
+    (conj coll {:token-str s, :pos n}))
 
 (defn lex-line
   [initial-line]
@@ -25,7 +25,7 @@
      result []]
     (let [close-partial-token (fn [] (conj-with-metadata result (apply str partial-token) saved-pos))
           current-pos (- (count initial-line) (count line))
-          previous-token (:token (last result) "")
+          previous-token (:token-str (last result) "")
           parsing-token? (not (empty? partial-token))]
       (match [head parsing-token?]
         [(:or \; nil) true ]          (close-partial-token)
@@ -61,7 +61,7 @@
 (defn pretty-print-tokens [token-seq]
   (clojure.string/join 
     "\n"
-    (map #(format "%2d %s" (:pos %) (:token %)) 
+    (map #(format "%2d %s" (:pos %) (:token-str %)) 
          token-seq)))
 
 (defn evaluate [token-seq]
