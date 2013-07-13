@@ -79,7 +79,7 @@
      [commands   :command]
      [str->int   :number]
      [valid-word :label]
-     [return-err  :error]]))
+     [return-err :error]]))
 
 (def value-type? #{:number :register})
 
