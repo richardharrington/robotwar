@@ -2,9 +2,9 @@
   (:require [clojure.test :refer :all]
             [hs-robotwar.core :refer :all]))
 
-(def line1 "IF DAMAGE # D GOTO MOVE")
-(def line2 "AIM-17 TO AIM")
-(def line3 "IF X<-5 GOTO SCAN")
+(def line1 "IF DAMAGE # D GOTO MOVE    ; comment or something")
+(def line2 "AIM-17 TO AIM              ; more comments")
+(def line3 "IF X<-5 GOTO SCAN          ; comments including code: AIM TO RADAR")
 
 (def lexed-tokens1 [{:token-str "IF", :pos 0} 
                     {:token-str "DAMAGE", :pos 3} 

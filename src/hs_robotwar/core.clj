@@ -31,12 +31,16 @@
   [s n] 
   {:token-str s, :pos n})
 
-(def lex-re (re-pattern (str  "[" operators "]|[^" operators "\\s]+")))
+(def lex-re (re-pattern (str "[" operators "]|[^" operators "\\s]+")))
+
+(defn strip-comments
+  [line]
+  (re-find #"[^;]*" line))
 
 (defn lex-line
   [line]
   (map #(apply build-lex-metadata %) 
-       (re-seq-with-pos lex-re line)))
+       (re-seq-with-pos lex-re (strip-comments line))))
 
 (defn lex
   [src-code]
