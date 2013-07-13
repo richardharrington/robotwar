@@ -6,46 +6,68 @@
 (def line2 "AIM-17 TO AIM")
 (def line3 "IF X<-5 GOTO SCAN")
 
-(def tokens1 [{:token-str "IF", :pos 0} 
-              {:token-str "DAMAGE", :pos 3} 
-              {:token-str "#", :pos 10} 
-              {:token-str "D", :pos 12} 
-              {:token-str "GOTO", :pos 14} 
-              {:token-str "MOVE", :pos 19}])
+(def lexed-tokens1 [{:token-str "IF", :pos 0} 
+                    {:token-str "DAMAGE", :pos 3} 
+                    {:token-str "#", :pos 10} 
+                    {:token-str "D", :pos 12} 
+                    {:token-str "GOTO", :pos 14} 
+                    {:token-str "MOVE", :pos 19}])
 
-(def tokens2 [{:token-str "AIM", :pos 0} 
-              {:token-str "-", :pos 3} 
-              {:token-str "17", :pos 4} 
-              {:token-str "TO", :pos 7} 
-              {:token-str "AIM", :pos 10}])
+(def lexed-tokens2 [{:token-str "AIM", :pos 0} 
+                    {:token-str "-", :pos 3} 
+                    {:token-str "17", :pos 4} 
+                    {:token-str "TO", :pos 7} 
+                    {:token-str "AIM", :pos 10}])
 
-(def tokens3 [{:token-str "IF", :pos 0} 
-              {:token-str "X", :pos 3} 
-              {:token-str "<", :pos 4} 
-              {:token-str "-", :pos 5} 
-              {:token-str "5", :pos 6} 
-              {:token-str "GOTO", :pos 8} 
-              {:token-str "SCAN", :pos 13}])
+(def lexed-tokens3 [{:token-str "IF", :pos 0} 
+                    {:token-str "X", :pos 3} 
+                    {:token-str "<", :pos 4} 
+                    {:token-str "-", :pos 5} 
+                    {:token-str "5", :pos 6} 
+                    {:token-str "GOTO", :pos 8} 
+                    {:token-str "SCAN", :pos 13}])
+
+(def lexed-tokens4 [{:token-str "AIM", :pos 0} 
+                    {:token-str "@", :pos 3} 
+                    {:token-str "17", :pos 4} 
+                    {:token-str "TO", :pos 7} 
+                    {:token-str "AIM", :pos 10}])
+
+(def parsed-tokens2 [{:val "AIM", :type :register, :pos 0} 
+                     {:val "-", :type :command, :pos 3} 
+                     {:val 17, :type :number, :pos 4} 
+                     {:val "TO", :type :command, :pos 7} 
+                     {:val "AIM", :type :register, :pos 10}])
+
+(def parsed-tokens3 [{:val "IF", :type :command, :pos 0} 
+                     {:val "X", :type :register, :pos 3} 
+                     {:val "<", :type :command, :pos 4} 
+                     {:val -5, :type :number, :pos 5} 
+                     {:val "GOTO", :type :command, :pos 8} 
+                     {:val "SCAN", :type :label, :pos 13}])
+
+(def parsed-tokens4 [{:val "AIM", :type :register, :pos 0} 
+                     {:val "Invalid word or symbol", :type :error, :pos 3}])
 
 (deftest lex-simple
   (testing "lexing of simple line"
     (is (= (lex-line line1) 
-           tokens1))))
+           lexed-tokens1))))
 
 (deftest lex-scrunched-chars
   (testing "lexing with no whitespace between operators and operands"
     (is (= (lex-line line2)
-           tokens2)))) 
+           lexed-tokens2)))) 
 
 (deftest lex-negative-numbers
   (testing "lexing with unary negative operator"
     (is (= (lex-line line3)
-           tokens3))))
+           lexed-tokens3))))
 
 (deftest lex-multi-line
   (testing "lexing multiple lines"
     (is (= (lex (clojure.string/join "\n" [line1 line2 line3]))
-           (concat tokens1 tokens2 tokens3)))))
+           (concat lexed-tokens1 lexed-tokens2 lexed-tokens3)))))
 
 (deftest str->int-fail
   (testing "failure of str->int"
@@ -106,5 +128,18 @@
     (is (= (parse-token {:token-str "-GOTO", :pos 23})
            {:val "Invalid word or symbol", :type :error, :pos 23}))))
           
+(deftest parse-tokens-minus-sign
+  (testing "parsing tokens with a binary minus sign"
+    (is (= (parse lexed-tokens2)
+           parsed-tokens2))))
 
+(deftest parse-tokens-negative-sign
+  (testing "parsing tokens with a unary negative sign"
+    (is (= (parse lexed-tokens3)
+           parsed-tokens3))))
+
+(deftest parse-tokens-error
+  (testing "parsing tokens with an invalid operator"
+    (is (= (parse lexed-tokens4)
+           parsed-tokens4))))
  
