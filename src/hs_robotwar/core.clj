@@ -5,13 +5,11 @@
 
 (def operators "-+*/=#<>")
 
-(def lex-re (re-pattern (str  "[" operators "]|[^" operators "\\s]+")))
-(def operators-set (set (map str operators)))
-
 (def registers (union (set (map #(-> % char str) (range (int \A) (inc (int \Z)))))
                       #{"AIM" "SHOT" "RADAR" "DAMAGE" "SPEEDX" "SPEEDY" "RANDOM" "INDEX"}))
 
-(def commands (union operators-set #{"TO" "IF" "GOTO" "GOSUB" "ENDSUB"})) 
+(def commands (union (set (map str operators)) 
+                     #{"TO" "IF" "GOTO" "GOSUB" "ENDSUB"})) 
 
 (defn re-seq-with-pos
   "returns a sequence of 2-element vectors: [match position]"
@@ -32,6 +30,8 @@
 (defn build-lex-metadata 
   [s n] 
   {:token-str s, :pos n})
+
+(def lex-re (re-pattern (str  "[" operators "]|[^" operators "\\s]+")))
 
 (defn lex-line
   [line]
