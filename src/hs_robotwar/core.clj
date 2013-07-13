@@ -3,7 +3,6 @@
 (use '[clojure.core.match :only (match)])
 (use '[clojure.set :only (union)])
 
-
 (def operators #{\= \< \> \# \+ \- \* \/})
 
 (def registers (union (set (map #(-> % char str) (range (int \A) (inc (int \Z)))))
@@ -25,7 +24,6 @@
      result []]
     (let [close-partial-token (fn [] (conj-with-metadata result (apply str partial-token) saved-pos))
           current-pos (- (count initial-line) (count line))
-          previous-token (:token-str (last result) "")
           parsing-token? (not (empty? partial-token))]
       (match [head parsing-token?]
         [(:or \; nil) true ]          (close-partial-token)
@@ -42,6 +40,13 @@
         [_ true ]                     (recur tail (conj partial-token head) saved-pos result)
         [_ false]                     (recur tail (conj partial-token head) current-pos result)))))
 
+(defn merge-lexed-tokens
+  "helper function for conjoining minus signs to next token
+  if they turn out to be unary negative signs"
+  [first-token second-token]
+  {:token-str (str (:token-str first-token) (:token-str second-token))
+   :pos (:pos first-token)})
+
 (defn lex
   [src-code]
   (mapcat lex-line (clojure.string/split src-code #"\n")))
@@ -53,7 +58,7 @@
        (Integer/parseInt s)))
 
 (defn valid-word
-  "Capital letters and numbers, starting with a capital letter"
+   "Capital letters and numbers, starting with a capital letter"
   [s]
   (re-find #"^[A-Z]+\d*$" s))
 
@@ -70,25 +75,28 @@
      [valid-word :label]
      [identity   :error]]))
 
+(def value-type? #{:number :register})
 
+(defn parse
+  "take the tokens and convert them to structured source code ready for compiling"
+  [initial-tokens]
+  (loop [parsed []
+         [{token-str :token-str :as token} & tail :as tokens] initial-tokens]
+    (let [previous-parsed-token (last parsed)]
+      (cond
+        (or (empty? tokens) (= (:type previous-parsed-token) :error))
+          parsed
+        ; deal with unary negative signs
+        (and (= token-str "-") (not-empty tail) (not (value-type? (:type previous-parsed-token)))) 
+          (recur parsed (cons (merge-lexed-tokens token (first tail)) (rest tail)))
+        :otherwise
+          (recur (conj parsed (parse-token token)) tail)))))
 
-;(def parse
-;  "take the tokens and convert them to structured source code ready for compiling"
-;  [initial-tokens]
-;  (loop [[{token-str :token-str :as head} & tail :as tokens] initial-tokens
-;         parsed []]
-;    (match [token-str]
-;      ["-"] (if (value? (:type (last parsed)))
-;              (recur (conj parsed ()
-
-(def parse
-  "temporary pipe connector -- to be deleted"
-  identity)
 
 (defn pretty-print-tokens [token-seq]
   (clojure.string/join 
     "\n"
-    (map #(format "%2d %s" (:pos %) (:token-str %)) 
+    (map #(format "%2d %s %s" (:pos %) (:type %) (:val %)) 
          token-seq)))
 
 (defn evaluate [token-seq]
