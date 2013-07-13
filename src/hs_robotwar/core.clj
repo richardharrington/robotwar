@@ -1,46 +1,46 @@
 (ns hs-robotwar.core)
 
-(use '[clojure.core.match :only (match)])
 (use '[clojure.set :only (union)])
 (use '[clojure.string :only (split join)])
 
+(def operators "-+*/=#<>")
 
-(def operators #{\= \< \> \# \+ \- \* \/})
+(def lex-re (re-pattern (str  "[" operators "]|[^" operators "\\s]+")))
+(def operators-set (set (map str operators)))
 
 (def registers (union (set (map #(-> % char str) (range (int \A) (inc (int \Z)))))
                       #{"AIM" "SHOT" "RADAR" "DAMAGE" "SPEEDX" "SPEEDY" "RANDOM" "INDEX"}))
 
-(def commands (union (set (map str operators))
-                     #{"TO" "IF" "GOTO" "GOSUB" "ENDSUB"})) 
+(def commands (union operators-set #{"TO" "IF" "GOTO" "GOSUB" "ENDSUB"})) 
 
-(defn conj-with-metadata 
-  [coll s n] 
-    (conj coll {:token-str s, :pos n}))
+(defn re-seq-with-pos
+  "returns a sequence of 2-element vectors: [match position]"
+  [re initial-s]
+  (loop [s initial-s, 
+         end-of-previous-word 0
+         acc []]
+    (if (empty? s)
+      acc
+      (if-let [next-match (re-find re s)]
+        (let [idx-start (.indexOf s next-match)
+              idx-end (+ idx-start (count next-match))]
+          (recur (subs s idx-end)
+                 (+ end-of-previous-word idx-end)
+                 (conj acc [next-match (+ end-of-previous-word idx-start)])))
+        acc))))
+
+(defn build-lex-metadata 
+  [s n] 
+  {:token-str s, :pos n})
 
 (defn lex-line
-  [initial-line]
-  (loop
-    [[head & tail :as line] initial-line
-     partial-token []
-     saved-pos 0
-     result []]
-    (let [close-partial-token (fn [] (conj-with-metadata result (apply str partial-token) saved-pos))
-          current-pos (- (count initial-line) (count line))
-          parsing-token? (not (empty? partial-token))]
-      (match [head parsing-token?]
-        [(:or \; nil) true ]          (close-partial-token)
-        [(:or \; nil) false]          result
-        [(:or \space \t) true ]       (recur tail [] nil (close-partial-token))
-        [(:or \space \t) false]       (recur tail [] nil result)
-        ; if it's an operator and we're currently parsing a token, 
-        ; close the partial token and recur on the same character.
-        [(_ :guard operators) true ]  (recur line [] nil (close-partial-token))
-        [(_ :guard operators) false]  (recur tail 
-                                             [] 
-                                             nil 
-                                             (conj-with-metadata result (str head) current-pos))
-        [_ true ]                     (recur tail (conj partial-token head) saved-pos result)
-        [_ false]                     (recur tail (conj partial-token head) current-pos result)))))
+  [line]
+  (map #(apply build-lex-metadata %) 
+       (re-seq-with-pos lex-re line)))
+
+(defn lex
+  [src-code]
+  (mapcat lex-line (split src-code #"\n")))
 
 (defn merge-lexed-tokens
   "helper function for conjoining minus signs to next token
@@ -48,10 +48,6 @@
   [first-token second-token]
   {:token-str (str (:token-str first-token) (:token-str second-token))
    :pos (:pos first-token)})
-
-(defn lex
-  [src-code]
-  (mapcat lex-line (split src-code #"\n")))
 
 (defn str->int
   "Like Integer/parseInt, but returns nil on failure"
