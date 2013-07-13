@@ -46,3 +46,65 @@
   (testing "lexing multiple lines"
     (is (= (lex (clojure.string/join "\n" [line1 line2 line3]))
            (concat tokens1 tokens2 tokens3)))))
+
+(deftest str->int-fail
+  (testing "failure of str->int"
+    (is (= (str->int "G")
+           nil))))
+
+(deftest str->int-success-positive-number
+  (testing "str->int with positive number"
+    (is (= (str->int "8")
+           8))))
+
+(deftest str->int-success-negative-number
+  (testing "str->int with negative number"
+    (is (= (str->int "-9")
+           -9))))
+
+(deftest valid-word-fail-because-lower-case
+  (testing "word not valid because lower case"
+    (is (= (valid-word "Beatles")
+           nil))))
+
+(deftest valid-word-fail-because-starts-with-number
+  (testing "word not valid because starts with number"
+    (is (= (valid-word "7BEATLES")))))
+
+(deftest valid-word-success
+  (testing "valid word"
+    (is (= (valid-word "BEATLES7")
+           "BEATLES7"))))
+
+(deftest parse-token-register
+  (testing "parsing register token"
+    (is (= (parse-token {:token-str "AIM", :pos 0})
+           {:val "AIM", :type :register, :pos 0}))))
+
+(deftest parse-token-command-word
+  (testing "parsing command token (word)"
+    (is (= (parse-token {:token-str "GOTO", :pos 14})
+           {:val "GOTO", :type :command, :pos 14}))))
+
+(deftest parse-token-command-operator
+  (testing "parsing command token (operator)"
+    (is (= (parse-token {:token-str "#", :pos 10})
+           {:val "#", :type :command, :pos 10}))))
+
+(deftest parse-token-number
+  (testing "parsing number token"
+    (is (= (parse-token {:token-str "-17", :pos 4}))
+        {:val -17, :type :number, :pos 4})))
+
+(deftest parse-token-label
+  (testing "parsing label token"
+    (is (= (parse-token  {:token-str "SCAN", :pos 13})
+           {:val "SCAN", :type :label, :pos 13}))))
+
+(deftest parse-token-error
+  (testing "parsing error token"
+    (is (= (parse-token {:token-str "-GOTO", :pos 23})
+           {:val "-GOTO", :type :error, :pos 23}))))
+          
+
+ 
