@@ -46,17 +46,44 @@
   [src-code]
   (mapcat lex-line (clojure.string/split src-code #"\n")))
 
-(def parse
-  "will be filled in later -- right now just a pass-through for the repl"
-  identity)
+(defn str->int
+  "Like Integer/parseInt, but returns nil on failure"
+  [s]
+  (and (re-find #"^-?\d+$" s)
+       (Integer/parseInt s)))
 
-(defn compile-to-obj-code
-  "takes a stream of tokens and converts them into robotwar virtual machine code"
-  [tokens]
-  (loop [tokens tokens
-         done? false
-         obj-code []]
-    ))
+(defn valid-word
+  "Capital letters and numbers, starting with a capital letter"
+  [s]
+  (re-find #"^[A-Z]+\d*$" s))
+
+(defn parse-token
+  "takes a single token and adds the appropriate metadata"
+  [{token-str :token-str, pos :pos}]
+  (some
+    (fn [[parser token-type]]
+      (when-let [token-val (parser token-str)]
+        {:val token-val, :type token-type, :pos pos}))
+    [[registers  :register]
+     [commands   :command]
+     [str->int   :number]
+     [valid-word :label]
+     [identity   :error]]))
+
+
+
+;(def parse
+;  "take the tokens and convert them to structured source code ready for compiling"
+;  [initial-tokens]
+;  (loop [[{token-str :token-str :as head} & tail :as tokens] initial-tokens
+;         parsed []]
+;    (match [token-str]
+;      ["-"] (if (value? (:type (last parsed)))
+;              (recur (conj parsed ()
+
+(def parse
+  "temporary pipe connector -- to be deleted"
+  identity)
 
 (defn pretty-print-tokens [token-seq]
   (clojure.string/join 
@@ -76,4 +103,4 @@
       (println (evaluate (parse (lex input))))
       (recur (read-line)))))
 
- 
+
