@@ -12,16 +12,17 @@
                      #{"TO" "IF" "GOTO" "GOSUB" "ENDSUB"})) 
 
 (defn re-seq-with-pos
-  "returns a sequence of 2-element vectors in the form [match position]"
+  "Like re-seq, but returns a sequence of 2-element vectors 
+  in the form [match pos] where pos is match's position in the original string"
   [re initial-s]
-    (loop [s initial-s
-           acc []]
-      (if (empty? s)
-        acc
-        (let [match (re-find re s)]
-          (if (and match (= (.indexOf s match) 0))
-            (recur (subs s (count match)) (conj acc [match (- (count initial-s) (count s))]))
-            (recur (apply str (rest s)) acc))))))
+  (loop [s initial-s
+         acc []]
+    (if-let [match (re-find re s)]
+      (let [match-pos (.indexOf s match)]
+        (recur (subs s (+ match-pos (count match)))
+               (conj acc [match 
+                          (+ match-pos (- (count initial-s) (count s)))])))
+      acc)))
 
 (defn build-lex-metadata 
   [s n] 
