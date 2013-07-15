@@ -35,7 +35,7 @@
 (defn lex-line
   [line]
   (map #(apply build-lex-metadata %) 
-       (re-seq-with-pos lex-re (strip-comments line))))
+       (re-seq-with-pos lex-re line)))
 
 (defn lex
   [src-code]
@@ -109,7 +109,11 @@
   []
   (loop [input (read-line)]
     (when (not= input "exit")
-      (println (evaluate (parse (lex input))))
+      (-> input
+          strip-comments
+          lex
+          parse
+          evaluate)
       (recur (read-line)))))
 
 

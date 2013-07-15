@@ -3,8 +3,10 @@
             [hs-robotwar.core :refer :all]))
 
 (def line1 "IF DAMAGE # D GOTO MOVE    ; comment or something")
-(def line2 "AIM-17 TO AIM              ; more comments")
-(def line3 "IF X<-5 GOTO SCAN          ; comments including code: AIM TO RADAR")
+
+(def line-no-comments1 "IF DAMAGE # D GOTO MOVE")
+(def line-no-comments2 "AIM-17 TO AIM")
+(def line-no-comments3 "IF X<-5 GOTO SCAN")
 
 (def lexed-tokens1 [{:token-str "IF", :pos 0} 
                     {:token-str "DAMAGE", :pos 3} 
@@ -49,24 +51,31 @@
 (def parsed-tokens4 [{:val "AIM", :type :register, :pos 0} 
                      {:val "Invalid word or symbol", :type :error, :pos 3}])
 
+(deftest strip-comments-test
+  (testing "stripping comments"
+    (is (= (strip-comments line1)
+           "IF DAMAGE # D GOTO MOVE    "))))
+
 (deftest lex-simple
   (testing "lexing of simple line"
-    (is (= (lex-line line1) 
+    (is (= (lex-line line-no-comments1) 
            lexed-tokens1))))
 
 (deftest lex-scrunched-chars
   (testing "lexing with no whitespace between operators and operands"
-    (is (= (lex-line line2)
+    (is (= (lex-line line-no-comments2)
            lexed-tokens2)))) 
 
 (deftest lex-negative-numbers
   (testing "lexing with unary negative operator"
-    (is (= (lex-line line3)
+    (is (= (lex-line line-no-comments3)
            lexed-tokens3))))
 
 (deftest lex-multi-line
   (testing "lexing multiple lines"
-    (is (= (lex (clojure.string/join "\n" [line1 line2 line3]))
+    (is (= (lex (clojure.string/join "\n" [line-no-comments1 
+                                           line-no-comments2 
+                                           line-no-comments3]))
            (concat lexed-tokens1 lexed-tokens2 lexed-tokens3)))))
 
 (deftest str->int-fail
