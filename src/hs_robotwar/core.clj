@@ -73,23 +73,31 @@
               :when token-val]
          {:val token-val, :type token-type, :pos pos})))
 
+(defn parse
+  "take the tokens and convert them to strucured source code ready for compiling"
+  [tokens]
+  (reduce (fn [parsed token]
+            (if (= (:type (last parsed)) :error)
+              parsed
+              (conj parsed (parse-token token))))
+          []
+          tokens))
+
 (def value-type? #{:number :register})
 
-(defn parse
-  "take the tokens and convert them to structured source code ready for compiling"
+(defn disambiguate-minus-signs
   [initial-tokens]
-  (loop [parsed []
-         [{token-str :token-str :as token} & tail :as tokens] initial-tokens]
-    (let [previous-parsed-token (last parsed)]
+  (loop [tokens initial-tokens
+         acc []]
+    (let [{prev-type :type} (last acc)
+          {current-val :val, current-pos :pos :as current-token} (first tokens)
+          {next-val :val, next-type :type :as next-token} (second tokens)]
       (cond
-        (or (empty? tokens) (= (:type previous-parsed-token) :error))
-          parsed
-        ; deal with unary negative signs
-        (and (= token-str "-") (not-empty tail) (not (value-type? (:type previous-parsed-token)))) 
-          (recur parsed (cons (merge-lexed-tokens token (first tail)) (rest tail)))
-        :otherwise
-          (recur (conj parsed (parse-token token)) tail)))))
-
+        (empty? tokens) acc
+        (and (not (value-type? prev-type)) (= current-val "-") (= next-type :number))
+          (recur (rest (rest tokens)) 
+                 (conj acc {:val (- next-val), :pos current-pos, :type :number})) 
+        :otherwise (recur (rest tokens) (conj acc current-token))))))
 
 (defn pretty-print-tokens [token-seq]
   (join 
@@ -110,6 +118,7 @@
           strip-comments
           lex
           parse
+          disambiguate-minus-signs
           evaluate)
       (recur (read-line)))))
 

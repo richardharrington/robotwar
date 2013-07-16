@@ -44,12 +44,20 @@
 (def parsed-tokens3 [{:val "IF", :type :command, :pos 0} 
                      {:val "X", :type :register, :pos 3} 
                      {:val "<", :type :command, :pos 4} 
-                     {:val -5, :type :number, :pos 5} 
+                     {:val "-", :type :command, :pos 5} 
+                     {:val 5, :type :number, :pos 6} 
                      {:val "GOTO", :type :command, :pos 8} 
                      {:val "SCAN", :type :label, :pos 13}])
 
 (def parsed-tokens4 [{:val "AIM", :type :register, :pos 0} 
                      {:val "Invalid word or symbol", :type :error, :pos 3}])
+
+(def minus-sign-disambiguated-tokens3 [{:val "IF", :type :command, :pos 0} 
+                                       {:val "X", :type :register, :pos 3} 
+                                       {:val "<", :type :command, :pos 4} 
+                                       {:val -5, :type :number, :pos 5} 
+                                       {:val "GOTO", :type :command, :pos 8} 
+                                       {:val "SCAN", :type :label, :pos 13}])
 
 (deftest strip-comments-test
   (testing "stripping comments"
@@ -151,4 +159,22 @@
   (testing "parsing tokens with an invalid operator"
     (is (= (parse lexed-tokens4)
            parsed-tokens4))))
- 
+
+(def minus-sign-disambiguated-tokens2 parsed-tokens2)
+
+(def minus-sign-disambiguated-tokens3 [{:val "IF", :type :command, :pos 0} 
+                                       {:val "X", :type :register, :pos 3} 
+                                       {:val "<", :type :command, :pos 4} 
+                                       {:val -5, :type :number, :pos 5} 
+                                       {:val "GOTO", :type :command, :pos 8} 
+                                       {:val "SCAN", :type :label, :pos 13}])
+
+(deftest disambiguate-minus-signs-binary
+  (testing "disambiguating minus signs, result should be subtraction operator"
+    (is (= (disambiguate-minus-signs parsed-tokens2)
+           parsed-tokens2))))
+
+(deftest disambiguate-minus-signs-unary
+  (testing "disambiguating minus signs, result should be unary negative sign"
+    (is (= (disambiguate-minus-signs parsed-tokens3)
+           minus-sign-disambiguated-tokens3))))
