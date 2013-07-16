@@ -21,13 +21,13 @@
        (when (.find m)
          (cons [(re-groups m) (.start m)] (lazy-seq (step))))))))
 
-(def lex-re 
-  (let [opstring (join operators)]
-    (re-pattern (str "[" opstring "]|[^" opstring "\\s]+"))))
-
 (defn strip-comments
   [line]
   (re-find #"[^;]*" line))
+
+(def lex-re 
+  (let [opstring (join operators)]
+    (re-pattern (str "[" opstring "]|[^" opstring "\\s]+"))))
 
 (defn lex-line
   [line]
@@ -54,7 +54,7 @@
 (defn valid-word
    "Capital letters and numbers, starting with a capital letter"
   [s]
-  (re-matches #"[A-Z]+\d*" s))
+  (re-matches #"^[A-Z][A-Z\d]*" s))
 
 (defn ignoring-args-thunk [x] (fn [& _] x))
 
