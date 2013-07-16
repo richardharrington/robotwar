@@ -46,10 +46,10 @@
    :pos (:pos first-token)})
 
 (defn str->int
-  "Like Integer/parseInt, but returns nil on failure"
-  [s]
-  (and (re-matches #"-?\d+" s)
-       (Integer/parseInt s)))
+  "Integer/parseInt, but returns nil on failure"
+  [s-raw]
+  (try (Integer/parseInt s-raw)
+       (catch Exception e nil)))
 
 (defn valid-word
    "Capital letters and numbers, starting with a capital letter"
