@@ -56,9 +56,7 @@
   [s]
   (re-matches #"^[A-Z][A-Z\d]*" s))
 
-(defn ignoring-args-thunk [x] (fn [& _] x))
-
-(def return-err (ignoring-args-thunk "Invalid word or symbol"))
+(def return-err (constantly "Invalid word or symbol"))
 
 (def parser-priority
  [[registers  :register]
