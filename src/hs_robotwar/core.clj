@@ -5,8 +5,9 @@
 
 (def operators "-+*/=#<>")
 
-(def registers (union (set (map #(-> % char str) (range (int \A) (inc (int \Z)))))
-                      #{"AIM" "SHOT" "RADAR" "DAMAGE" "SPEEDX" "SPEEDY" "RANDOM" "INDEX"}))
+(def registers #{ "A" "B" "C" "D" "E" "F" "G" "H" "I" "J" "K" "L" "M"
+                  "N" "O" "P" "Q" "R" "S" "T" "U" "V" "W" "X" "Y" "Z"
+                  "AIM" "SHOT" "RADAR" "DAMAGE" "SPEEDX" "SPEEDY" "RANDOM" "INDEX"})
 
 (def commands (union (set (map str operators)) 
                      #{"TO" "IF" "GOTO" "GOSUB" "ENDSUB"})) 
