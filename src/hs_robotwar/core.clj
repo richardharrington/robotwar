@@ -66,12 +66,11 @@
   [return-err :error]])
 
 (defn parse-token
- "takes a single token and adds the appropriate metadata"
- [{:keys [token-str pos]}]
- (first (for [[parser token-type] parser-priority 
-              :let [token-val (parser token-str)] 
-              :when token-val]
-         {:val token-val, :type token-type, :pos pos})))
+  [{:keys [token-str pos]}]
+  (loop [[[parser token-type] & tail] parser-priority]
+    (if-let [token-val (parser token-str)]
+      {:val token-val, :type token-type, :pos pos}
+      (recur tail))))
 
 (defn parse
   "take the tokens and convert them to strucured source code ready for compiling"
