@@ -3,14 +3,14 @@
 (use '[clojure.set :only (union)])
 (use '[clojure.string :only (split join)])
 
-(def operators "-+*/=#<>")
+(def operators #{ "-" "+" "*" "/" "=" "#" "<" ">"})
 
 (def registers #{ "A" "B" "C" "D" "E" "F" "G" "H" "I" "J" "K" "L" "M"
                   "N" "O" "P" "Q" "R" "S" "T" "U" "V" "W" "X" "Y" "Z"
                   "AIM" "SHOT" "RADAR" "DAMAGE" "SPEEDX" "SPEEDY" "RANDOM" "INDEX"})
 
-(def commands (union (set (map str operators)) 
-                     #{"TO" "IF" "GOTO" "GOSUB" "ENDSUB"})) 
+(def commands (union operators 
+                     #{"TO" "IF" "GOTO" "GOSUB" "ENDSUB"}))
 
 (defn re-seq-with-pos
   "like re-seq, but returns a sequence of 2-element sequences
@@ -27,7 +27,9 @@
   [s n] 
   {:token-str s, :pos n})
 
-(def lex-re (re-pattern (str "[" operators "]|[^" operators "\\s]+")))
+(def lex-re 
+  (let [opstring (join operators)]
+    (re-pattern (str "[" opstring "]|[^" opstring "\\s]+"))))
 
 (defn strip-comments
   [line]
