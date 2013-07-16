@@ -38,13 +38,6 @@
   [src-code]
   (mapcat lex-line (split src-code #"\n")))
 
-(defn merge-lexed-tokens
-  "helper function for conjoining minus signs to next token
-  if they turn out to be unary negative signs"
-  [first-token second-token]
-  {:token-str (str (:token-str first-token) (:token-str second-token))
-   :pos (:pos first-token)})
-
 (defn str->int
   "Integer/parseInt, but returns nil on failure"
   [s-raw]
