@@ -63,18 +63,20 @@
 
 (def return-err (ignoring-args-thunk "Invalid word or symbol"))
 
+(def parser-priority
+ [[registers  :register]
+  [commands   :command]
+  [str->int   :number]
+  [valid-word :label]
+  [return-err :error]])
+
 (defn parse-token
-  "takes a single token and adds the appropriate metadata"
-  [{token-str :token-str, pos :pos}]
-  (some
-    (fn [[parser token-type]]
-      (when-let [token-val (parser token-str)]
-        {:val token-val, :type token-type, :pos pos}))
-    [[registers  :register]
-     [commands   :command]
-     [str->int   :number]
-     [valid-word :label]
-     [return-err :error]]))
+ "takes a single token and adds the appropriate metadata"
+ [{:keys [token-str pos]}]
+ (first (for [[parser token-type] parser-priority 
+              :let [token-val (parser token-str)] 
+              :when token-val]
+         {:val token-val, :type token-type, :pos pos})))
 
 (def value-type? #{:number :register})
 
