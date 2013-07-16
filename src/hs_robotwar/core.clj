@@ -71,28 +71,12 @@
   [return-err :error]])
 
 (defn parse-token
-  "takes a single token and adds the appropriate metadata"
-  [{:keys [token-str pos]}]
-  (some
-    (fn [[parser token-type]]
-      (when-let [token-val (parser token-str)]
-        {:val token-val, :type token-type, :pos pos}))
-    parser-priority))
-
-(defn parse-token-2
  "takes a single token and adds the appropriate metadata"
  [{:keys [token-str pos]}]
  (first (for [[parser token-type] parser-priority 
               :let [token-val (parser token-str)] 
               :when token-val]
          {:val token-val, :type token-type, :pos pos})))
-
-(defn parse-token-3
- "takes a single token and adds the appropriate metadata"
- [{:keys [token-str pos]}]
- (some identity (for [[parser token-type] parser-priority]
-                 (when-let [token-val (parser token-str)]
-                  {:val token-val, :type token-type, :pos pos}))))
 
 (def value-type? #{:number :register})
 
