@@ -75,21 +75,33 @@
           []
           tokens))
 
-(def value-type? #{:number :register})
-
 (defn disambiguate-minus-signs
   [initial-tokens]
   (loop [tokens initial-tokens
-         acc []]
-    (let [{prev-type :type} (last acc)
+         results []]
+    (let [{prev-type :type} (last results)
           {current-val :val, current-pos :pos :as current-token} (first tokens)
           {next-val :val, next-type :type :as next-token} (second tokens)]
       (cond
-        (empty? tokens) acc
-        (and (not (value-type? prev-type)) (= current-val "-") (= next-type :number))
+        (empty? tokens) results
+        (and (not (#{:number :register} prev-type)) (= current-val "-") (= next-type :number))
           (recur (rest (rest tokens)) 
-                 (conj acc {:val (- next-val), :pos current-pos, :type :number})) 
-        :otherwise (recur (rest tokens) (conj acc current-token))))))
+                 (conj results {:val (- next-val), :pos current-pos, :type :number})) 
+        :otherwise (recur (rest tokens) (conj results current-token))))))
+
+(defn rw-compile
+  "Compiles the tokens into token-pairs. Commands consume the next token.
+  Values form the special token-pair comma-value 
+  (meaning push the value into the accumulator)"
+  [initial-tokens]
+  (loop [[token & tail :as tokens] initial-tokens
+         result []]
+    (if (empty? tokens)
+      result
+      (case (:type token)
+        :command             (recur (rest tail) (conj result [token (first tail)]))
+        (:number :register)  (recur tail (conj result [{:val ",", :type :command, :pos (:pos token)} token]))
+        :label               (recur tail (conj result [token nil]))))))
 
 (defn pretty-print-tokens [token-seq]
   (join 
