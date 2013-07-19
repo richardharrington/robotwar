@@ -1,4 +1,4 @@
-(ns hs-robotwar.core)
+(ns robotwar.core)
 
 (use '[clojure.set :only (union)])
 (use '[clojure.string :only (split join)])
@@ -104,14 +104,15 @@
         :label               (recur tail (conj result [token nil]))))))
 
 (defn pretty-print-tokens [token-seq]
-  (join 
-    "\n"
-    (map #(format "%2d %s %s" (:pos %) (:type %) (:val %)) 
-         token-seq)))
-
-(defn evaluate [token-seq]
-  (println (pretty-print-tokens token-seq)))
-
+  "This is hacky and just a temporary display function"
+  (letfn [(f [[fst snd]]
+            (if snd
+              (format "%2d %9s %8s %20d %9s %11s"
+                      (:pos fst) (:type fst) (:val fst) 
+                      (:pos snd) (:type snd) (:val snd))
+              (format "%2d %9s %8s"
+                      (:pos fst) (:type fst) (:val fst))))]
+    (join "\n" (map f token-seq))))
 
 (defn repl
   "make it so"
@@ -123,7 +124,9 @@
           lex
           parse
           disambiguate-minus-signs
-          evaluate)
+          rw-compile
+          pretty-print-tokens
+          println)
       (recur (read-line)))))
 
 
