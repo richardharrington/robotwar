@@ -91,7 +91,7 @@
 
 (defn rw-compile
   "Compiles the tokens into token-pairs. Commands consume the next token.
-  Values form the special token-pair comma-value 
+  Values form the special token-pair that is a comma followed by a value 
   (meaning push the value into the accumulator)"
   [initial-tokens]
   (loop [[token & tail :as tokens] initial-tokens
@@ -103,7 +103,25 @@
         (:number :register)  (recur tail (conj result [{:val ",", :type :command, :pos (:pos token)} token]))
         :label               (recur tail (conj result [token nil]))))))
 
-(defn pretty-print-tokens [token-seq]
+(defn map-labels
+  "Maps label-names to their appropriate indexes in the instruction list,
+  and remove the labels from the instruction list itself (except as targets)"
+  [initial-instrs]
+  (loop [[instr & tail :as instrs] initial-instrs
+         {label-map :labels instr-vec :instrs :as result} {:labels {}, :instrs []}
+         idx 0]
+    (if (empty? instrs)
+      result
+      (let [{command-type :type, command-val :val} (first instr)]
+        (if (= command-type :label) 
+          (recur tail 
+                 {:labels (assoc label-map command-val idx), :instrs instr-vec} 
+                 idx)
+          (recur tail
+                 {:labels label-map, :instrs (conj instr-vec instr)}
+                 (inc idx)))))))
+
+(defn pretty-print-tokens [instrs-tree]
   "This is hacky and just a temporary display function"
   (letfn [(f [[fst snd]]
             (if snd
@@ -112,7 +130,15 @@
                       (:pos snd) (:type snd) (:val snd))
               (format "%2d %9s %8s"
                       (:pos fst) (:type fst) (:val fst))))]
-    (join "\n" (map f token-seq))))
+    (str 
+      "labels:\n" 
+      (instrs-tree :labels)
+      "\n\ninstructions:\n"
+      (join "\n" (map f (instrs-tree :instrs))))))
+
+
+(defn p [string]
+  (-> string strip-comments lex parse disambiguate-minus-signs rw-compile map-labels))
 
 (defn repl
   "make it so"
@@ -125,6 +151,7 @@
           parse
           disambiguate-minus-signs
           rw-compile
+          map-labels
           pretty-print-tokens
           println)
       (recur (read-line)))))

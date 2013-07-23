@@ -83,6 +83,21 @@
                           [{:val "GOTO", :type :command, :pos 13} 
                            {:val "SCAN", :type :label, :pos 18}]])
 
+(def labels-mapped3 {:labels {}, 
+                     :instrs [[{:pos 0, :type :command, :val "IF"} 
+                               {:pos 3, :type :register, :val "X"}] 
+                              [{:pos 4, :type :command, :val "<"} 
+                               {:pos 5, :type :number, :val -5}] 
+                              [{:pos 8, :type :command, :val "GOTO"} 
+                               {:pos 13, :type :label, :val "SCAN"}]]})
+
+(def labels-mapped6 {:labels {"WAIT" 0}, 
+                     :instrs [[{:pos 5, :type :command, :val "IF"} 
+                               {:pos 8, :type :register, :val "X"}] 
+                              [{:pos 9, :type :command, :val "<"} 
+                               {:pos 10, :type :number, :val -5}] 
+                              [{:pos 13, :type :command, :val "GOTO"} 
+                               {:pos 18, :type :label, :val "SCAN"}]]})
 
 (deftest strip-comments-test
   (testing "stripping comments"
@@ -206,5 +221,15 @@
   (testing "compiling tokens no starting label"
     (is (= (rw-compile minus-sign-disambiguated-tokens6)
            rw-compiled-tokens6))))
+
+(deftest map-labels-no-label
+  (testing "mapping labels from compiled tokens with no label"
+    (is (= (map-labels rw-compiled-tokens3)
+           labels-mapped3))))
+
+(deftest map-labels-with-label
+  (testing "compiling tokens no starting label"
+    (is (= (map-labels rw-compiled-tokens6)
+           labels-mapped6))))
 
 
