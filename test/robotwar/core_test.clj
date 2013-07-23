@@ -59,6 +59,31 @@
                                        {:val "GOTO", :type :command, :pos 8} 
                                        {:val "SCAN", :type :label, :pos 13}])
 
+(def minus-sign-disambiguated-tokens6 [{:val "WAIT", :type :label, :pos 0} 
+                                       {:val "IF", :type :command, :pos 5} 
+                                       {:val "X", :type :register, :pos 8} 
+                                       {:val "<", :type :command, :pos 9} 
+                                       {:val -5, :pos 10, :type :number} 
+                                       {:val "GOTO", :type :command, :pos 13} 
+                                       {:val "SCAN", :type :label, :pos 18}])
+
+(def rw-compiled-tokens3 [[{:pos 0, :type :command, :val "IF"} 
+                           {:pos 3, :type :register, :val "X"}] 
+                          [{:pos 4, :type :command, :val "<"} 
+                           {:pos 5, :type :number, :val -5}] 
+                          [{:pos 8, :type :command, :val "GOTO"} 
+                           {:pos 13, :type :label, :val "SCAN"}]])
+
+(def rw-compiled-tokens6 [[{:val "WAIT", :type :label, :pos 0} 
+                           nil] 
+                          [{:val "IF", :type :command, :pos 5} 
+                           {:val "X", :type :register, :pos 8}] 
+                          [{:val "<", :type :command, :pos 9} 
+                           {:val -5, :pos 10, :type :number}] 
+                          [{:val "GOTO", :type :command, :pos 13} 
+                           {:val "SCAN", :type :label, :pos 18}]])
+
+
 (deftest strip-comments-test
   (testing "stripping comments"
     (is (= (strip-comments line1)
@@ -162,13 +187,6 @@
 
 (def minus-sign-disambiguated-tokens2 parsed-tokens2)
 
-(def minus-sign-disambiguated-tokens3 [{:val "IF", :type :command, :pos 0} 
-                                       {:val "X", :type :register, :pos 3} 
-                                       {:val "<", :type :command, :pos 4} 
-                                       {:val -5, :type :number, :pos 5} 
-                                       {:val "GOTO", :type :command, :pos 8} 
-                                       {:val "SCAN", :type :label, :pos 13}])
-
 (deftest disambiguate-minus-signs-binary
   (testing "disambiguating minus signs, result should be subtraction operator"
     (is (= (disambiguate-minus-signs parsed-tokens2)
@@ -178,3 +196,15 @@
   (testing "disambiguating minus signs, result should be unary negative sign"
     (is (= (disambiguate-minus-signs parsed-tokens3)
            minus-sign-disambiguated-tokens3))))
+
+(deftest compile-tokens-no-label
+  (testing "compiling tokens with no starting label"
+    (is (= (rw-compile minus-sign-disambiguated-tokens3)
+           rw-compiled-tokens3))))
+
+(deftest compile-tokens-with-label
+  (testing "compiling tokens no starting label"
+    (is (= (rw-compile minus-sign-disambiguated-tokens6)
+           rw-compiled-tokens6))))
+
+
