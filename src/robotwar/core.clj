@@ -5,9 +5,25 @@
 
 (def operators #{ "-" "+" "*" "/" "=" "#" "<" ">"})
 
-(def registers #{ "A" "B" "C" "D" "E" "F" "G" "H" "I" "J" "K" "L" "M"
-                  "N" "O" "P" "Q" "R" "S" "T" "U" "V" "W" "X" "Y" "Z"
-                  "AIM" "SHOT" "RADAR" "DAMAGE" "SPEEDX" "SPEEDY" "RANDOM" "INDEX"})
+(def operator-map {"-" -
+                   "+" +
+                   "*" *
+                   "/" #(int (Math/round (float (/ %1 %2))))
+                   "=" =
+                   "<" <
+                   ">" >
+                   "#" not=})
+
+(def registers-vec [ "A" "B" "C" "D" "E" "F" "G" "H" "I" "J" "K" "L" "M"
+                     "N" "O" "P" "Q" "R" "S" "T" "U" "V" "W" "X" "Y" "Z"
+                     "AIM" "SHOT" "RADAR" "DAMAGE" "SPEEDX" "SPEEDY" "RANDOM" "INDEX" "DATA" ])
+
+(def get-register-by-idx 
+  "to allow use of the INDEX/DATA register pair, we need to have a way of 
+  getting registers by their index, starting from 1."
+  (zipmap (map inc (range (count registers-vec))) registers-vec))
+
+(def registers (set registers-vec))
 
 (def commands (union operators 
                      #{"TO" "IF" "GOTO" "GOSUB" "ENDSUB"}))
@@ -137,7 +153,7 @@
       (join "\n" (map f (instrs-tree :instrs))))))
 
 
-(defn p [string]
+(defn compile-to-obj-code [string]
   (-> string strip-comments lex parse disambiguate-minus-signs rw-compile map-labels))
 
 (defn repl
@@ -157,3 +173,91 @@
       (recur (read-line)))))
 
 
+
+(def robot-source-code-test "WAIT GOTO WAIT")
+(def robot-program-test (compile-to-obj-code robot-source-code-test))
+
+
+(def robot-state-test {:acc nil
+                       :instr-ptr 0
+                       :call-stack []
+                       :registers nil
+                       :program robot-program-test})
+
+
+(defn resolve-arg [{arg-val :val arg-type :type} registers labels]
+  "resolves an instruction argument to a numeric value
+  (either an arithmetic or logical comparison operand, or an instruction pointer)."
+                  (case arg-type
+                    :label (labels arg-val)
+                    :number arg-val
+                    :register (case arg-val
+                                "RANDOM" (rand-int (registers arg-val))
+                                "DATA" (registers (get-register-by-idx (registers "INDEX")))
+                                (registers arg-val))
+                    nil))
+
+(def registers-with-effect-on-world #{"AIM" "SHOT" "RADAR"})
+  
+(defn tick-robot
+  "takes as input a data structure representing all that the robot's brain
+  needs to know about the world:
+
+  1) The robot program, consisting of a vector of two-part instructions
+     (a command, followed by an argument or nil) as well as a map of labels to 
+     instruction numbers
+  2) The instruction pointer (an index number for the instruction vector) 
+  3) The value of the accumulator, or nil
+  4) The call stack (a vector of instruction pointers to lines following
+     GOSUB calls; this will not get out of hand because no recursion,
+     mutual or otherwise, will be allowed. TODO: implement this restriction)
+  5) The contents of all the registers
+  
+  After executing one instruction, tick-robot returns the updated verion of all of the above, 
+  plus an optional :action field, to notify the world if the AIM, SHOT, or RADAR registers have
+  been pushed to."
+
+  [{:keys [acc instr-ptr call-stack registers], {:keys [labels instrs]} :program :as state}]
+  (let [[{command :val} {unresolved-arg :val :as arg}] (instrs instr-ptr)
+        inc-instr-ptr #(assoc % instr-ptr (inc instr-ptr))
+        skip-next-instr-ptr #(assoc % instr-ptr (+ instr-ptr 2))
+        resolve #(resolve-arg % registers labels)]
+    (case command
+      "GOTO"             (assoc state instr-ptr (resolve arg))
+      "GOSUB"            (assoc (assoc state call-stack (conj call-stack (inc instr-ptr)))
+                                instr-ptr 
+                                (resolve arg))
+      "ENDSUB"           (assoc (assoc state call-stack (pop call-stack))
+                                instr-ptr
+                                (peek call-stack))
+      ("IF" ",")         (inc-instr-ptr (assoc state acc (resolve arg)))
+      ("+" "-" "*" "/")  (inc-instr-ptr (assoc state acc (operator-map acc (resolve arg))))
+      ("=" ">" "<" "#")  (if (operator-map acc (resolve arg))
+                           (inc-instr-ptr state)
+                           (skip-next-instr-ptr state))
+      "TO"               (let [return-state (inc-instr-ptr (assoc-in state [registers unresolved-arg] acc))]
+                           (if (registers-with-effect-on-world unresolved-arg)
+                             (conj return-state {:action unresolved-arg})
+                             return-state)))))
+
+
+
+;
+;
+;
+;(def starter-world {:width 250 :height 250})
+;
+;(defn play
+;  "takes a vector of robots, and plays a game"
+;  [robots {width :width, height :height :as world}]
+;  ()
+;
+;
+;(fn [l]
+;  (let sub-seq [(reduce (fn [acc val]
+;                          )
+;                        [(first l)]
+;                        l)]
+;    (when (> 1 (count sub-seq))
+;      sub-seq)))
+;
