@@ -1,4 +1,6 @@
-(ns robotwar.core)
+(ns robotwar.core
+  (:use (clojure [set :only [union]]
+                 [string :only [split join]])))
 
 (use '[clojure.set :only (union)])
 (use '[clojure.string :only (split join)])
