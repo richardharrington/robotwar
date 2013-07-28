@@ -67,3 +67,9 @@
                              (conj return-state {:action unresolved-arg-val})
                              return-state)))))
 
+(defn init-robot [program]
+  {:program program
+   :acc 0
+   :instr-ptr 0
+   :registers (zipmap lexicon/registers (repeat 0))
+   :call-stack []})
