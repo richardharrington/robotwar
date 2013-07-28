@@ -67,24 +67,3 @@
                              (conj return-state {:action unresolved-arg-val})
                              return-state)))))
 
-
-
-;
-;
-;
-;(def starter-world {:width 250 :height 250})
-;
-;(defn play
-;  "takes a vector of robots, and plays a game"
-;  [robots {width :width, height :height :as world}]
-;  ()
-;
-;
-;(fn [l]
-;  (let sub-seq [(reduce (fn [acc val]
-;                          )
-;                        [(first l)]
-;                        l)]
-;    (when (> 1 (count sub-seq))
-;      sub-seq)))
-;
