@@ -1,6 +1,6 @@
-(ns robotwar.core-test
+(ns rw.core-test
   (:require [clojure.test :refer :all]
-            [robotwar.core :refer :all]))
+            [rw.core :refer :all]))
 
 (def line1 "IF DAMAGE # D GOTO MOVE    ; comment or something")
 

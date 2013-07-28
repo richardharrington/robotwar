@@ -1,9 +1,6 @@
-(ns robotwar.core
+(ns rw.core
   (:use (clojure [set :only [union]]
                  [string :only [split join]])))
-
-(use '[clojure.set :only (union)])
-(use '[clojure.string :only (split join)])
 
 (def operators #{ "-" "+" "*" "/" "=" "#" "<" ">"})
 
