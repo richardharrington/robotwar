@@ -13,8 +13,10 @@
 
 (def rc "AIM + 5 TO RADAR")
 (def rp (create/compile rc))
-(def rs (assoc-in (exec/init-robot rp) [:registers "AIM"] 6))
+(def t0 (assoc-in (exec/init-robot rp) [:registers "AIM"] 6))
 
-(def t0 (exec/tick-robot rs))
 (def t1 (exec/tick-robot t0))
-(def t3 (exec/tick-robot t1))
+(def t2 (exec/tick-robot t1))
+(def t3 (exec/tick-robot t2))
+
+(def iter (iterate exec/tick-robot t0))
