@@ -1,8 +1,7 @@
 (ns rw.core
   (:use (clojure [set :only [union]]
-                 [string :only [split join]])))
-
-(def operators #{ "-" "+" "*" "/" "=" "#" "<" ">"})
+                 [string :only [split join]]))
+  (:require (rw [lexicon :as lexicon])))
 
 (def operator-map {"-" -
                    "+" +
@@ -13,19 +12,13 @@
                    ">" >
                    "#" not=})
 
-(def registers-vec [ "A" "B" "C" "D" "E" "F" "G" "H" "I" "J" "K" "L" "M"
-                     "N" "O" "P" "Q" "R" "S" "T" "U" "V" "W" "X" "Y" "Z"
-                     "AIM" "SHOT" "RADAR" "DAMAGE" "SPEEDX" "SPEEDY" "RANDOM" "INDEX" "DATA" ])
+(def commands (set lexicon/command-names))
+(def registers (set lexicon/register-names))
 
 (def get-register-by-idx 
   "to allow use of the INDEX/DATA register pair, we need to have a way of 
   getting registers by their index, starting from 1."
-  (zipmap (map inc (range (count registers-vec))) registers-vec))
-
-(def registers (set registers-vec))
-
-(def commands (union operators 
-                     #{"TO" "IF" "GOTO" "GOSUB" "ENDSUB"}))
+  (zipmap (map inc (range (count lexicon/register-names))) lexicon/register-names))
 
 (defn re-seq-with-pos
   "Returns a lazy sequence of successive matches of pattern in string with position.
@@ -41,7 +34,7 @@
   (re-find #"[^;]*" line))
 
 (def lex-re 
-  (let [opstring (join operators)]
+  (let [opstring (join lexicon/op-command-names)]
     (re-pattern (str "[" opstring "]|[^" opstring "\\s]+"))))
 
 (defn lex-line
