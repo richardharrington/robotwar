@@ -46,23 +46,23 @@
 
   [{:keys [acc instr-ptr call-stack registers], {:keys [labels instrs]} :program :as state}]
   (let [[{command :val} {unresolved-arg-val :val :as arg}] (instrs instr-ptr)
-        inc-instr-ptr #(assoc % instr-ptr (inc instr-ptr))
-        skip-next-instr-ptr #(assoc % instr-ptr (+ instr-ptr 2))
+        inc-instr-ptr #(assoc % :instr-ptr (inc instr-ptr))
+        skip-next-instr-ptr #(assoc % :instr-ptr (+ instr-ptr 2))
         resolve #(resolve-arg % registers labels)]
     (case command
-      "GOTO"             (assoc state instr-ptr (resolve arg))
-      "GOSUB"            (assoc (assoc state call-stack (conj call-stack (inc instr-ptr)))
-                                instr-ptr 
+      "GOTO"             (assoc state :instr-ptr (resolve arg))
+      "GOSUB"            (assoc (assoc state :call-stack (conj call-stack (inc instr-ptr)))
+                                :instr-ptr 
                                 (resolve arg))
-      "ENDSUB"           (assoc (assoc state call-stack (pop call-stack))
-                                instr-ptr
+      "ENDSUB"           (assoc (assoc state :call-stack (pop call-stack))
+                                :instr-ptr
                                 (peek call-stack))
-      ("IF" ",")         (inc-instr-ptr (assoc state acc (resolve arg)))
-      ("+" "-" "*" "/")  (inc-instr-ptr (assoc state acc (op-map (resolve arg))))
+      ("IF" ",")         (inc-instr-ptr (assoc state :acc (resolve arg)))
+      ("+" "-" "*" "/")  (inc-instr-ptr (assoc state :acc (op-map (resolve arg))))
       ("=" ">" "<" "#")  (if (op-map (resolve arg))
                            (inc-instr-ptr state)
                            (skip-next-instr-ptr state))
-      "TO"               (let [return-state (inc-instr-ptr (assoc-in state [registers unresolved-arg-val] acc))]
+      "TO"               (let [return-state (inc-instr-ptr (assoc-in state [:registers unresolved-arg-val] acc))]
                            (if (registers-with-effect-on-world unresolved-arg-val)
                              (conj return-state {:action unresolved-arg-val})
                              return-state)))))
