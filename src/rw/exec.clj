@@ -1,11 +1,12 @@
-(ns rw.core
+(ns rw.exec
   (:require (rw [lexicon :as lexicon])))
 
 (def op-map (zipmap lexicon/op-commands 
-                    (map #(case %
-                            "/" #(int (Math/round (float (/ %1 %2))))
-                            "#" not=
-                            (read-string %))
+                    (map (fn [op] 
+                           (case op
+                             "/" #(int (Math/round (float (/ %1 %2))))
+                             "#" not=
+                             (read-string op)))
                          lexicon/op-commands)))
 
 (defn resolve-register [registers reg]

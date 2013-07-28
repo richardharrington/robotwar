@@ -9,7 +9,7 @@
 
 (def commands (concat op-commands word-commands))
 
-(def get-register-by-idx 
+(defn get-register-by-idx 
   "to allow use of the INDEX/DATA register pair, we need to have a way of 
   getting registers by their index, but starting from 1, not 0."
   [idx]

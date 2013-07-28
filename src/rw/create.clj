@@ -1,4 +1,5 @@
-(ns rw.core
+(ns rw.create
+  (:refer-clojure :exclude [compile])
   (:use [clojure.string :only [split join]] 
         [rw.lexicon :only [registers op-commands commands]]))
 
