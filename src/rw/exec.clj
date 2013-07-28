@@ -1,5 +1,6 @@
 (ns rw.exec
-  (:require (rw [lexicon :as lexicon])))
+  (:require (rw [lexicon :as lexicon]))
+  (:use [clojure.pprint :only [pprint]]))
 
 (def op-map (zipmap lexicon/op-commands 
                     (map (fn [op] 
@@ -49,6 +50,7 @@
         inc-instr-ptr #(assoc % :instr-ptr (inc instr-ptr))
         skip-next-instr-ptr #(assoc % :instr-ptr (+ instr-ptr 2))
         resolve #(resolve-arg % registers labels)]
+    ;(pprint [command (op-map command) acc arg (resolve arg)])
     (case command
       "GOTO"             (assoc state :instr-ptr (resolve arg))
       "GOSUB"            (assoc (assoc state :call-stack (conj call-stack (inc instr-ptr)))
@@ -58,8 +60,13 @@
                                 :instr-ptr
                                 (peek call-stack))
       ("IF" ",")         (inc-instr-ptr (assoc state :acc (resolve arg)))
-      ("+" "-" "*" "/")  (inc-instr-ptr (assoc state :acc (op-map (resolve arg))))
-      ("=" ">" "<" "#")  (if (op-map (resolve arg))
+      ("+" "-" "*" "/")  (do (pprint [(op-map command)
+                                      acc
+                                      (resolve arg)
+                                      state
+                                      (assoc state :acc ((op-map command) acc (resolve arg)))]) 
+                             (inc-instr-ptr (assoc state :acc ((op-map command) acc (resolve arg)))))
+      ("=" ">" "<" "#")  (if ((op-map command) acc (resolve arg))
                            (inc-instr-ptr state)
                            (skip-next-instr-ptr state))
       "TO"               (let [return-state (inc-instr-ptr (assoc-in state [:registers unresolved-arg-val] acc))]
