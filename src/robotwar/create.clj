@@ -86,8 +86,10 @@
            & [{next-val :val, next-type :type :as next-token} :as tail]] tokens]
       (cond
         (empty? tokens) results
-        (and (not (#{:number :register} prev-type)) (#{"-"} current-val) (#{:number} next-type))
-          (recur (rest (rest tokens)) 
+        (and (#{"-"} current-val) 
+             (#{:number} next-type) 
+             (not (#{:number :register} prev-type)))
+          (recur (rest tail) 
                  (conj results (into current-token {:val (- next-val), :type :number}))) 
         :otherwise (recur tail (conj results current-token))))))
 
