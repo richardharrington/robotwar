@@ -1,6 +1,6 @@
-(ns rw.core
-  (:require (rw [create :as create]
-                [exec :as exec])))
+(ns robotwar.core
+  (:require (robotwar [create :as create]
+                      [exec :as exec])))
 
 (def robot-source-code-test "WAIT GOTO WAIT")
 (def robot-program-test (create/compile robot-source-code-test))

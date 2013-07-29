@@ -1,7 +1,7 @@
-(ns rw.create
+(ns robotwar.create
   (:refer-clojure :exclude [compile])
   (:use [clojure.string :only [split join]] 
-        [rw.lexicon :only [registers op-commands commands]]))
+        [robotwar.lexicon :only [registers op-commands commands]]))
 
 (defn re-seq-with-pos
   "Returns a lazy sequence of successive matches of pattern in string with position.

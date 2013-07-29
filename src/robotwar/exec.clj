@@ -1,5 +1,5 @@
-(ns rw.exec
-  (:require (rw [lexicon :as lexicon])))
+(ns robotwar.exec
+  (:require (robotwar [lexicon :as lexicon])))
 
 (def op-map (zipmap lexicon/op-commands 
                     (map (fn [op] 
