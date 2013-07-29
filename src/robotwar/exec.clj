@@ -36,33 +36,31 @@
   2) The instruction pointer (an index number for the instruction vector) 
   3) The value of the accumulator, or nil
   4) The call stack (a vector of instruction pointers to lines following
-     GOSUB calls; this will not get out of hand because no recursion,
-     mutual or otherwise, will be allowed. TODO: implement this restriction)
+     GOSUB calls)
   5) The contents of all the registers
   
   After executing one instruction, tick-robot returns the updated verion of all of the above, 
-  plus an optional :action field, to notify the world if the AIM, SHOT, or RADAR registers have
-  been pushed to."
+  plus an optional :action field, to notify the world if the SHOT, SPEEDX, SPEEDY or RADAR 
+  registers have been pushed to."
 
-  [{:keys [acc instr-ptr call-stack registers], {:keys [labels instrs]} :program :as state}]
-  (let [[{command :val} {unresolved-arg-val :val :as arg}] (instrs instr-ptr)
-        inc-instr-ptr #(assoc % :instr-ptr (inc instr-ptr))
-        skip-next-instr-ptr #(assoc % :instr-ptr (+ instr-ptr 2))
-        resolve #(resolve-arg % registers labels)]
+  [{:keys [acc instr-ptr call-stack registers program] :as state}]
+  (let [[{command :val} {unresolved-arg-val :val :as arg}] ((program :instrs) instr-ptr)
+        resolve #(resolve-arg % registers (program :labels))]
     (case command
-      "GOTO"             (assoc state :instr-ptr (resolve arg))
-      "GOSUB"            (assoc (assoc state :call-stack (conj call-stack (inc instr-ptr)))
-                                :instr-ptr 
-                                (resolve arg))
-      "ENDSUB"           (assoc (assoc state :call-stack (pop call-stack))
-                                :instr-ptr
-                                (peek call-stack))
-      ("IF" ",")         (inc-instr-ptr (assoc state :acc (resolve arg)))
-      ("+" "-" "*" "/")  (inc-instr-ptr (assoc state :acc ((op-map command) acc (resolve arg))))
+      "GOTO"             (into state {:instr-ptr (resolve arg)})
+      "GOSUB"            (into state {:instr-ptr (resolve arg)
+                                      :call-stack (conj call-stack (inc instr-ptr))})
+      "ENDSUB"           (into state {:instr-ptr (peek call-stack)
+                                      :call-stack (pop call-stack)})
+      ("IF", ",")        (into state {:instr-ptr (inc instr-ptr)
+                                      :acc (resolve arg)})
+      ("+" "-" "*" "/")  (into state {:instr-ptr (inc instr-ptr)
+                                      :acc ((op-map command) acc (resolve arg))})
       ("=" ">" "<" "#")  (if ((op-map command) acc (resolve arg))
-                           (inc-instr-ptr state)
-                           (skip-next-instr-ptr state))
-      "TO"               (let [return-state (inc-instr-ptr (assoc-in state [:registers unresolved-arg-val] acc))]
+                           (into state {:instr-ptr (inc instr-ptr)})
+                           (into state {:instr-ptr (+ instr-ptr 2)}))
+      "TO"               (let [return-state (into state {:instr-ptr (inc instr-ptr)
+                                                         :registers (into registers {unresolved-arg-val acc})})]
                            (if (registers-with-effect-on-world unresolved-arg-val)
                              (conj return-state {:action unresolved-arg-val})
                              return-state)))))
