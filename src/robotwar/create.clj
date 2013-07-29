@@ -83,13 +83,13 @@
          results []]
     (let [{prev-type :type} (last results)
           [{current-val :val :as current-token} 
-           {next-val :val, next-type :type :as next-token}] tokens]
+           & [{next-val :val, next-type :type :as next-token} :as tail]] tokens]
       (cond
         (empty? tokens) results
         (and (not (#{:number :register} prev-type)) (#{"-"} current-val) (#{:number} next-type))
           (recur (rest (rest tokens)) 
                  (conj results (into current-token {:val (- next-val), :type :number}))) 
-        :otherwise (recur (rest tokens) (conj results current-token))))))
+        :otherwise (recur tail (conj results current-token))))))
 
 (defn make-instr-pairs
   "Compiles the tokens into token-pairs. Commands consume the next token.
