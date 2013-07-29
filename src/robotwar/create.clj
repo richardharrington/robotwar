@@ -2,6 +2,7 @@
   (:refer-clojure :exclude [compile])
   (:use (clojure [string :only [split join]] 
                  [pprint :only [pprint]])
+        [clojure.core.match :only [match]]
         [robotwar.lexicon :only [registers op-commands commands]]))
 
 (defn re-seq-with-pos
