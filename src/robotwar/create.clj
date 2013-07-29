@@ -113,18 +113,15 @@
   and remove the labels from the instruction list itself (except as targets)"
   [initial-instrs]
   (loop [[instr & tail :as instrs] initial-instrs
-         {label-map :labels instr-vec :instrs :as result} {:labels {}, :instrs []}
-         idx 0]
+         result {:labels {} 
+                 :instrs []}]
     (if (empty? instrs)
       result
-      (let [{command-type :type, command-val :val} (first instr)]
-        (if (= command-type :label) 
-          (recur tail 
-                 {:labels (assoc label-map command-val idx), :instrs instr-vec} 
-                 idx)
-          (recur tail
-                 {:labels label-map, :instrs (conj instr-vec instr)}
-                 (inc idx)))))))
+      (let [command (first instr)
+            next-instr-num (count (result :instrs))]
+        (if (#{(command :type)} :label) 
+          (recur tail (assoc-in result [:labels (command :val)] next-instr-num))
+          (recur tail (assoc-in result [:instrs next-instr-num] instr)))))))
 
 (defn compile [string]
   (-> string 
