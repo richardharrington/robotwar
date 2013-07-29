@@ -1,6 +1,7 @@
 (ns robotwar.create
   (:refer-clojure :exclude [compile])
-  (:use [clojure.string :only [split join]] 
+  (:use (clojure [string :only [split join]] 
+                 [pprint :only [pprint]])
         [robotwar.lexicon :only [registers op-commands commands]]))
 
 (defn re-seq-with-pos
@@ -126,6 +127,6 @@
   []
   (loop [input (read-line)]
     (when (not= input "exit")
-      (-> input compile pretty-print println)
+      (-> input compile pprint)
       (recur (read-line)))))
 
