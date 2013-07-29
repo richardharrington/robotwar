@@ -13,22 +13,32 @@
        (when (.find m)
          (cons [(re-groups m) (.start m)] (lazy-seq (step))))))))
 
+(defn split-lines
+  [raw-lines]
+  (split raw-lines #"\n"))
+
 (defn strip-comments
-  [line]
-  (re-find #"[^;]*" line))
+  [lines]
+  (map #(re-find #"[^;]*" %) lines))
 
 (def lex-re 
   (let [op-string (join op-commands)]
     (re-pattern (str "[" op-string "]|[^" op-string "\\s]+"))))
 
 (defn lex-line
-  [line]
-  (map (fn [[s n]] {:token-str s, :pos n}) 
+  "Helper function for lex. Note: :line and :pos
+  are intended to be human-readable for error-reporting
+  purposes, so they're indexed from 1."
+  [line-num line]
+  (map (fn [[s n]] 
+         {:token-str s, :line (inc line-num), :pos (inc n)}) 
        (re-seq-with-pos lex-re line)))
 
 (defn lex
-  [src-code]
-  (mapcat lex-line (split src-code #"\n")))
+  "Lexes a sequence of lines. After this point, line numbers
+  are captured as metadata and tokens are no longer grouped by line."
+  [lines]
+  (apply concat (map-indexed lex-line lines)))
 
 (defn str->int
   "Integer/parseInt, but returns nil on failure"
@@ -51,10 +61,10 @@
   [return-err       :error]])
 
 (defn parse-token
-  [{:keys [token-str pos]}]
+  [{:keys [token-str pos line]}]
   (loop [[[parser token-type] & tail] parser-priority]
     (if-let [token-val (parser token-str)]
-      {:val token-val, :type token-type, :pos pos}
+      {:val token-val, :type token-type, :pos pos :line line}
       (recur tail))))
 
 (defn parse
@@ -72,13 +82,13 @@
   (loop [tokens initial-tokens
          results []]
     (let [{prev-type :type} (last results)
-          {current-val :val, current-pos :pos :as current-token} (first tokens)
+          {current-val :val, current-pos :pos, current-line :line :as current-token} (first tokens)
           {next-val :val, next-type :type :as next-token} (second tokens)]
       (cond
         (empty? tokens) results
         (and (not (#{:number :register} prev-type)) (= current-val "-") (= next-type :number))
           (recur (rest (rest tokens)) 
-                 (conj results {:val (- next-val), :pos current-pos, :type :number})) 
+                 (conj results {:val (- next-val), :pos current-pos, :line current-line, :type :number})) 
         :otherwise (recur (rest tokens) (conj results current-token))))))
 
 (defn make-instr-pairs
@@ -92,7 +102,7 @@
       result
       (case (:type token)
         :command             (recur (rest tail) (conj result [token (first tail)]))
-        (:number :register)  (recur tail (conj result [{:val ",", :type :command, :pos (:pos token)} token]))
+        (:number :register)  (recur tail (conj result [{:val ",", :type :command, :pos (:pos token), :line (:line token)} token]))
         :label               (recur tail (conj result [token nil]))))))
 
 (defn map-labels
@@ -115,6 +125,7 @@
 
 (defn compile [string]
   (-> string 
+      split-lines
       strip-comments 
       lex 
       parse 
