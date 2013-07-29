@@ -24,7 +24,7 @@
     :register  (resolve-register registers arg-val)
     nil))
 
-(def registers-with-effect-on-world #{"AIM" "SHOT" "RADAR"})
+(def registers-with-effect-on-world #{"AIM" "SHOT" "RADAR" "SPEEDX" "SPEEDY"})
   
 (defn tick-robot
   "takes as input a data structure representing all that the robot's brain
