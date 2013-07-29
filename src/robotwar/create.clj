@@ -82,19 +82,20 @@
   (loop [tokens initial-tokens
          results []]
     (let [{prev-type :type} (last results)
-          {current-val :val, current-pos :pos, current-line :line :as current-token} (first tokens)
-          {next-val :val, next-type :type :as next-token} (second tokens)]
+          [{current-val :val :as current-token} 
+           {next-val :val, next-type :type :as next-token}] tokens]
       (cond
         (empty? tokens) results
-        (and (not (#{:number :register} prev-type)) (= current-val "-") (= next-type :number))
+        (and (not (#{:number :register} prev-type)) (#{"-"} current-val) (#{:number} next-type))
           (recur (rest (rest tokens)) 
-                 (conj results {:val (- next-val), :pos current-pos, :line current-line, :type :number})) 
+                 (conj results (into current-token {:val (- next-val), :type :number}))) 
         :otherwise (recur (rest tokens) (conj results current-token))))))
 
 (defn make-instr-pairs
   "Compiles the tokens into token-pairs. Commands consume the next token.
   Values form the special token-pair that is a comma followed by a value 
-  (meaning push the value into the accumulator)"
+  (meaning push the value into the accumulator). The comma command re-uses
+  the same :line and :pos metadata from the argument that follows it."
   [initial-tokens]
   (loop [[token & tail :as tokens] initial-tokens
          result []]
@@ -102,7 +103,7 @@
       result
       (case (:type token)
         :command             (recur (rest tail) (conj result [token (first tail)]))
-        (:number :register)  (recur tail (conj result [{:val ",", :type :command, :pos (:pos token), :line (:line token)} token]))
+        (:number :register)  (recur tail (conj result [(into token {:val ",", :type :command}) token]))
         :label               (recur tail (conj result [token nil]))))))
 
 (defn map-labels
