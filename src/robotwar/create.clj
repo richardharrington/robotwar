@@ -121,21 +121,6 @@
       make-instr-pairs 
       map-labels))
 
-(defn pretty-print [program]
-  "This is hacky and just a temporary display function"
-  (letfn [(f [[fst snd]]
-            (if snd
-              (format "%2d %9s %8s %20d %9s %11s"
-                      (:pos fst) (:type fst) (:val fst) 
-                      (:pos snd) (:type snd) (:val snd))
-              (format "%2d %9s %8s"
-                      (:pos fst) (:type fst) (:val fst))))]
-    (str 
-      "labels:\n" 
-      (program :labels)
-      "\n\ninstructions:\n"
-      (join "\n" (map f (program :instrs))))))
-
 (defn repl
   "make it so"
   []
