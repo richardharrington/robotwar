@@ -100,7 +100,7 @@
 
 (defn make-instr-pairs
   "Compiles the tokens into token-pairs. Commands consume the next token.
-  Values form the special token-pair that is a comma followed by a value 
+  Bare values form the special token-pair that is a comma followed by the value 
   (meaning push the value into the accumulator). The comma command re-uses
   the same :line and :pos metadata from the argument that follows it."
   [initial-tokens]
@@ -108,10 +108,13 @@
          result []]
     (if (empty? tokens)
       result
-      (case (:type token)
-        :command             (recur (rest tail) (conj result [token (first tail)]))
-        (:number :register)  (recur tail (conj result [(into token {:val ",", :type :command}) token]))
-        :label               (recur tail (conj result [token nil]))))))
+      (match [token]
+        [{:type (:or :number :register)}] 
+          (recur tail (conj result [(into token {:val ",", :type :command}) token]))
+        [(:or {:type :label} {:type :command, :val "ENDSUB"})]
+          (recur tail (conj result [token nil]))
+        [{:type :command}] 
+          (recur (rest tail) (conj result [token (first tail)]))))))
 
 (defn map-labels
   "Maps label-names to their appropriate indexes in the instruction list,

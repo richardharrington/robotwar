@@ -78,6 +78,11 @@
                                        {:val "GOTO", :type :command, :line 1, :pos 14} 
                                        {:val "SCAN", :type :label, :line 1, :pos 19}])
 
+(def minus-sign-disambiguated-tokens7 [{:val "ENDSUB", :type :command, :pos 1, :line 1}
+                                       {:val 13, :type :number, :pos 8, :line 1}
+                                       {:val "TO", :type :command, :pos 11, :line 1}
+                                       {:val "Y", :type :register, :pos 14, :line 1}])
+
 (def instr-pairs3 [[{:line 1, :pos 1, :type :command, :val "IF"} 
                     {:line 1, :pos 4, :type :register, :val "X"}] 
                    [{:line 1, :pos 5, :type :command, :val "<"} 
@@ -93,6 +98,12 @@
                     {:val -5, :line 1, :pos 11, :type :number}] 
                    [{:val "GOTO", :type :command, :line 1, :pos 14} 
                     {:val "SCAN", :type :label, :line 1, :pos 19}]])
+
+(def instr-pairs7 [[{:val "ENDSUB", :type :command, :pos 1, :line 1} nil]
+                   [{:val ",", :type :command, :pos 8, :line 1}
+                    {:val 13, :type :number, :pos 8, :line 1}]
+                   [{:val "TO", :type :command, :pos 11, :line 1}
+                    {:val "Y", :type :register, :pos 14, :line 1}]])
 
 (def labels-mapped3 {:labels {}, 
                      :instrs [[{:line 1, :pos 1, :type :command, :val "IF"} 
@@ -265,6 +276,11 @@
   (testing "instruction pairs with starting label"
     (is (= (make-instr-pairs minus-sign-disambiguated-tokens6)
            instr-pairs6))))
+
+(deftest instr-pairs-with-endsub
+  (testing "instruction pairs with endsub (which takes no argument)"
+    (is (= (make-instr-pairs minus-sign-disambiguated-tokens7)
+           instr-pairs7))))
 
 (deftest map-labels-no-label
   (testing "mapping labels from instruction pairs with no label"
