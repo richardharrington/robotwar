@@ -68,14 +68,18 @@
       (recur tail))))
 
 (defn parse
-  "take the tokens and convert them to structured source code ready for compiling"
-  [tokens]
-  (reduce (fn [parsed token]
-            (if (= (:type (last parsed)) :error)
-              parsed
-              (conj parsed (parse-token token))))
-          []
-          tokens))
+  "take the tokens and convert them to structured source code ready for compiling.
+  if there's an error, returns a different type: just the token,
+  outside of any sequence."
+  [initial-tokens]
+  (loop [[token & tail :as tokens] initial-tokens
+         parsed-tokens []]
+    (if (empty? tokens)
+      parsed-tokens
+      (let [parsed-token (parse-token token)]
+        (if (= (:type parsed-token) :error)
+          parsed-token
+          (recur tail (conj parsed-tokens parsed-token)))))))
 
 (defn disambiguate-minus-signs
   [initial-tokens]
@@ -124,14 +128,18 @@
           (recur tail (assoc-in result [:instrs next-instr-num] instr)))))))
 
 (defn compile [string]
-  (-> string 
-      split-lines
-      strip-comments 
-      lex 
-      parse 
-      disambiguate-minus-signs 
-      make-instr-pairs 
-      map-labels))
+  "compiles robotwar code, with error-checking beginning after the lexing
+  step. All functions that return errors will return a map with the keyword 
+  :error, and then a token with a :val field containing the error string, 
+  and :pos and :line fields containing the location. So far only parse
+  implements error-checking."
+  (let [lexed (-> string split-lines strip-comments lex)]
+   (reduce (fn [result step]
+             (if (= (:type result) :error)
+               result
+               (step result)))
+           lexed
+           [parse disambiguate-minus-signs make-instr-pairs map-labels])))
 
 (defn repl
   "make it so"

@@ -8,6 +8,8 @@
 (def line2 "AIM-17 TO AIM              ; other comment")
 (def line3 "IF X<-5 GOTO SCAN          ; third comment")
 
+(def line4 "6 to RADAR") ; this will be an error: no lower-case
+
 (def line-no-comments1 "IF DAMAGE # D GOTO MOVE")
 (def line-no-comments2 "AIM-17 TO AIM")
 (def line-no-comments3 "IF X<-5 GOTO SCAN")
@@ -59,8 +61,7 @@
                      {:val "GOTO", :type :command, :line 1, :pos 9} 
                      {:val "SCAN", :type :label, :line 1, :pos 14}])
 
-(def parsed-tokens4 [{:val "AIM", :type :register, :line 1, :pos 1} 
-                     {:val "Invalid word or symbol", :type :error, :line 1, :pos 4}])
+(def parsed-tokens4 {:val "Invalid word or symbol", :type :error, :line 1, :pos 4})
 
 (def minus-sign-disambiguated-tokens3 [{:val "IF", :type :command, :line 1, :pos 1} 
                                        {:val "X", :type :register, :line 1, :pos 4} 
@@ -109,6 +110,34 @@
                               [{:line 1, :pos 14, :type :command, :val "GOTO"} 
                                {:line 1, :pos 19, :type :label, :val "SCAN"}]]})
 
+(def multi-line-compiled 
+  {:labels {},
+   :instrs
+   [[{:val "IF", :type :command, :pos 1, :line 1}
+     {:val "DAMAGE", :type :register, :pos 4, :line 1}]
+    [{:val "#", :type :command, :pos 11, :line 1}
+     {:val "D", :type :register, :pos 13, :line 1}]
+    [{:val "GOTO", :type :command, :pos 15, :line 1}
+     {:val "MOVE", :type :label, :pos 20, :line 1}]
+    [{:val ",", :type :command, :pos 1, :line 2}
+     {:val "AIM", :type :register, :pos 1, :line 2}]
+    [{:val "-", :type :command, :pos 4, :line 2}
+     {:val 17, :type :number, :pos 5, :line 2}]
+    [{:val "TO", :type :command, :pos 8, :line 2}
+     {:val "AIM", :type :register, :pos 11, :line 2}]
+    [{:val "IF", :type :command, :pos 1, :line 3}
+     {:val "X", :type :register, :pos 4, :line 3}]
+    [{:val "<", :type :command, :pos 5, :line 3}
+     {:val -5, :type :number, :pos 6, :line 3}]
+    [{:val "GOTO", :type :command, :pos 9, :line 3}
+     {:val "SCAN", :type :label, :pos 14, :line 3}]]})
+
+(def multi-line-compiled-error 
+  {:val "Invalid word or symbol", :type :error, :pos 3, :line 4})
+
+
+; And now for the tests.
+;
 (deftest strip-comments-test
   (testing "stripping comments"
     (is (= (strip-comments [line1])
@@ -247,4 +276,13 @@
     (is (= (map-labels instr-pairs6)
            labels-mapped6))))
 
+(deftest compile-test-success
+  (testing "compiling successfully"
+    (is (= (compile (join "\n" [line1 line2 line3]))
+           multi-line-compiled))))
+
+(deftest compile-test-failure
+  (testing "compile results in error"
+    (is (= (compile (join "\n" [line1 line2 line3 line4]))
+           multi-line-compiled-error))))
 
