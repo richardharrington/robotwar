@@ -3,26 +3,7 @@
   (:use [clojure.pprint]
         (robotwar create exec)))
 
-(def robot-source-code-test "WAIT GOTO WAIT")
-(def robot-program-test (compile robot-source-code-test))
-
-(def robot-state-test {:acc nil
-                       :instr-ptr 0
-                       :call-stack []
-                       :registers nil
-                       :program robot-program-test})
-
-(def rc "AIM + 5 TO RADAR")
-(def rp (compile rc))
-(def t0 (assoc-in (init-robot-state rp {}) [:registers "AIM"] 6))
-
-(def t1 (tick-robot t0))
-(def t2 (tick-robot t1))
-(def t3 (tick-robot t2))
-
-(def iter (iterate tick-robot t0))
-
-(def src-code " START 
+(def src-code1 " START 
                     0 TO A
                 TEST 
                     IF A > 2 GOTO START 
@@ -34,14 +15,18 @@
                     ENDSUB 
                     200 TO A ")
 
-(def istate (init-robot-state (compile src-code) {}))
+(def src-code2 "WAIT GOTO WAIT")
+(def src-code3 "500 TO RANDOM RANDOM RANDOM RANDOM")
 
-(def s (iterate tick-robot istate))
-(def t #(nth s %))
+(def world (init-world 30 30 (map compile [src-code1 src-code2 src-code3])))
+
+
+
+
 
 ; pretty-prints a robot-state with line numbers, 
 ; and only the first four registers. very convenient.
-(def ppt #(pprint (into (assoc-in (t %) 
+#_(def ppt #(pprint (into (assoc-in (t %) 
                                   [:program :instrs] 
                                   (zipmap (range) (get-in (t %) [:program :instrs])))
                         {:registers (select-keys ((t %) :registers) ["A" "B" "C" "D"])})))
