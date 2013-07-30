@@ -30,7 +30,7 @@
     (is (= (:acc (nth-state 7))
            1))))
 
-(deftest gosub-and-call-stack-test
+(deftest gosub-test
   (testing "gosub should move instr-ptr and add the return-ptr to the call stack"
     (is (let [{:keys [instr-ptr call-stack]} (nth-state 5)]
           (= [instr-ptr call-stack]
