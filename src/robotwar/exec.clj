@@ -1,5 +1,6 @@
 (ns robotwar.exec
-  (:require (robotwar [lexicon :as lexicon])))
+  (:require (robotwar [lexicon :as lexicon]))
+  (:use [clojure.string :only [join]]))
 
 (def op-map (zipmap lexicon/op-commands 
                     (map (fn [op] 
@@ -25,20 +26,20 @@
     nil))
 
 (def registers-with-effect-on-world #{"SHOT" "RADAR" "SPEEDX" "SPEEDY"})
-  
+
 (defn tick-robot
   "takes as input a data structure representing all that the robot's brain
   needs to know about the world:
 
   1) The robot program, consisting of a vector of two-part instructions
-     (a command, followed by an argument or nil) as well as a map of labels to 
-     instruction numbers
+  (a command, followed by an argument or nil) as well as a map of labels to 
+  instruction numbers
   2) The instruction pointer (an index number for the instruction vector) 
   3) The value of the accumulator, or nil
   4) The call stack (a vector of instruction pointers to lines following
-     GOSUB calls)
+  GOSUB calls)
   5) The contents of all the registers
-  
+
   After executing one instruction, tick-robot returns the updated verion of all of the above, 
   plus an optional :action field, to notify the world if the SHOT, SPEEDX, SPEEDY or RADAR 
   registers have been pushed to."
@@ -83,15 +84,32 @@
    :height height
    :shells []
    :robots (map-indexed (fn [idx program]
-                  {:internal-state (init-robot-state program 
-                                                     {"X" (rand-int width)
-                                                      "Y" (rand-int height)}) 
-                   :external-state {:icon (str idx)}}) 
-                programs)})
+                          {:internal-state (init-robot-state program 
+                                                             {"X" (rand-int width)
+                                                              "Y" (rand-int height)}) 
+                           :external-state {:icon (str idx)}}) 
+                        programs)})
 
-  
+(defn tick-world
+  "TODO"
+  [world-state])
 
-
-
-
-
+(defn arena-text-grid
+  "outputs the arena, with borders"
+  [{:keys [width height robots]}]
+  (let [horiz-border-char "-"
+        vert-border-char "+"
+        header-footer (apply str (repeat (+ width 2) horiz-border-char))
+        field (for [y (range height), x (range width)]
+                (some (fn [{{{robot-x "X" robot-y "Y"} :registers} :internal-state
+                            {icon :icon} :external-state}]
+                        (if (= [x y] [robot-x robot-y])
+                          icon
+                          " "))
+                      robots))]
+    (str header-footer
+         "\n" 
+         (join "\n" (map #(join (apply str %) (repeat 2 vert-border-char))
+                         (partition width field))) 
+         "\n" 
+         header-footer)))
