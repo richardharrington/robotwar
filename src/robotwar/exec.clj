@@ -65,7 +65,10 @@
                              (conj return-state {:action unresolved-arg-val})
                              return-state)))))
 
-(defn init-robot [program]
+(defn init-robot
+  "initialize all the state variables that go along
+  with the robot program when it's running." 
+  [program]
   {:program program
    :acc 0
    :instr-ptr 0
