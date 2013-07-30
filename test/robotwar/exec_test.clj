@@ -18,31 +18,30 @@
 
 (def initial-state (init-robot-state (compile src-code) {}))
 (def states (iterate tick-robot initial-state))
-(def nth-state #(nth states %))
 
 (deftest branching-test
   (testing "comparison statement should cause jump in instr-ptr"
-    (is (= (:instr-ptr (nth-state 4))
+    (is (= (:instr-ptr (nth states 4))
            5))))
 
 (deftest arithmetic-test
   (testing "addition"
-    (is (= (:acc (nth-state 7))
+    (is (= (:acc (nth states 7))
            1))))
 
 (deftest gosub-test
   (testing "gosub should move instr-ptr and add the return-ptr to the call stack"
-    (is (let [{:keys [instr-ptr call-stack]} (nth-state 5)]
+    (is (let [{:keys [instr-ptr call-stack]} (nth states 5)]
           (= [instr-ptr call-stack]
              [9 [6]])))))
           
 (deftest endsub-test
   (testing "endsub pops instr-ptr off call stack and goes there"
-    (is (let [{:keys [instr-ptr call-stack]} (nth-state 9)]
+    (is (let [{:keys [instr-ptr call-stack]} (nth states 9)]
           (= [instr-ptr call-stack]
              [6 []])))))
 
 (deftest push-test
   (testing "pushing number to register"
-    (is (= (get-in (nth-state 8) [:registers "A"])
+    (is (= (get-in (nth states 8) [:registers "A"])
            1))))
