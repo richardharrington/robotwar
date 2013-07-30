@@ -65,12 +65,33 @@
                              (conj return-state {:action unresolved-arg-val})
                              return-state)))))
 
-(defn init-robot
+(defn init-robot-state
   "initialize all the state variables that go along
   with the robot program when it's running." 
-  [program]
+  [program register-vals]
   {:program program
    :acc 0
    :instr-ptr 0
-   :registers (zipmap lexicon/registers (repeat 0))
+   :registers (into (zipmap lexicon/registers (repeat 0))
+                    register-vals)
    :call-stack []})
+
+(defn init-world
+  "initialize all the variables for a robot world"
+  [width height programs]
+  {:width width
+   :height height
+   :shells []
+   :robots (map-indexed (fn [idx program]
+                  {:internal-state (init-robot-state program 
+                                                     {"X" (rand-int width)
+                                                      "Y" (rand-int height)}) 
+                   :external-state {:icon (str idx)}}) 
+                programs)})
+
+  
+
+
+
+
+

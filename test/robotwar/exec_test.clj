@@ -16,7 +16,7 @@
                     ENDSUB 
                     200 TO A ")
 
-(def initial-state (init-robot (compile src-code)))
+(def initial-state (init-robot-state (compile src-code) {}))
 (def states (iterate tick-robot initial-state))
 (def nth-state #(nth states %))
 

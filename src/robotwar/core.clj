@@ -14,7 +14,7 @@
 
 (def rc "AIM + 5 TO RADAR")
 (def rp (compile rc))
-(def t0 (assoc-in (init-robot rp) [:registers "AIM"] 6))
+(def t0 (assoc-in (init-robot-state rp {}) [:registers "AIM"] 6))
 
 (def t1 (tick-robot t0))
 (def t2 (tick-robot t1))
@@ -34,7 +34,7 @@
                     ENDSUB 
                     200 TO A ")
 
-(def istate (init-robot (compile src-code)))
+(def istate (init-robot-state (compile src-code) {}))
 
 (def s (iterate tick-robot istate))
 (def t #(nth s %))
