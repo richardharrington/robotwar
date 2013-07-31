@@ -126,7 +126,7 @@
       result
       (let [command (first instr)
             next-instr-num (count (result :instrs))]
-        (if (#{(command :type)} :label) 
+        (if (= (command :type) :label) 
           (recur tail (assoc-in result [:labels (command :val)] next-instr-num))
           (recur tail (assoc-in result [:instrs next-instr-num] instr)))))))
 
