@@ -26,17 +26,18 @@
     (re-pattern (str "[" op-string "]|[^" op-string "\\s]+"))))
 
 (defn lex-line
-  "Helper function for lex. Note: :line and :pos
+  "Helper function for lex. Note: metadata fields :line and :pos
   are intended to be human-readable for error-reporting
   purposes, so they're indexed from 1."
   [line-num line]
   (map (fn [[s n]] 
-         {:token-str s, :line (inc line-num), :pos (inc n)}) 
+         ^{:line (inc line-num), :pos (inc n)} {:token-str s}) 
        (re-seq-with-pos lex-re line)))
 
 (defn lex
-  "Lexes a sequence of lines. After this point, line numbers
-  are captured as metadata and tokens are no longer grouped by line."
+  "Lexes a sequence of lines. After this point, tokens 
+  are no longer grouped by line (line numbers have been 
+  captured in metadata, along with column numbers)."
   [lines]
   (apply concat (map-indexed lex-line lines)))
 
@@ -61,10 +62,13 @@
   [return-err       :error]])
 
 (defn parse-token
-  [{:keys [token-str pos line]}]
+  "removes the token-str field and adds two new fields:
+  :val and :type"
+  [{token-str :token-str :as token}]
   (loop [[[parser token-type] & tail] parser-priority]
     (if-let [token-val (parser token-str)]
-      {:val token-val, :type token-type, :pos pos :line line}
+      (dissoc (into token {:val token-val, :type token-type})
+              :token-str) 
       (recur tail))))
 
 (defn parse
@@ -115,6 +119,9 @@
         [{:type :command}] 
           (recur (rest tail) (conj result [token (first tail)]))))))
 
+; TODO: preserve :line and :pos metadata with labels,
+; when labels are transferred from the instruction list to the label map
+
 (defn map-labels
   "Maps label-names to their appropriate indexes in the instruction list,
   and remove the labels from the instruction list itself (except as targets)"
@@ -134,8 +141,8 @@
   "compiles robotwar code, with error-checking beginning after the lexing
   step. All functions that return errors will return a map with the keyword 
   :error, and then a token with a :val field containing the error string, 
-  and :pos and :line fields containing the location. So far only parse
-  implements error-checking."
+  and metadata containing :pos and :line fields containing the location. 
+  So far only parse implements error-checking."
   (let [lexed (-> string split-lines strip-comments lex)]
    (reduce (fn [result step]
              (if (= (:type result) :error)
