@@ -103,9 +103,10 @@
 
 (defn make-instr-pairs
   "Compiles the tokens into token-pairs. Commands consume the next token.
-  Bare values form the special token-pair that is a comma followed by the value 
+  When values are encountered that are not arguments to commands, 
+  a special token-pair is created that is a comma followed by the value 
   (meaning push the value into the accumulator). The comma command re-uses
-  the same :line and :pos metadata from the argument that follows it."
+  the same :line and :pos metadata from the token containing the value that is being pushed."
   [initial-tokens]
   (loop [[token & tail :as tokens] initial-tokens
          result []]
