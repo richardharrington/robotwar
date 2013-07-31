@@ -13,7 +13,7 @@
 (defn resolve-register [registers reg]
   (case reg
     "RANDOM" (rand-int (registers reg))
-    "DATA" (registers (lexicon/get-register-by-idx (registers "INDEX")))
+    "DATA" (registers (lexicon/registers (registers "INDEX")))
     (registers reg)))
 
 (defn resolve-arg [{arg-val :val arg-type :type} registers labels]
