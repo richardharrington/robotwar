@@ -1,5 +1,4 @@
 (ns robotwar.create-test
-  (:refer-clojure :exclude [compile])
   (:require [clojure.test :refer :all]
             [robotwar.create :refer :all])
   (:use [clojure.string :only [join]]))
@@ -121,7 +120,7 @@
                               [{:line 1, :pos 14, :type :command, :val "GOTO"} 
                                {:line 1, :pos 19, :type :label, :val "SCAN"}]]})
 
-(def multi-line-compiled 
+(def multi-line-assembled 
   {:labels {},
    :instrs
    [[{:val "IF", :type :command, :pos 1, :line 1}
@@ -143,7 +142,7 @@
     [{:val "GOTO", :type :command, :pos 9, :line 3}
      {:val "SCAN", :type :label, :pos 14, :line 3}]]})
 
-(def multi-line-compiled-error 
+(def multi-line-assembled-error 
   {:val "Invalid word or symbol", :type :error, :pos 3, :line 4})
 
 
@@ -292,13 +291,13 @@
     (is (= (map-labels instr-pairs6)
            labels-mapped6))))
 
-(deftest compile-test-success
+(deftest assemble-test-success
   (testing "compiling successfully"
-    (is (= (compile (join "\n" [line1 line2 line3]))
-           multi-line-compiled))))
+    (is (= (assemble (join "\n" [line1 line2 line3]))
+           multi-line-assembled))))
 
-(deftest compile-test-failure
-  (testing "compile results in error"
-    (is (= (compile (join "\n" [line1 line2 line3 line4]))
-           multi-line-compiled-error))))
+(deftest assemble-test-failure
+  (testing "assemble results in error"
+    (is (= (assemble (join "\n" [line1 line2 line3 line4]))
+           multi-line-assembled-error))))
 

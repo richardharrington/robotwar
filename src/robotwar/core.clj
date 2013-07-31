@@ -1,5 +1,4 @@
 (ns robotwar.core
-  (:refer-clojure :exclude [compile])
   (:use [clojure.pprint]
         (robotwar create exec)))
 
@@ -18,7 +17,7 @@
 (def src-code2 "WAIT GOTO WAIT")
 (def src-code3 "500 TO RANDOM RANDOM RANDOM RANDOM")
 
-(def world (init-world 30 30 (map compile [src-code1 src-code2 src-code3])))
+(def world (init-world 30 30 (map assemble [src-code1 src-code2 src-code3])))
 
 
 

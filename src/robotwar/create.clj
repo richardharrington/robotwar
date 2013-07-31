@@ -1,5 +1,4 @@
 (ns robotwar.create
-  (:refer-clojure :exclude [compile])
   (:use (clojure [string :only [split join]] 
                  [pprint :only [pprint]])
         [clojure.core.match :only [match]]
@@ -131,7 +130,7 @@
           (recur tail (assoc-in result [:labels (command :val)] next-instr-num))
           (recur tail (assoc-in result [:instrs next-instr-num] instr)))))))
 
-(defn compile [string]
+(defn assemble [string]
   "compiles robotwar code, with error-checking beginning after the lexing
   step. All functions that return errors will return a map with the keyword 
   :error, and then a token with a :val field containing the error string, 
@@ -150,6 +149,6 @@
   []
   (loop [input (read-line)]
     (when (not= input "exit")
-      (-> input compile pprint)
+      (-> input assemble pprint)
       (recur (read-line)))))
 

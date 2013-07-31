@@ -1,5 +1,4 @@
 (ns robotwar.exec-test
-  (:refer-clojure :exclude [compile])
   (:require [clojure.test :refer :all]
             (robotwar [create :refer :all]
                       [exec :refer :all])))
@@ -16,7 +15,7 @@
                     ENDSUB 
                     200 TO A ")
 
-(def initial-state (init-robot-state (compile src-code) {}))
+(def initial-state (init-robot-state (assemble src-code) {}))
 (def states (iterate tick-robot initial-state))
 
 (deftest branching-test
