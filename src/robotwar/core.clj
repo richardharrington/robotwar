@@ -19,14 +19,17 @@
 
 (def world (init-world 30 30 (map assemble [src-code1 src-code2 src-code3])))
 
-
-
-
+(def step (fn [initial-state n]
+            (nth (iterate tick-robot initial-state) n)))
 
 ; pretty-prints a robot-state with line numbers, 
-; and only the first four registers. very convenient.
-#_(def ppt #(pprint (into (assoc-in (t %) 
-                                  [:program :instrs] 
-                                  (zipmap (range) (get-in (t %) [:program :instrs])))
-                        {:registers (select-keys ((t %) :registers) ["A" "B" "C" "D"])})))
+; and only the registers you want. Very convenient.
+
+(def ppt (fn [program n & reg-keys]
+           (let [state (step (init-robot-state program {}) n)]
+             (pprint (into (assoc-in
+                             state
+                             [:program :instrs]
+                             (zipmap (range) (get-in state [:program :instrs])))
+                           {:registers (select-keys (:registers state) reg-keys)}))))) 
 
