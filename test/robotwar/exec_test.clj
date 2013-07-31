@@ -27,12 +27,18 @@
                        RANDOM
                        RANDOM
                        RANDOM
-                       RANDOM " ])
+                       RANDOM " 
+
+                 ; program 2: to test INDEX/DATA pair of registers
+                 "     300 TO A
+                       1 TO INDEX
+                       DATA " ])
 
 (def robot-history #(iterate tick-robot (init-robot-state (assemble %) {})))
 (def robot-histories (map robot-history src-codes))
 (def multi-use-history (nth robot-histories 0))
 (def random-check-history (nth robot-histories 1))
+(def index-data-check-history (nth robot-histories 2)) 
 
 (deftest branching-test
   (testing "comparison statement should cause jump in instr-ptr"
@@ -72,3 +78,10 @@
           (and (every? #{1000} (map first random-pairs))
                (every? #(< -1 % 1000) (map second random-pairs))
                (apply not= (map second random-pairs)))))))
+
+(deftest index-data-pair-test
+  (testing "registers whose index numbers are pushed to INDEX can
+           be referenced by accessing DATA"
+    (is (= (get-in (nth index-data-check-history 5) [:registers "A"])
+           300))))
+
