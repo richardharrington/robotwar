@@ -1,19 +1,22 @@
-(ns robotwar.exec
-  (:require (robotwar [lexicon :as lexicon]))
-  (:use [clojure.string :only [join]]))
+(ns robotwar.robot
+  (:use [clojure.string :only [join]]
+        (robotwar kernel-lexicon game-lexicon)))
 
-(def op-map (zipmap lexicon/op-commands 
+; TODO: remove the game-lexicon dependency above, when it's no longer needed
+; (i.e. when we've moved the resolve-register logic out of this module)
+
+(def op-map (zipmap op-commands 
                     (map (fn [op] 
                            (case op
                              "/" #(int (Math/round (float (/ %1 %2))))
                              "#" not=
                              (-> op read-string eval)))
-                         lexicon/op-commands)))
+                         op-commands)))
 
 (defn resolve-register [registers reg]
   (case reg
     "RANDOM" (rand-int (registers reg))
-    "DATA" (registers (lexicon/registers (registers "INDEX")))
+    "DATA" (registers (reg-names (registers "INDEX")))
     (registers reg)))
 
 (defn resolve-arg [{arg-val :val arg-type :type} registers labels]
@@ -68,48 +71,12 @@
 
 (defn init-robot-state
   "initialize all the state variables that go along
-  with the robot program when it's running." 
-  [program register-vals]
+  with the robot program when it's running.
+  (Optionally, pass in a hash-map of register names and values)." 
+  [program reg-names & [registers]]
   {:program program
    :acc 0
    :instr-ptr 0
-   :registers (into (zipmap lexicon/registers (repeat 0))
-                    register-vals)
+   :registers (into (zipmap reg-names (repeat 0))
+                    registers)
    :call-stack []})
-
-(defn init-world
-  "initialize all the variables for a robot world"
-  [width height programs]
-  {:width width
-   :height height
-   :shells []
-   :robots (map-indexed (fn [idx program]
-                          {:internal-state (init-robot-state program 
-                                                             {"X" (rand-int width)
-                                                              "Y" (rand-int height)}) 
-                           :external-state {:icon (str idx)}}) 
-                        programs)})
-
-(defn tick-world
-  "TODO"
-  [world-state])
-
-(defn arena-text-grid
-  "outputs the arena, with borders"
-  [{:keys [width height robots]}]
-  (let [horiz-border-char "-"
-        vert-border-char "+"
-        header-footer (apply str (repeat (+ width 2) horiz-border-char))
-        field (for [y (range height), x (range width)]
-                (some (fn [{{{robot-x "X" robot-y "Y"} :registers} :internal-state
-                            {icon :icon} :external-state}]
-                        (if (= [x y] [robot-x robot-y])
-                          icon
-                          " "))
-                      robots))]
-    (str header-footer
-         "\n" 
-         (join "\n" (map #(join (apply str %) (repeat 2 vert-border-char))
-                         (partition width field))) 
-         "\n" 
-         header-footer)))

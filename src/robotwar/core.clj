@@ -1,6 +1,6 @@
 (ns robotwar.core
   (:use [clojure.pprint]
-        (robotwar create exec)))
+        (robotwar foundry robot world game-lexicon)))
 
 (def src-code1 " START 
                     0 TO A
@@ -17,7 +17,7 @@
 (def src-code2 "WAIT GOTO WAIT")
 (def src-code3 "500 TO RANDOM RANDOM RANDOM RANDOM")
 
-(def world (init-world 30 30 (map assemble [src-code1 src-code2 src-code3])))
+(def world (init-world 30 30 (map #(assemble reg-names %) [src-code1 src-code2 src-code3])))
 
 (def step (fn [initial-state n]
             (nth (iterate tick-robot initial-state) n)))

@@ -1,7 +1,6 @@
-(ns robotwar.exec-test
-  (:require [clojure.test :refer :all]
-            (robotwar [create :refer :all]
-                      [exec :refer :all])))
+(ns robotwar.robot-test
+  (:use [clojure.test]
+        (robotwar foundry robot game-lexicon)))
 
 (def src-codes [ ; program 0: multi-use program
                  " START 
@@ -34,7 +33,7 @@
                        1 TO INDEX
                        DATA " ])
 
-(def robot-history #(iterate tick-robot (init-robot-state (assemble %) {})))
+(def robot-history #(iterate tick-robot (init-robot-state (assemble reg-names %) {})))
 (def robot-histories (map robot-history src-codes))
 (def multi-use-history (nth robot-histories 0))
 (def random-check-history (nth robot-histories 1))

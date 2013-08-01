@@ -1,8 +1,8 @@
-(ns robotwar.create
+(ns robotwar.foundry
   (:use (clojure [string :only [split join]] 
                  [pprint :only [pprint]])
         [clojure.core.match :only [match]]
-        [robotwar.lexicon :only [registers op-commands commands]]))
+        [robotwar.kernel-lexicon]))
 
 (defn re-seq-with-pos
   "Returns a lazy sequence of successive matches of pattern in string with position.
@@ -54,33 +54,32 @@
 
 (def return-err (constantly "Invalid word or symbol"))
 
-(def parser-priority
- [[(set registers)  :register]
-  [(set commands)   :command]
-  [str->int         :number]
-  [valid-word       :label]
-  [return-err       :error]])
-
 (defn parse-token
   "removes the token-str field and adds two new fields:
-  :val and :type"
-  [{token-str :token-str :as token}]
-  (loop [[[parser token-type] & tail] parser-priority]
-    (if-let [token-val (parser token-str)]
-      (dissoc (into token {:val token-val, :type token-type})
-              :token-str) 
-      (recur tail))))
+  :val and :type, based on sending the :token-str value
+  through a series of parsing functions until a match is found."
+  [reg-names token]
+  (let [parser-priority [[(set reg-names)  :register]
+                         [(set commands)   :command]
+                         [str->int         :number]
+                         [valid-word       :label]
+                         [return-err       :error]]]
+    (loop [[[parser token-type] & tail] parser-priority]
+      (if-let [token-val (parser (:token-str token))]
+        (dissoc (into token {:val token-val, :type token-type})
+                :token-str) 
+        (recur tail)))))
 
 (defn parse
   "take the tokens and convert them to structured source code ready for compiling.
   if there's an error, returns a different type: just the token,
   outside of any sequence."
-  [initial-tokens]
+  [reg-names initial-tokens]
   (loop [[token & tail :as tokens] initial-tokens
          parsed-tokens []]
     (if (empty? tokens)
       parsed-tokens
-      (let [parsed-token (parse-token token)]
+      (let [parsed-token (parse-token reg-names token)]
         (if (= (:type parsed-token) :error)
           parsed-token
           (recur tail (conj parsed-tokens parsed-token)))))))
@@ -138,25 +137,17 @@
           (recur tail (assoc-in result [:labels (command :val)] next-instr-num))
           (recur tail (assoc-in result [:instrs next-instr-num] instr)))))))
 
-(defn assemble [string]
+(defn assemble [reg-names string]
   "compiles robotwar code, with error-checking beginning after the lexing
   step. All functions that return errors will return a map with the keyword 
   :error, and then a token with a :val field containing the error string, 
   and metadata containing :pos and :line fields containing the location. 
   So far only parse implements error-checking."
-  (let [lexed (-> string split-lines strip-comments lex)]
+  (let [parse-with-reg-names (partial parse reg-names)
+        lexed (-> string split-lines strip-comments lex)]
    (reduce (fn [result step]
              (if (= (:type result) :error)
                result
                (step result)))
            lexed
-           [parse disambiguate-minus-signs make-instr-pairs map-labels])))
-
-(defn repl
-  "make it so"
-  []
-  (loop [input (read-line)]
-    (when (not= input "exit")
-      (-> input assemble pprint)
-      (recur (read-line)))))
-
+           [parse-with-reg-names disambiguate-minus-signs make-instr-pairs map-labels])))
