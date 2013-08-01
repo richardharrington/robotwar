@@ -13,22 +13,52 @@
                              (-> op read-string eval)))
                          op-commands)))
 
+(defn init-internal-state
+  "initialize all the internal state variables that go along
+  with the robot program when it's running.
+  (Optionally, also pass in a hash-map of register names and values,
+  which will override the defaults)." 
+  [program reg-names & [registers]]
+  {:registers (into {} (concat
+                         (for [reg-name reg-names]
+                           ; default values for :read, :write and :data. (TODO: move these into a higher-level module)
+                           ; NOTE: the default version of the :read function does not need the world-state parameter.
+                           [reg-name {:read (fn [data _] data) 
+                                      :write (fn [robot data]
+                                               (assoc-in robot [:internal-state :registers reg-name] data))
+                                      :data 0}])
+                         registers))
+   :program program
+   :acc 0
+   :instr-ptr 0
+   :call-stack []})
+
+(defn read-register
+  "returns a numeric value"
+  [{:keys [read data] :as register} world]
+  (read data world))
+
+(defn write-register
+  "returns a full robot state, including its external state and its internal brain state.
+  TODO: implement extra flag to indicate if we've fired a shot."
+  [robot {write :write :as register} data]
+  (write robot data))
+
 (defn resolve-register [registers reg]
   (case reg
     "RANDOM" (rand-int (registers reg))
     "DATA" (registers (reg-names (registers "INDEX")))
     (registers reg)))
 
-(defn resolve-arg [{arg-val :val arg-type :type} registers labels]
+(defn resolve-arg [{arg-val :val arg-type :type} registers labels world]
   "resolves an instruction argument to a numeric value
-  (either an arithmetic or logical comparison operand, or an instruction pointer)."
+  (either an arithmetic or logical comparison operand, or an instruction pointer).
+  If it's reading from a register, uses that register's :read function."
   (case arg-type
     :label     (labels arg-val)
     :number    arg-val
-    :register  (resolve-register registers arg-val)
+    :register  (read-register (registers arg-val) world)
     nil))
-
-(def registers-with-effect-on-world #{"SHOT" "RADAR" "SPEEDX" "SPEEDY"})
 
 (defn tick-robot
   "takes as input a data structure representing all that the robot's brain
@@ -47,36 +77,26 @@
   plus an optional :action field, to notify the world if the SHOT, SPEEDX, SPEEDY or RADAR 
   registers have been pushed to."
 
-  [{:keys [acc instr-ptr call-stack registers program] :as state}]
-  (let [[{command :val} {unresolved-arg-val :val :as arg}] ((program :instrs) instr-ptr)
-        resolve #(resolve-arg % registers (program :labels))]
+  [robot world]
+  (let [internal-state (:internal-state robot)
+        {:keys [acc instr-ptr call-stack registers program]} internal-state
+        [{command :val} {unresolved-arg-val :val :as arg}] ((program :instrs) instr-ptr)
+        resolve #(resolve-arg % registers (program :labels) world)
+        return-robot #(assoc robot :internal-state (into internal-state %))]
     (case command
-      "GOTO"             (into state {:instr-ptr (resolve arg)})
-      "GOSUB"            (into state {:instr-ptr (resolve arg)
-                                      :call-stack (conj call-stack (inc instr-ptr))})
-      "ENDSUB"           (into state {:instr-ptr (peek call-stack)
-                                      :call-stack (pop call-stack)})
-      ("IF", ",")        (into state {:instr-ptr (inc instr-ptr)
-                                      :acc (resolve arg)})
-      ("+" "-" "*" "/")  (into state {:instr-ptr (inc instr-ptr)
-                                      :acc ((op-map command) acc (resolve arg))})
+      "GOTO"             (return-robot {:instr-ptr (resolve arg)})
+      "GOSUB"            (return-robot {:instr-ptr (resolve arg)
+                                        :call-stack (conj call-stack (inc instr-ptr))})
+      "ENDSUB"           (return-robot {:instr-ptr (peek call-stack)
+                                        :call-stack (pop call-stack)})
+      ("IF", ",")        (return-robot {:instr-ptr (inc instr-ptr)
+                                        :acc (resolve arg)})
+      ("+" "-" "*" "/")  (return-robot {:instr-ptr (inc instr-ptr)
+                                        :acc ((op-map command) acc (resolve arg))})
       ("=" ">" "<" "#")  (if ((op-map command) acc (resolve arg))
-                           (into state {:instr-ptr (inc instr-ptr)})
-                           (into state {:instr-ptr (+ instr-ptr 2)}))
-      "TO"               (let [return-state (into state {:instr-ptr (inc instr-ptr)
-                                                         :registers (into registers {unresolved-arg-val acc})})]
-                           (if (registers-with-effect-on-world unresolved-arg-val)
-                             (conj return-state {:action unresolved-arg-val})
-                             return-state)))))
+                           (return-robot {:instr-ptr (inc instr-ptr)})
+                           (return-robot {:instr-ptr (+ instr-ptr 2)}))
+      "TO"               (write-register (return-robot {:instr-ptr (inc instr-ptr)})
+                                         (registers unresolved-arg-val)
+                                         acc))))
 
-(defn init-robot-state
-  "initialize all the state variables that go along
-  with the robot program when it's running.
-  (Optionally, pass in a hash-map of register names and values)." 
-  [program reg-names & [registers]]
-  {:program program
-   :acc 0
-   :instr-ptr 0
-   :registers (into (zipmap reg-names (repeat 0))
-                    registers)
-   :call-stack []})
