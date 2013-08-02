@@ -1,8 +1,8 @@
 (ns robotwar.foundry
+  (:require [robotwar.kernel-lexicon])
   (:use (clojure [string :only [split join]] 
                  [pprint :only [pprint]])
-        [clojure.core.match :only [match]]
-        [robotwar.kernel-lexicon]))
+        [clojure.core.match :only [match]]))
 
 (defn re-seq-with-pos
   "Returns a lazy sequence of successive matches of pattern in string with position.
@@ -22,7 +22,7 @@
   (map #(re-find #"[^;]*" %) lines))
 
 (def lex-re 
-  (let [op-string (join op-commands)]
+  (let [op-string (join robotwar.kernel-lexicon/op-commands)]
     (re-pattern (str "[" op-string "]|[^" op-string "\\s]+"))))
 
 (defn lex-line
@@ -59,11 +59,12 @@
   :val and :type, based on sending the :token-str value
   through a series of parsing functions until a match is found."
   [reg-names token]
-  (let [parser-priority [[(set reg-names)  :register]
-                         [(set commands)   :command]
-                         [str->int         :number]
-                         [valid-word       :label]
-                         [return-err       :error]]]
+  (let [parser-priority 
+        [[(set reg-names)  :register]
+         [(set robotwar.kernel-lexicon/commands) :command]
+         [str->int         :number]
+         [valid-word       :label]
+         [return-err       :error]]]
     (loop [[[parser token-type] & tail] parser-priority]
       (if-let [token-val (parser (:token-str token))]
         (dissoc (into token {:val token-val, :type token-type})
