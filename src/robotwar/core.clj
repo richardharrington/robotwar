@@ -1,6 +1,6 @@
 (ns robotwar.core
   (:use [clojure.pprint]
-        (robotwar foundry robot world game-lexicon)))
+        (robotwar foundry brain robot world game-lexicon)))
 
 (def src-code1 " START 
                     0 TO A

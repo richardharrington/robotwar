@@ -1,9 +1,6 @@
 (ns robotwar.world
   (:use [clojure.string :only [join]]
-        (robotwar foundry robot game-lexicon)))
-
-; TODO: Write init-register function, in robot probably, and init those 
-; X and Y registers down below.
+        (robotwar foundry brain robot game-lexicon)))
 
 (defn init-world
   "initialize all the variables for a robot world"
@@ -12,11 +9,19 @@
    :height height
    :shells []
    :robots (vec (map-indexed (fn [idx program]
-                          {:internal-state (init-internal-state program reg-names 
-                                                             {"X" (rand-int width)
-                                                              "Y" (rand-int height)}) 
-                           :icon (str idx)}) 
-                        programs))})
+                               {:brain (init-brain 
+                                         program 
+                                         reg-names
+                                         {(init-register "X" 
+                                                         default-read 
+                                                         default-write
+                                                         (rand-int width))
+                                          (init-register "Y"
+                                                         default-read
+                                                         default-write
+                                                         (rand-int height))})
+                                :icon (str idx)}) 
+                             programs))})
 
 (defn tick-world
   "TODO"
