@@ -20,13 +20,13 @@
 (def world (init-world 30 30 (map #(assemble reg-names %) [src-code1 src-code2 src-code3])))
 
 (def step (fn [initial-state n]
-            (nth (iterate tick-robot initial-state) n)))
+            (nth (iterate #(tick-robot % world) initial-state) n)))
 
 ; pretty-prints a robot-state with line numbers, 
 ; and only the registers you want. Very convenient.
 
 (def ppt (fn [program n & reg-keys]
-           (let [state (step (init-robot-state program {}) n)]
+           (let [state (step (init-internal-state program {}) n)]
              (pprint (into (assoc-in
                              state
                              [:program :instrs]

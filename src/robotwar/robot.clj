@@ -1,5 +1,6 @@
 (ns robotwar.robot
   (:use [clojure.string :only [join]]
+        [clojure.pprint :only [pprint]]
         (robotwar kernel-lexicon game-lexicon)))
 
 ; TODO: remove the game-lexicon dependency above, when it's no longer needed
@@ -19,19 +20,28 @@
   (Optionally, also pass in a hash-map of register names and values,
   which will override the defaults)." 
   [program reg-names & [registers]]
-  {:registers (into {} (concat
-                         (for [reg-name reg-names]
-                           ; default values for :read, :write and :data. (TODO: move these into a higher-level module)
-                           ; NOTE: the default version of the :read function does not need the world-state parameter.
-                           [reg-name {:read (fn [data _] data) 
-                                      :write (fn [robot data]
-                                               (assoc-in robot [:internal-state :registers reg-name] data))
-                                      :data 0}])
-                         registers))
-   :program program
-   :acc 0
-   :instr-ptr 0
-   :call-stack []})
+  (pprint program)
+  (pprint reg-names)
+  (pprint registers)
+  (let [identity-with-throwaway-args (fn [x & args] x)]
+    {:registers (into {} (concat
+                           (for [reg-name reg-names]
+                             ; default values for :read, :write and :data. 
+                             ; (TODO: move these into a higher-level module)
+                             ; NOTE: the default version of the :read function 
+                             ; does not need the world-state parameter.
+                             [reg-name {:read identity-with-throwaway-args
+                                        :write (fn [robot data]
+                                                 (assoc-in 
+                                                   robot 
+                                                   [:internal-state :registers reg-name] 
+                                                   data))
+                                        :data 0}])
+                           registers))
+     :program program
+     :acc 0
+     :instr-ptr 0
+     :call-stack []}))
 
 (defn read-register
   "returns a numeric value"
@@ -44,11 +54,11 @@
   [robot {write :write :as register} data]
   (write robot data))
 
-(defn resolve-register [registers reg]
-  (case reg
-    "RANDOM" (rand-int (registers reg))
-    "DATA" (registers (reg-names (registers "INDEX")))
-    (registers reg)))
+;(defn resolve-register [registers reg]
+;  (case reg
+;    "RANDOM" (rand-int (registers reg))
+;    "DATA" (registers (reg-names (registers "INDEX")))
+;    (registers reg)))
 
 (defn resolve-arg [{arg-val :val arg-type :type} registers labels world]
   "resolves an instruction argument to a numeric value
@@ -80,7 +90,7 @@
   [robot world]
   (let [internal-state (:internal-state robot)
         {:keys [acc instr-ptr call-stack registers program]} internal-state
-        [{command :val} {unresolved-arg-val :val :as arg}] ((program :instrs) instr-ptr)
+        [{command :val} arg] ((program :instrs) instr-ptr)
         resolve #(resolve-arg % registers (program :labels) world)
         return-robot #(assoc robot :internal-state (into internal-state %))]
     (case command
@@ -97,6 +107,6 @@
                            (return-robot {:instr-ptr (inc instr-ptr)})
                            (return-robot {:instr-ptr (+ instr-ptr 2)}))
       "TO"               (write-register (return-robot {:instr-ptr (inc instr-ptr)})
-                                         (registers unresolved-arg-val)
+                                         (registers (:val arg))
                                          acc))))
 
