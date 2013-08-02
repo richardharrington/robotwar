@@ -20,6 +20,62 @@
 ;                      A BIT CLEARER. THE NAMES CAN BE SHORTENED QUITE A BIT,
 ;                      WHEN LOADED INTO THE MODULES.
 
+(defn make-default-read [register]
+  "takes a register and returns the default version of its :read function,
+  which ignores the `world` parameter and just returns 
+  the :val field from the register."
+  (fn [_] 
+    (:val register)))
+
+(defn make-default-write [robot-idx reg-name]
+  "takes a robot-idx and a reg-name to locate a register, and
+  returns the default version of that register's :write function,
+  which takes a world parameter and a data value and returns the 
+  world with the data value assoc'd into it."
+  (fn [world data]
+   (assoc-in world [:robots robot-idx :registers reg-name :val] data)))
+
+(def default-data 0)
+
+(defn default-register [robot-idx reg-name]
+  (init-register 
+    reg-name 
+
+
+(defn init-robot
+  [program x y]
+  {:pos-x x
+   :pos-y y
+   :veloc-x 0
+   :veloc-y 0
+   :accel-x 0
+   :accel-y 0
+   :damage 100
+   :
+  [let [special-registers
+        [init-register "X" default-
+
+(defn init-world
+  "initialize all the variables for a robot world"
+  [width height programs]
+  {:width width
+   :height height
+   :shells []
+   :robots (vec (map-indexed (fn [idx program]
+                               {:brain (init-brain 
+                                         program 
+                                         reg-names
+                                         {(init-register "X" 
+                                                         default-read 
+                                                         default-write
+                                                         (rand-int width))
+                                          (init-register "Y"
+                                                         default-read
+                                                         default-write
+                                                         (rand-int height))})
+                                :icon (str idx)}) 
+                             programs))})
+
 (defn tick-robot
   [robot world]
   (let [ticked (tick-brain robot world)]

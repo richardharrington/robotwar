@@ -10,21 +10,28 @@
                              (-> op read-string eval)))
                          op-commands)))
 
-(defn init-register [reg-name read write data]
-  {reg-name {:read read
-             :write write
-             :data data}})
+(defn init-register [reg-name read-func write-func data]
+  "the read function should take a world and return a value.
+  the write function should take a world and a value and return 
+  a new world."
+  {reg-name {:read read-func
+             :write write-func
+             :val data}})
 
-(defn default-read [data world]
-  data)
+(defn read-register
+  "wrapper for the read function in each register. takes a register
+  and also takes world state, because
+  some of those functions may need access to the world state.
+  returns a numeric value."
+  [{read :read} world]
+  (read world))
 
-(defn default-write [robot data]
-  (assoc-in robot [:brain :registers reg-name] data))
-
-(def default-data 0)
-
-(defn default-register [reg-name]
-  (init-register reg-name default-read default-write default-data))
+(defn write-register
+  "wrapper for the write function in each register.
+  takes a register, a robot, a world, and the data to write.
+  returns a full world."
+  [{write :write} world data]
+  (write world data))
 
 (defn init-brain
   "initialize the brain (meaning all the internal state variables that go along
@@ -38,22 +45,6 @@
    :program program
    :registers (into {} (concat (map default-register reg-names) registers))})
 
-(defn read-register
-  "wrapper for the read function in each register. takes a register
-  and also takes world state, because
-  some of those functions may need access to the world state.
-  returns a numeric value."
-  [{:keys [read data] :as register} world]
-  (read data world))
-
-(defn write-register
-  "wrapper for the write function in each register.
-  takes a robot, a register, and the data to write.
-  returns a full robot (brain and external properties as well).
-  TODO: implement extra flag to indicate if we've fired a shot."
-  [robot {write :write :as register} data]
-  (write robot data))
-
 (defn resolve-arg [{arg-val :val arg-type :type} registers labels world]
   "resolves an instruction argument to a numeric value
   (either an arithmetic or logical comparison operand, or an instruction pointer)."
@@ -63,38 +54,38 @@
     :register  (read-register (registers arg-val) world)
     nil))
 
-(defn tick-brain
-  "takes a full robot. Only the internal state (the brain) will be 
-  different when we pass it back, for all of the operations except 'TO',
-  which may alter the external state of the robot as well. (And for the time
-  being, shots fired will be indicated with a flag in the robot.)
+(defn step-brain
+  "takes a robot index and a world. Returns a world. 
+  
+  Read functions may or may not need anything except the brain.
+  
+  Only the brain (the internal state of the robot)
+  will be different when we pass it back, for all of the operations 
+  except 'TO', which may also alter the external state of the robot, or the wider world.
 
-  Also takes a 'world' parameter, which may contain information that some of the
-  registers' read functions may need. Will not be passed out in the return value.
-
-  TODO: Figure out a way to have this function not know about the external robot stuff,
+  TODO: Figure out a way to have this function not know about the external stuff,
   like that the name of the field leading to the brain is :brain."
 
-  [robot world]
-  (let [brain (:brain robot)
+  [robot-idx world]
+  (let [{brain :brain :as robot} ((:robots world) robot-idx)
         {:keys [acc instr-ptr call-stack registers program]} brain
         [{command :val} arg] ((:instrs program) instr-ptr)
         resolve #(resolve-arg % registers (:labels program) world)
-        return-robot #(assoc robot :brain (into brain %))]
+        into-world-brain #(assoc-in world [:robots robot-idx :brain] (into brain %))]
     (case command
-      "GOTO"             (return-robot {:instr-ptr (resolve arg)})
-      "GOSUB"            (return-robot {:instr-ptr (resolve arg)
-                                        :call-stack (conj call-stack (inc instr-ptr))})
-      "ENDSUB"           (return-robot {:instr-ptr (peek call-stack)
-                                        :call-stack (pop call-stack)})
-      ("IF", ",")        (return-robot {:instr-ptr (inc instr-ptr)
-                                        :acc (resolve arg)})
-      ("+" "-" "*" "/")  (return-robot {:instr-ptr (inc instr-ptr)
-                                        :acc ((op-map command) acc (resolve arg))})
+      "GOTO"             (into-world-brain {:instr-ptr (resolve arg)})
+      "GOSUB"            (into-world-brain {:instr-ptr (resolve arg)
+                                            :call-stack (conj call-stack (inc instr-ptr))})
+      "ENDSUB"           (into-world-brain {:instr-ptr (peek call-stack)
+                                            :call-stack (pop call-stack)})
+      ("IF", ",")        (into-world-brain {:instr-ptr (inc instr-ptr)
+                                            :acc (resolve arg)})
+      ("+" "-" "*" "/")  (into-world-brain {:instr-ptr (inc instr-ptr)
+                                            :acc ((op-map command) acc (resolve arg))})
       ("=" ">" "<" "#")  (if ((op-map command) acc (resolve arg))
-                           (return-robot {:instr-ptr (inc instr-ptr)})
-                           (return-robot {:instr-ptr (+ instr-ptr 2)}))
-      "TO"               (write-register (return-robot {:instr-ptr (inc instr-ptr)})
+                           (into-world-brain {:instr-ptr (inc instr-ptr)})
+                           (into-world-brain {:instr-ptr (+ instr-ptr 2)}))
+      "TO"               (write-register (into-world-brain {:instr-ptr (inc instr-ptr)})
                                          (registers (:val arg))
                                          acc))))
 
