@@ -82,12 +82,11 @@
           (= [instr-ptr call-stack]
              [6 []])))))
 
-;(deftest push-test
-;  (testing "pushing number to register"
-;    (is (= (get-in (get-world 7 0) [:robots 0 :brain :acc])
-;    (is (= (get-in (nth multi-use-history 8) [:registers "A"])
-;           1))))
-;
+(deftest push-test
+  (testing "pushing number to register"
+    (is (= (get-in (get-world 8 0) [:robots 0 :registers "A" :val])
+           1))))
+
 ;(deftest random-test
 ;  (testing "push to random register and pull from it to receive a number
 ;           of unequal numbers less than the number that was pushed"
