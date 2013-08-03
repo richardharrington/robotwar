@@ -1,35 +1,31 @@
 (ns robotwar.core
   (:use [clojure.pprint]
-        (robotwar foundry brain robot world game-lexicon)))
+        (robotwar foundry brain robot world game-lexicon brain-test)))
 
-;(def src-code1 " START 
-;                    0 TO A
-;                TEST 
-;                    IF A > 2 GOTO START 
-;                    GOSUB INCREMENT
-;                    GOTO TEST 
-;                    100 TO A 
-;                INCREMENT 
-;                    A + 1 TO A 
-;                    ENDSUB 
-;                    200 TO A ")
+; this is a hacky place for messing with stuff. currently imports 
+; all the test data from brain-test, and the function below uses
+; some of those variables to 
+; pretty-print a robot-state with line numbers for the program instructions, 
+; and only the registers you want. Very convenient.
 ;
-;(def src-code2 "WAIT GOTO WAIT")
-;(def src-code3 "500 TO RANDOM RANDOM RANDOM RANDOM")
-;
-;(def world (init-world 30 30 (map #(assemble reg-names %) [src-code1 src-code2 src-code3])))
-;
-;(def step (fn [initial-state n]
-;            (nth (iterate #(tick-robot % world) initial-state) n)))
-;
-;; pretty-prints a robot-state with line numbers, 
-;; and only the registers you want. Very convenient.
-;
-;(def ppt (fn [program n & reg-keys]
-;           (let [state (step (init-internal-state program {}) n)]
-;             (pprint (into (assoc-in
-;                             state
-;                             [:program :instrs]
-;                             (zipmap (range) (get-in state [:program :instrs])))
-;                           {:registers (select-keys (:registers state) reg-keys)}))))) 
-;
+; it takes a world-tick number and a robot index number, and prettyprints a robot
+; with line numbers for the program instructions, and only the registers specified.
+; (also it only prints the values of the registers, not the register-maps with
+; their ugly full system-names of the read and write functions.) Very convenient.
+
+(def get-robot (fn [world-tick-idx robot-idx]
+           (let [world-idx (+ (* world-tick-idx len) robot-idx)
+                 world (nth worlds world-idx)]
+             ((:robots world) robot-idx))))
+
+(def ppt (fn [world-tick-idx robot-idx & [reg-keys]]
+           (let [{:keys [brain registers] :as robot} (get-robot world-tick-idx robot-idx)]
+             (pprint 
+               (into robot 
+                     {:brain (assoc-in 
+                               brain 
+                               [:program :instrs]
+                               (sort (zipmap (range) (get-in brain [:program :instrs]))))
+                      :registers (sort (into {} (for [[reg-name reg-map]
+                                                      (select-keys registers reg-keys)]
+                                                  {reg-name (:val reg-map)})))})))))
