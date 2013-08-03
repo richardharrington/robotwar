@@ -66,9 +66,9 @@
     (is (= (get-in (nth worlds 21) [:robots 0 :brain :acc])
            1))))
 
-#_(deftest gosub-test
+(deftest gosub-test
   (testing "gosub should move instr-ptr and add the return-ptr to the call stack"
-    (is (let [{:keys [instr-ptr call-stack]} (get-in (nth worlds 21) [:robots 0 :brain])]
+    (is (let [{:keys [instr-ptr call-stack]} (get-in (nth worlds 15) [:robots 0 :brain])]
           (= [instr-ptr call-stack]
              [9 [6]])))))
 
