@@ -56,31 +56,35 @@
                                   [(step-brain (robots idx) world) (mod (inc idx) len)])
                                 [initial-world 0])))
 
+(def get-world (fn [world-tick-idx robot-idx]
+                 (let [world-idx (+ (* world-tick-idx len) robot-idx)]
+                   (nth worlds world-idx))))
+
 (deftest branching-test
   (testing "comparison statement should cause jump in instr-ptr"
-    (is (= (get-in (nth worlds 12) [:robots 0 :brain :instr-ptr])
+    (is (= (get-in (get-world 4 0) [:robots 0 :brain :instr-ptr])
            5))))
 
 (deftest arithmetic-test
   (testing "addition"
-    (is (= (get-in (nth worlds 21) [:robots 0 :brain :acc])
+    (is (= (get-in (get-world 7 0) [:robots 0 :brain :acc])
            1))))
 
 (deftest gosub-test
   (testing "gosub should move instr-ptr and add the return-ptr to the call stack"
-    (is (let [{:keys [instr-ptr call-stack]} (get-in (nth worlds 15) [:robots 0 :brain])]
+    (is (let [{:keys [instr-ptr call-stack]} (get-in (get-world 5 0) [:robots 0 :brain])]
           (= [instr-ptr call-stack]
              [9 [6]])))))
 
 (deftest endsub-test
   (testing "endsub pops instr-ptr off call stack and goes there"
-    (is (let [{:keys [instr-ptr call-stack]} (get-in (nth worlds 27) [:robots 0 :brain])]
+    (is (let [{:keys [instr-ptr call-stack]} (get-in (get-world 9 0) [:robots 0 :brain])]
           (= [instr-ptr call-stack]
              [6 []])))))
 
 ;(deftest push-test
 ;  (testing "pushing number to register"
-;    (is (= (get-in (nth worlds 21) [:robots 0 :brain :acc])
+;    (is (= (get-in (get-world 7 0) [:robots 0 :brain :acc])
 ;    (is (= (get-in (nth multi-use-history 8) [:registers "A"])
 ;           1))))
 ;
