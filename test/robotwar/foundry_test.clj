@@ -1,8 +1,8 @@
 (ns robotwar.foundry-test
-  (:require [clojure.test :refer :all]
-            [robotwar.foundry :refer :all]
-            [robotwar.game-lexicon :refer :all])
-  (:use [clojure.string :only [join]]))
+  (:use (clojure [string :only [join]]
+                 [test])
+        [robotwar.foundry])
+  (:require [robotwar.game-lexicon]))
 
 (def line1 "IF DAMAGE # D GOTO MOVE    ; comment or something")
 (def line2 "AIM-17 TO AIM              ; other comment")
@@ -212,47 +212,47 @@
 
 (deftest parse-token-register
   (testing "parsing register token"
-    (is (= (parse-token reg-names {:token-str "AIM"})
+    (is (= (parse-token robotwar.game-lexicon/reg-names {:token-str "AIM"})
            {:val "AIM", :type :register}))))
 
 (deftest parse-token-command-word
   (testing "parsing command token (word)"
-    (is (= (parse-token reg-names {:token-str "GOTO"})
+    (is (= (parse-token robotwar.game-lexicon/reg-names {:token-str "GOTO"})
            {:val "GOTO", :type :command}))))
 
 (deftest parse-token-command-operator
   (testing "parsing command token (operator)"
-    (is (= (parse-token reg-names {:token-str "#"})
+    (is (= (parse-token robotwar.game-lexicon/reg-names {:token-str "#"})
            {:val "#", :type :command}))))
 
 (deftest parse-token-number
   (testing "parsing number token"
-    (is (= (parse-token reg-names {:token-str "-17"}))
+    (is (= (parse-token robotwar.game-lexicon/reg-names {:token-str "-17"}))
         {:val -17, :type :number})))
 
 (deftest parse-token-label
   (testing "parsing label token"
-    (is (= (parse-token reg-names {:token-str "SCAN"})
+    (is (= (parse-token robotwar.game-lexicon/reg-names {:token-str "SCAN"})
            {:val "SCAN", :type :label}))))
 
 (deftest parse-token-error
   (testing "parsing error token"
-    (is (= (parse-token reg-names {:token-str "-GOTO"})
+    (is (= (parse-token robotwar.game-lexicon/reg-names {:token-str "-GOTO"})
            {:val "Invalid word or symbol", :type :error}))))
 
 (deftest parse-tokens-minus-sign
   (testing "parsing tokens with a binary minus sign"
-    (is (= (parse reg-names lexed-tokens2)
+    (is (= (parse robotwar.game-lexicon/reg-names lexed-tokens2)
            parsed-tokens2))))
 
 (deftest parse-tokens-negative-sign
   (testing "parsing tokens with a unary negative sign"
-    (is (= (parse reg-names lexed-tokens3)
+    (is (= (parse robotwar.game-lexicon/reg-names lexed-tokens3)
            parsed-tokens3))))
 
 (deftest parse-tokens-error
   (testing "parsing tokens with an invalid operator"
-    (is (= (parse reg-names lexed-tokens4)
+    (is (= (parse robotwar.game-lexicon/reg-names lexed-tokens4)
            parsed-tokens4))))
 
 (def minus-sign-disambiguated-tokens2 parsed-tokens2)
@@ -294,17 +294,17 @@
 
 (deftest assemble-test-success
   (testing "compiling successfully"
-    (is (= (assemble reg-names (join "\n" [line1 line2 line3]))
+    (is (= (assemble robotwar.game-lexicon/reg-names (join "\n" [line1 line2 line3]))
            multi-line-assembled))))
 
 (deftest assemble-test-failure
   (testing "assemble results in error"
-    (is (= (assemble reg-names (join "\n" [line1 line2 line3 line4]))
+    (is (= (assemble robotwar.game-lexicon/reg-names (join "\n" [line1 line2 line3 line4]))
            multi-line-assembled-error))))
 
 (deftest preserving-line-and-pos-metadata-test
   (testing "line and pos metadata preserved through assembly process"
-    (is (= (meta (get-in (assemble reg-names (join "\n" [line1 line2 line3]))
+    (is (= (meta (get-in (assemble robotwar.game-lexicon/reg-names (join "\n" [line1 line2 line3]))
                          [:instrs 8 1]))
            {:line 3, :pos 14}))))
 

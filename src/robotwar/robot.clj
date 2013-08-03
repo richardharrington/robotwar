@@ -1,82 +1,79 @@
 (ns robotwar.robot
   (:use [clojure.string :only [join]]
-        (robotwar kernel-lexicon game-lexicon)))
+        (robotwar brain game-lexicon)))
 
-; TODO: remove the game-lexicon dependency above, when it's no longer needed
-; (i.e. when we've moved the resolve-register logic out of this module)
-
-(def op-map (zipmap op-commands 
-                    (map (fn [op] 
-                           (case op
-                             "/" #(int (Math/round (float (/ %1 %2))))
-                             "#" not=
-                             (-> op read-string eval)))
-                         op-commands)))
-
-(defn resolve-register [registers reg]
-  (case reg
-    "RANDOM" (rand-int (registers reg))
-    "DATA" (registers (reg-names (registers "INDEX")))
-    (registers reg)))
-
-(defn resolve-arg [{arg-val :val arg-type :type} registers labels]
-  "resolves an instruction argument to a numeric value
-  (either an arithmetic or logical comparison operand, or an instruction pointer)."
-  (case arg-type
-    :label     (labels arg-val)
-    :number    arg-val
-    :register  (resolve-register registers arg-val)
-    nil))
-
-(def registers-with-effect-on-world #{"SHOT" "RADAR" "SPEEDX" "SPEEDY"})
-
-(defn tick-robot
-  "takes as input a data structure representing all that the robot's brain
-  needs to know about the world:
-
-  1) The robot program, consisting of a vector of two-part instructions
-  (a command, followed by an argument or nil) as well as a map of labels to 
-  instruction numbers
-  2) The instruction pointer (an index number for the instruction vector) 
-  3) The value of the accumulator, or nil
-  4) The call stack (a vector of instruction pointers to lines following
-  GOSUB calls)
-  5) The contents of all the registers
-
-  After executing one instruction, tick-robot returns the updated verion of all of the above, 
-  plus an optional :action field, to notify the world if the SHOT, SPEEDX, SPEEDY or RADAR 
-  registers have been pushed to."
-
-  [{:keys [acc instr-ptr call-stack registers program] :as state}]
-  (let [[{command :val} {unresolved-arg-val :val :as arg}] ((program :instrs) instr-ptr)
-        resolve #(resolve-arg % registers (program :labels))]
-    (case command
-      "GOTO"             (into state {:instr-ptr (resolve arg)})
-      "GOSUB"            (into state {:instr-ptr (resolve arg)
-                                      :call-stack (conj call-stack (inc instr-ptr))})
-      "ENDSUB"           (into state {:instr-ptr (peek call-stack)
-                                      :call-stack (pop call-stack)})
-      ("IF", ",")        (into state {:instr-ptr (inc instr-ptr)
-                                      :acc (resolve arg)})
-      ("+" "-" "*" "/")  (into state {:instr-ptr (inc instr-ptr)
-                                      :acc ((op-map command) acc (resolve arg))})
-      ("=" ">" "<" "#")  (if ((op-map command) acc (resolve arg))
-                           (into state {:instr-ptr (inc instr-ptr)})
-                           (into state {:instr-ptr (+ instr-ptr 2)}))
-      "TO"               (let [return-state (into state {:instr-ptr (inc instr-ptr)
-                                                         :registers (into registers {unresolved-arg-val acc})})]
-                           (if (registers-with-effect-on-world unresolved-arg-val)
-                             (conj return-state {:action unresolved-arg-val})
-                             return-state)))))
-
-(defn init-robot-state
-  "initialize all the state variables that go along
-  with the robot program when it's running.
-  (Optionally, pass in a hash-map of register names and values)." 
-  [program reg-names & [registers]]
-  {:program program
-   :acc 0
-   :instr-ptr 0
-   :registers (into (zipmap reg-names (repeat 0))
-                    registers)
-   :call-stack []})
+; TODO: Fill out this module.
+; Probably it will consist mostly of
+; 0) An init function, to initialize all the fields containing
+;    the external robot information. I think this should be
+;    SEPARATE FROM THE REGISTERS, even the ones that are similar.
+; 1) Specialty read and write functions for the registers
+; 2) Code to deal with the flag when the robot fires a shot (probably this
+;    will just involve passing the flag up to the world)
+; 3) Something else I can't remember. Maybe put some of the init-register
+;    and default-register and register-handling-in-general code in this 
+;    module, instead of in brain. Something to think about.
+; 4) GENERAL NOTES: A) CHANGE STRINGS TO KEYWORDS EARLY ON.
+;                   B) CHANGE SOME OF THESE MODULE LOADINGS FROM 
+;                      "USE" TO "REFER", SO THAT THEY HAVE TO USE
+;                      FULLY-QUALIFIED NAMES. THAT MIGHT MAKE THINGS
+;                      A BIT CLEARER. THE NAMES CAN BE SHORTENED QUITE A BIT,
+;                      WHEN LOADED INTO THE MODULES.
+;
+;(defn make-default-read [register]
+;  "takes a register and returns the default version of its :read function,
+;  which ignores the `world` parameter and just returns 
+;  the :val field from the register."
+;  (fn [_] 
+;    (:val register)))
+;
+;(defn make-default-write [robot-idx reg-name]
+;  "takes a robot-idx and a reg-name to locate a register, and
+;  returns the default version of that register's :write function,
+;  which takes a world parameter and a data value and returns the 
+;  world with the data value assoc'd into it."
+;  (fn [world data]
+;   (assoc-in world [:robots robot-idx :registers reg-name :val] data)))
+;
+;(def default-data 0)
+;
+;(defn default-register [robot-idx reg-name]
+;  (init-register 
+;    reg-name)) 
+;
+;
+;(defn init-robot
+;  [program x y]
+;  {:pos-x x
+;   :pos-y y
+;   :veloc-x 0
+;   :veloc-y 0
+;   :accel-x 0
+;   :accel-y 0
+;   :damage 100})
+;   
+;(defn init-world
+;  "initialize all the variables for a robot world"
+;  [width height programs]
+;  {:width width
+;   :height height
+;   :shells []
+;   :robots (vec (map-indexed (fn [idx program]
+;                               {:brain (init-brain 
+;                                         program 
+;                                         reg-names
+;                                         {(init-register "X" 
+;                                                         default-read 
+;                                                         default-write
+;                                                         (rand-int width))
+;                                          (init-register "Y"
+;                                                         default-read
+;                                                         default-write
+;                                                         (rand-int height))})
+;                                :icon (str idx)}) 
+;                             programs))})
+;
+;(defn tick-robot
+;  [robot world]
+;  (let [ticked (tick-brain robot world)]
+;    ))
