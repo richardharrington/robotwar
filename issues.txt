@@ -2,8 +2,4 @@ issues:
 
 1) better error-reporting. Start with pattern-matching on the instruction list to make sure everything is valid (i.e. that comparison operators have values after them, that 'if' statements are followed by comparisons, etc.
 
-2) get multiple lines to work when there are comments on each line
-
-3) include line number information in tokens, not just character information
-
 4) disallow recursion (if the stack already contains a pointer, do not allow it to be pushed again).
