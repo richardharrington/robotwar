@@ -55,21 +55,23 @@
 (def return-err (constantly "Invalid word or symbol"))
 
 (defn parse-token
-  "removes the token-str field and adds two new fields:
-  :val and :type, based on sending the :token-str value
-  through a series of parsing functions until a match is found."
-  [reg-names token]
+  "takes a vector of reg-names and a token with a token-str field and parses the token.
+  needs to work with the original token map by using dissoc and into
+  (rather than building a new one) because it contains line and column
+  number metadata."
+  [reg-names {token-str :token-str :as token}]
   (let [parser-priority 
         [[(set reg-names)  :register]
          [(set robotwar.kernel-lexicon/commands) :command]
          [str->int         :number]
          [valid-word       :label]
          [return-err       :error]]]
-    (loop [[[parser token-type] & tail] parser-priority]
-      (if-let [token-val (parser (:token-str token))]
-        (dissoc (into token {:val token-val, :type token-type})
-                :token-str) 
-        (recur tail)))))
+    (some
+      (fn [[parser token-type]]
+        (when-let [token-val (parser token-str)]
+          (dissoc (into token {:val token-val, :type token-type})
+                  :token-str)))
+        parser-priority)))
 
 (defn parse
   "take the tokens and convert them to structured source code ready for compiling.
@@ -80,8 +82,8 @@
          parsed-tokens []]
     (if (empty? tokens)
       parsed-tokens
-      (let [parsed-token (parse-token reg-names token)]
-        (if (= (:type parsed-token) :error)
+      (let [{token-type :type :as parsed-token} (parse-token reg-names token)]
+        (if (= token-type :error)
           parsed-token
           (recur tail (conj parsed-tokens parsed-token)))))))
 

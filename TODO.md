@@ -1,5 +1,3 @@
--- change parse function back to the way it was -- see outgoing email to Kevin
-
 -- change the robots associative structure from an array to a map, with keys like :0, :1, :2 etc., so that they can be removed during the battle without messing things up.
 
 -- change the robots so they have access to their own id keys, the same way the registers do, so that the robots can also have a write method which will know how to access itself in the world (and will return a world), and so that other functions won't have to provide id keys when they need to reference the robot and also alter the world -- they can just provide the robot and the world.
