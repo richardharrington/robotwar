@@ -10,7 +10,7 @@
   the parameters except the vector path to the register val, which is provided by 
   the let clojure."
   [reg-name robot-idx read-func write-func val]
-  (let [path-to-val [:robots robot-idx :register reg-name :val]]
+  (let [path-to-val [:robots robot-idx :registers reg-name :val]]
     {reg-name {:read (fn [world]
                        (read-func world path-to-val))
                :write (fn [world data]
