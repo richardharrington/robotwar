@@ -21,10 +21,10 @@
                        RANDOM RANDOM RANDOM RANDOM RANDOM
                        RANDOM RANDOM RANDOM RANDOM RANDOM " 
 
-                ; program 2: to test INDEX/DATA pair of registers
-                "     300 TO A
-                1 TO INDEX
-                DATA " ])
+                 ; program 2: to test INDEX/DATA pair of registers
+                 "     300 TO A
+                       1 TO INDEX
+                       DATA " ])
 
 (def len (count src-codes))
 (def idx-range (range len))
