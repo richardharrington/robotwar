@@ -1,7 +1,7 @@
 (ns robotwar.brain-test
   (:use [clojure.test]
         [robotwar.brain])
-  (:require (robotwar foundry game-lexicon)))
+  (:require [robotwar.game-lexicon]))
 
 (def src-codes [ ; program 0: multi-use program
                  " START 
@@ -39,8 +39,7 @@
                                      (assoc-in world path-to-val data))
                             :val 0}})))))
 
-(def brains (map (comp init-brain (partial robotwar.foundry/assemble robotwar.game-lexicon/reg-names))
-                 src-codes))
+(def brains (map init-brain src-codes))
 
 (def robots (vec (map (fn [idx brain robot-registers]
                         {:idx idx 
