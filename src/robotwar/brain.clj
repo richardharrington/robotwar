@@ -33,9 +33,7 @@
   {:acc 0
    :instr-ptr 0
    :call-stack []
-   :program (robotwar.foundry/assemble 
-              robotwar.game-lexicon/reg-names 
-              src-code)})
+   :program (robotwar.foundry/assemble src-code robotwar.game-lexicon/reg-names)})
 
 (defn resolve-arg [{arg-val :val arg-type :type} registers labels world]
   "resolves an instruction argument to a numeric value
