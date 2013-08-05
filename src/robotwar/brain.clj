@@ -1,9 +1,7 @@
 (ns robotwar.brain
   (:use [clojure.string :only [join]]
         [clojure.pprint :only [pprint]])
-  (:require (robotwar kernel-lexicon 
-                      game-lexicon 
-                      foundry)))
+  (:require (robotwar kernel-lexicon foundry)))
 
 (def op-map (into {} (for [op robotwar.kernel-lexicon/op-commands]
                        [op (case op
@@ -29,11 +27,11 @@
   "initialize the brain, meaning all the internal state variables that go along
   with the robot program when it's running, except for the registers,
   which are queried from the robot."
-  [src-code]
+  [src-code reg-names]
   {:acc 0
    :instr-ptr 0
    :call-stack []
-   :program (robotwar.foundry/assemble src-code robotwar.game-lexicon/reg-names)})
+   :program (robotwar.foundry/assemble src-code reg-names)})
 
 (defn resolve-arg [{arg-val :val arg-type :type} registers labels world]
   "resolves an instruction argument to a numeric value

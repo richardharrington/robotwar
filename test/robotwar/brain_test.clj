@@ -39,7 +39,7 @@
                                      (assoc-in world path-to-val data))
                             :val 0}})))))
 
-(def brains (map init-brain src-codes))
+(def brains (map #(init-brain % robotwar.game-lexicon/reg-names) src-codes))
 
 (def robots (vec (map (fn [idx brain robot-registers]
                         {:idx idx 
