@@ -1,7 +1,7 @@
 (ns robotwar.brain
   (:use [clojure.string :only [join]]
-        [clojure.pprint :only [pprint]]
-        [robotwar.kernel-lexicon]))
+        [clojure.pprint :only [pprint]])
+  (:require [robotwar.kernel-lexicon]))
 
 (def op-map (into {} (for [op robotwar.kernel-lexicon/op-commands]
                        [op (case op
