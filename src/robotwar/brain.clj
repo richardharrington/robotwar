@@ -31,7 +31,7 @@
   {:acc 0
    :instr-ptr 0
    :call-stack []
-   :program (robotwar.foundry/assemble src-code reg-names)})
+   :obj-code (robotwar.foundry/assemble src-code reg-names)})
 
 (defn resolve-arg [{arg-val :val arg-type :type} registers labels world]
   "resolves an instruction argument to a numeric value
@@ -54,11 +54,11 @@
 
   [robot world]
   (let [{:keys [registers brain]} robot
-        {:keys [program acc instr-ptr call-stack]} brain
-        {:keys [instrs labels]} program]
+        {:keys [obj-code acc instr-ptr call-stack]} brain
+        {:keys [instrs labels]} obj-code]
     (if (>= instr-ptr (count instrs))
       world
-      (let [[{command :val} arg] ((:instrs program) instr-ptr)
+      (let [[{command :val} arg] ((:instrs obj-code) instr-ptr)
             resolve #(resolve-arg % registers labels world)
             assoc-world-brain #(assoc-in world [:robots (:idx robot) :brain] (into brain %))]
         (case command
