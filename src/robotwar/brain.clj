@@ -56,7 +56,6 @@
   (let [{:keys [registers brain]} robot
         {:keys [program acc instr-ptr call-stack]} brain
         {:keys [instrs labels]} program]
-    ;(println acc instr-ptr call-stack instrs labels program brain robot)
     (if (>= instr-ptr (count instrs))
       world
       (let [[{command :val} arg] ((:instrs program) instr-ptr)
