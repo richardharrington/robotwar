@@ -14,7 +14,7 @@
 ; their ugly full system-names of the read and write functions.) Very convenient.
 
 (def get-robot (fn [world-tick-idx robot-idx]
-                 ((:robots (get-world world-tick-idx robot-idx)) robot-idx)))
+                 ((:robots (get-world world-tick-idx robot-idx worlds)) robot-idx)))
 
 (def ppt (fn [world-tick-idx robot-idx & [reg-keys]]
            (let [{:keys [brain registers] :as robot} (get-robot world-tick-idx robot-idx)]
