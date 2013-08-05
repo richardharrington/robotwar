@@ -11,22 +11,22 @@
 
 (defn read-register
   "a function to query the robot housing this brain, for information
-  from the registers. takes a reg-name, a robot and a world,
-  and returns the running of the register's read function on the world."
+  from the registers. takes a register and a world, and returns the 
+  result of running the register's read function on the world."
   [{read :read} world]
     (read world))  
 
 (defn write-register
   "a function to create a new world when the brain pushes data to a register.
-  takes a reg-name, a robot, a world, and data,
-  and returns the running of the register's write function on the data and the world." 
+  takes a register, a world, and data, and returns the result of running the 
+  register's write function on the data and the world." 
   [{write :write} world data]
     (write world data)) 
 
 (defn init-brain
   "initialize the brain, meaning all the internal state variables that go along
   with the robot program when it's running, except for the registers,
-  which are queried from the world (or the robot -- haven't decided yet)."
+  which are queried from the robot."
   [program]
   {:acc 0
    :instr-ptr 0
@@ -43,10 +43,10 @@
     nil))
 
 (defn step-brain
-  "takes a `world` and a pathway to a brain in that world, called `brain-path`.
+  "takes a robot and a world. returns a world.
   
   Only the brain (the internal state of the robot)
-  will be different when we pass it back, for all of the operations 
+  will be different in the new world we pass back, for all of the operations 
   except 'TO', which may also alter the external state of the robot, or the wider world.
 
   (returns the current state of the world untouched if the instruction pointer
