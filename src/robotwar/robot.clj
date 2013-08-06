@@ -56,9 +56,9 @@
                        (registers (robotwar.game-lexicon/reg-names (:val index-register)))))]
              (init-register "DATA" robot-idx
                (fn [world path-to-val]
-                 (robotwar.brain/read-register (target-register world path-to-val)))
+                 (robotwar.brain/read-register (target-register world path-to-val) world))
                (fn [world path-to-val data]
-                 (robotwar.brain/write-register (target-register world) data))
+                 (robotwar.brain/write-register (target-register world) world data))
                0))
 
            ; RANDOM
