@@ -3,6 +3,10 @@
   (:require [robotwar.brain :as brain]
             [robotwar.game-lexicon :as game-lexicon]))
 
+; TICK_DURATION is in seconds. 
+; TODO: should be passed in from some higher level module, or a config module.
+(def TICK_DURATION 1)
+
 (defn init-register 
   "takes a reg-name and a robot-idx (needed to locate the register in the world),
   as well as a read-func, a write-func, and a val. The read-func and write-func
