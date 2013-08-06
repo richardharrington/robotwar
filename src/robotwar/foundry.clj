@@ -1,5 +1,5 @@
 (ns robotwar.foundry
-  (:require [robotwar.kernel-lexicon])
+  (:require [robotwar.kernel-lexicon :as kernel-lexicon])
   (:use (clojure [string :only [split join]] 
                  [pprint :only [pprint]])
         [clojure.core.match :only [match]]))
@@ -22,7 +22,7 @@
   (map #(re-find #"[^;]*" %) lines))
 
 (def lex-re 
-  (let [op-string (join robotwar.kernel-lexicon/op-commands)]
+  (let [op-string (join kernel-lexicon/op-commands)]
     (re-pattern (str "[" op-string "]|[^" op-string "\\s]+"))))
 
 (defn lex-line
@@ -48,7 +48,7 @@
        (catch Exception e nil)))
 
 (defn valid-word
-   "Capital letters and numbers, starting with a capital letter"
+  "Capital letters and numbers, starting with a capital letter"
   [s]
   (re-matches #"^[A-Z][A-Z\d]*" s))
 
@@ -62,7 +62,7 @@
   [{token-str :token-str :as token} reg-names]
   (let [parser-priority 
         [[(set reg-names)  :register]
-         [(set robotwar.kernel-lexicon/commands) :command]
+         [(set kernel-lexicon/commands) :command]
          [str->int         :number]
          [valid-word       :label]
          [return-err       :error]]]
@@ -71,7 +71,7 @@
         (when-let [token-val (parser token-str)]
           (dissoc (into token {:val token-val, :type token-type})
                   :token-str)))
-        parser-priority)))
+      parser-priority)))
 
 (defn parse
   "take the tokens and convert them to structured source code ready for compiling.
@@ -99,8 +99,8 @@
         (and (= current-val "-") 
              (= next-type :number) 
              (not (#{:number :register} prev-type)))
-          (recur (rest tail) 
-                 (conj results (into current-token {:val (- next-val), :type :number}))) 
+        (recur (rest tail) 
+               (conj results (into current-token {:val (- next-val), :type :number}))) 
         :otherwise (recur tail (conj results current-token))))))
 
 (defn make-instr-pairs
@@ -115,12 +115,12 @@
     (if (empty? tokens)
       result
       (match [token]
-        [{:type (:or :number :register)}] 
-          (recur tail (conj result [(into token {:val ",", :type :command}) token]))
-        [(:or {:type :label} {:type :command, :val "ENDSUB"})]
-          (recur tail (conj result [token nil]))
-        [{:type :command}] 
-          (recur (rest tail) (conj result [token (first tail)]))))))
+             [{:type (:or :number :register)}] 
+             (recur tail (conj result [(into token {:val ",", :type :command}) token]))
+             [(:or {:type :label} {:type :command, :val "ENDSUB"})]
+             (recur tail (conj result [token nil]))
+             [{:type :command}] 
+             (recur (rest tail) (conj result [token (first tail)]))))))
 
 ; TODO: preserve :line and :pos metadata with labels,
 ; when labels are transferred from the instruction list to the label map
@@ -148,9 +148,9 @@
   So far only parse implements error-checking."
   (let [parse-with-reg-names #(parse % reg-names)
         lexed (-> src-code split-lines strip-comments lex)]
-   (reduce (fn [result step]
-             (if (= (:type result) :error)
-               result
-               (step result)))
-           lexed
-           [parse-with-reg-names disambiguate-minus-signs make-instr-pairs map-labels])))
+    (reduce (fn [result step]
+              (if (= (:type result) :error)
+                result
+                (step result)))
+            lexed
+            [parse-with-reg-names disambiguate-minus-signs make-instr-pairs map-labels])))

@@ -1,6 +1,6 @@
 (ns robotwar.world
   (:use [clojure.string :only [join]])
-  (:require [robotwar.robot]))
+  (:require [robotwar.robot :as robot]))
 
 (defn init-world
   "initialize all the variables for a robot world."
@@ -9,9 +9,12 @@
    :height height
    :shells []
    :robots (vec (map-indexed (fn [idx program]
-                               (robotwar.robot/init-robot idx program {:pos-x (rand-int width)
-                                                                       :pos-y (rand-int height)
-                                                                       :damage 100}))
+                               (robot/init-robot 
+                                 idx 
+                                 program 
+                                 {:pos-x (rand-int width)
+                                  :pos-y (rand-int height)
+                                  :damage 100}))
                              programs))
    :robot-idx 0})
 
@@ -22,7 +25,7 @@
   each robot. Because otherwise, do we step the shells after every 
   single robot has their turn?"
   [{:keys [robots robot-idx] :as world}]
-  (assoc (robotwar.robot/step-robot (robots robot-idx) world)
+  (assoc (robot/step-robot (robots robot-idx) world)
          :robot-idx
          (mod (inc robot-idx) (count robots))))
 

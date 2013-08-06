@@ -1,6 +1,7 @@
 (ns robotwar.robot
   (:use [clojure.string :only [join]])
-  (:require (robotwar brain game-lexicon)))
+  (:require [robotwar.brain :as brain]
+            [robotwar.game-lexicon :as game-lexicon]))
 
 (defn init-register 
   "takes a reg-name and a robot-idx (needed to locate the register in the world),
@@ -36,13 +37,13 @@
   [reg-name robot-idx field-name val]
   (init-register reg-name robot-idx 
                  (fn [world path-to-val]
-                  (field-name (get-robot world path-to-val))) 
+                   (field-name (get-robot world path-to-val))) 
                  (fn [world _ _] world) 
                  val))
 
 (defn init-registers
   [robot-idx attributes]
-  (let [storage-registers (into {} (for [reg-name robotwar.game-lexicon/storage-reg-names]
+  (let [storage-registers (into {} (for [reg-name game-lexicon/storage-reg-names]
                                      (init-default-register reg-name robot-idx)))]
     (into storage-registers
           [
@@ -53,12 +54,12 @@
            (letfn [(target-register [world path-to-val]
                      (let [registers (get-registers world path-to-val)
                            index-register (registers "INDEX")]
-                       (registers (robotwar.game-lexicon/reg-names (:val index-register)))))]
+                       (registers (game-lexicon/reg-names (:val index-register)))))]
              (init-register "DATA" robot-idx
                (fn [world path-to-val]
-                 (robotwar.brain/read-register (target-register world path-to-val) world))
+                 (brain/read-register (target-register world path-to-val) world))
                (fn [world path-to-val data]
-                 (robotwar.brain/write-register (target-register world) world data))
+                 (brain/write-register (target-register world) world data))
                0))
 
            ; RANDOM
@@ -87,7 +88,7 @@
    :accel-y 0
    :damage (:damage attributes)
    :registers (init-registers idx attributes)
-   :brain (robotwar.brain/init-brain src-code robotwar.game-lexicon/reg-names)})
+   :brain (brain/init-brain src-code game-lexicon/reg-names)})
 
 (defn step-robot
   "takes a robot and a world and returns the new state of the world
@@ -97,5 +98,5 @@
   [robot world]
   (if (<= (:damage robot) 0)
     world
-    (robotwar.brain/step-brain robot world)))
+    (brain/step-brain robot world)))
 

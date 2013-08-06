@@ -1,9 +1,10 @@
 (ns robotwar.brain
   (:use [clojure.string :only [join]]
         [clojure.pprint :only [pprint]])
-  (:require (robotwar kernel-lexicon foundry)))
+  (:require [robotwar.kernel-lexicon :as kernel-lexicon]
+            [robotwar.foundry :as foundry]))
 
-(def op-map (into {} (for [op robotwar.kernel-lexicon/op-commands]
+(def op-map (into {} (for [op kernel-lexicon/op-commands]
                        [op (case op
                              "/" #(int (Math/round (float (/ %1 %2))))
                              "#" not=
@@ -14,14 +15,14 @@
   from the registers. takes a register and a world, and returns the 
   result of running the register's read function on the world."
   [{read :read} world]
-    (read world))  
+  (read world))  
 
 (defn write-register
   "a function to create a new world when the brain pushes data to a register.
   takes a register, a world, and data, and returns the result of running the 
   register's write function on the data and the world." 
   [{write :write} world data]
-    (write world data)) 
+  (write world data)) 
 
 (defn init-brain
   "initialize the brain, meaning all the internal state variables that go along
@@ -31,7 +32,7 @@
   {:acc 0
    :instr-ptr 0
    :call-stack []
-   :obj-code (robotwar.foundry/assemble src-code reg-names)})
+   :obj-code (foundry/assemble src-code reg-names)})
 
 (defn resolve-arg [{arg-val :val arg-type :type} registers labels world]
   "resolves an instruction argument to a numeric value
@@ -44,7 +45,7 @@
 
 (defn step-brain
   "takes a robot and a world. returns a world.
-  
+
   Only the brain (the internal state of the robot)
   will be different in the new world we pass back, for all of the operations 
   except 'TO', which may also alter the external state of the robot, or the wider world.

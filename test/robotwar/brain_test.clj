@@ -1,7 +1,7 @@
 (ns robotwar.brain-test
   (:use [clojure.test]
         [robotwar.brain])
-  (:require [robotwar.world]))
+  (:require [robotwar.world :as world]))
 
 (def src-codes [ ; program 0: multi-use program
                  " START 
@@ -26,36 +26,36 @@
                        1 TO INDEX
                        DATA " ])
 
-(def initial-world (robotwar.world/init-world 256 256 src-codes))
-(def worlds (iterate robotwar.world/tick-world initial-world))
+(def initial-world (world/init-world 256 256 src-codes))
+(def worlds (iterate world/tick-world initial-world))
 
 (deftest branching-test
   (testing "comparison statement should cause jump in instr-ptr"
-    (is (= (get-in (robotwar.world/get-world 4 0 worlds) [:robots 0 :brain :instr-ptr])
+    (is (= (get-in (world/get-world 4 0 worlds) [:robots 0 :brain :instr-ptr])
            5))))
 
 (deftest arithmetic-test
   (testing "addition"
-    (is (= (get-in (robotwar.world/get-world 7 0 worlds) [:robots 0 :brain :acc])
+    (is (= (get-in (world/get-world 7 0 worlds) [:robots 0 :brain :acc])
            1))))
 
 (deftest gosub-test
   (testing "gosub should move instr-ptr and add the return-ptr to the call stack"
     (is (let [{:keys [instr-ptr call-stack]} 
-              (get-in (robotwar.world/get-world 5 0 worlds) [:robots 0 :brain])]
+              (get-in (world/get-world 5 0 worlds) [:robots 0 :brain])]
           (= [instr-ptr call-stack]
              [9 [6]])))))
 
 (deftest endsub-test
   (testing "endsub pops instr-ptr off call stack and goes there"
     (is (let [{:keys [instr-ptr call-stack]} 
-              (get-in (robotwar.world/get-world 9 0 worlds) [:robots 0 :brain])]
+              (get-in (world/get-world 9 0 worlds) [:robots 0 :brain])]
           (= [instr-ptr call-stack]
              [6 []])))))
 
 (deftest push-test
   (testing "pushing number to register"
-    (is (= (get-in (robotwar.world/get-world 8 0 worlds) [:robots 0 :registers "A" :val])
+    (is (= (get-in (world/get-world 8 0 worlds) [:robots 0 :registers "A" :val])
            1))))
 
 ;(deftest random-test
