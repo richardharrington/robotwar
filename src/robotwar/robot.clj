@@ -87,6 +87,30 @@
 
            ; TODO: SHOT AND RADAR
 
+(defn time-to-reach-desired-velocity
+  [vi vf a]
+  (let [v-diff (- vf vi)]
+    (if (zero? v-diff)
+      0
+      (double (/ v-diff a)))))
+
+(defn distance-with-constant-acceleration
+  [vi a t]
+  (double (+ (* vi t) (/ (* a (Math/pow t 2)) 2))))
+
+(defn distance-with-desired-velocity
+  "calculates distance travelled in either of two cases: 
+  1) when the desired velocity is not reached during the 
+  given time interval, in which case it's just 
+  distance-from-constant-acceleration, and 
+  2) when we reach the desired velocity (or are already there)
+  and then cruise the rest of the way." 
+  [vi vf a t]
+  (let [t' (time-to-reach-desired-velocity vi vf a)]
+    (if (<= t t')
+      (distance-with-constant-acceleration vi a t)
+      (+ (distance-with-constant-acceleration vi a t') 
+         (distance-with-constant-acceleration vf 0 (- t t'))))))
 
 (defn init-robot
   [idx src-code attributes]
