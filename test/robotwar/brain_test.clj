@@ -58,6 +58,21 @@
     (is (= (get-in (world/get-world 8 0 worlds) [:robots 0 :registers "A" :val])
            1))))
 
+; remaining tests will use a different method: 
+; just push and pull from one sample world and one sample robot
+
+(def sample-world (world/get-world 0 0 worlds))
+(def sample-robot ((:robots sample-world) 0))
+
+(deftest random-test
+  (testing "push to random register and pull a series of numbers all different
+           from random register"
+    (let [random-register (get-in sample-robot [:registers "RANDOM"])
+          new-world (write-register random-register sample-world 1000)
+          random-nums (repeatedly 5 (partial read-register random-register new-world))]
+    (is (= (get-in new-world [:robots 0 :registers "RANDOM" :val])
+           1000))
+    (is (every? #(< -1 % 1000) random-nums))))) 
 ;(deftest random-test
 ;  (testing "push to random register and pull from it to receive a number
 ;           of unequal numbers less than the number that was pushed"
