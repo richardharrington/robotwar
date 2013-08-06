@@ -34,10 +34,10 @@
                  ((:robots (world/get-world 
                              world-tick-idx 
                              robot-idx 
-                             brain-test/worlds)) 
+                             worlds)) 
                   robot-idx)))
 
-(def ppt (fn [worlds world-tick-idx robot-idx & [reg-keys]]
+(def ppt (fn [worlds world-tick-idx robot-idx & reg-keys]
            (let [{:keys [brain registers] :as robot} 
                  (get-robot worlds world-tick-idx robot-idx)]
              (pprint 
