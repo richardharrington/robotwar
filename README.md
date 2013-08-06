@@ -1,3 +1,6 @@
+RobotWar
+--------
+
 A reverse-engineered version (in Clojure) of Silas Warner's 1981 Apple II game, RobotWar.
 
 In RobotWar, players write programs in a language created specifically for the game, which is compiled down to a virtual machine code and then used as an AI for a (virtual) robot in arena battles against other players' robots.
