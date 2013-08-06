@@ -73,7 +73,7 @@
                           assoc-in
                           0)
 
-           ;X and Y and DAMAGE
+           ; X and Y and DAMAGE
            (init-read-only-register "X" robot-idx :pos-x (:pos-x attributes))
            (init-read-only-register "Y" robot-idx :pos-y (:pos-y attributes))
            (init-read-only-register "DAMAGE" robot-idx :damage (:damage attributes))])))
