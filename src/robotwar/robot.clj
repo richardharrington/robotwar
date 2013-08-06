@@ -96,7 +96,7 @@
   TODO: add a lot more stuff here that happens after the step-brain function,
   like moving the robot. Actually, that's the main thing."
   [robot world]
-  (if (<= (:damage robot) 0)
+  (if (>= (:damage robot) 100)
     world
     (brain/step-brain robot world)))
 
