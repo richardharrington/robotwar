@@ -150,10 +150,10 @@
   (if (>= (:damage robot) 100)
     world
     (let [new-world (brain/step-brain robot world)
-          new-robot (get-in world [new-world :robots robot-idx])
-          desired-v-x (do (pprint new-robot) (brain/read-register 
+          new-robot (get-in new-world [:robots robot-idx])
+          desired-v-x (brain/read-register 
                         (get-in new-robot [:registers "SPEEDX"]) 
-                        new-world))
+                        new-world)
           desired-v-y (brain/read-register 
                         (get-in new-robot [:registers "SPEEDY"]) 
                         new-world)
@@ -164,8 +164,8 @@
       (assoc-in 
         new-world 
         [:robots robot-idx] 
-        (into robot {:pos-x pos-x
-                     :pos-y pos-y
-                     :v-x v-x
-                     :v-y v-y})))))
+        (into new-robot {:pos-x pos-x
+                         :pos-y pos-y
+                         :v-x v-x
+                         :v-y v-y})))))
 
