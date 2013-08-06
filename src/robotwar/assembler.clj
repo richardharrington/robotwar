@@ -1,4 +1,4 @@
-(ns robotwar.foundry
+(ns robotwar.assembler
   (:require [robotwar.kernel-lexicon :as kernel-lexicon])
   (:use (clojure [string :only [split join]] 
                  [pprint :only [pprint]])

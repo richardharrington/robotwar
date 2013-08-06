@@ -2,7 +2,7 @@
   (:use [clojure.string :only [join]]
         [clojure.pprint :only [pprint]])
   (:require [robotwar.kernel-lexicon :as kernel-lexicon]
-            [robotwar.foundry :as foundry]))
+            [robotwar.assembler :as assembler]))
 
 (def op-map (into {} (for [op kernel-lexicon/op-commands]
                        [op (case op
@@ -32,7 +32,7 @@
   {:acc 0
    :instr-ptr 0
    :call-stack []
-   :obj-code (foundry/assemble src-code reg-names)})
+   :obj-code (assembler/assemble src-code reg-names)})
 
 (defn resolve-arg [{arg-val :val arg-type :type} registers labels world]
   "resolves an instruction argument to a numeric value

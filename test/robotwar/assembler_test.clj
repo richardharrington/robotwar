@@ -1,7 +1,7 @@
-(ns robotwar.foundry-test
+(ns robotwar.assembler-test
   (:use (clojure [string :only [join]]
                  [test])
-        [robotwar.foundry])
+        [robotwar.assembler])
   (:require [robotwar.game-lexicon :as game-lexicon]))
 
 (def line1 "IF DAMAGE # D GOTO MOVE    ; comment or something")

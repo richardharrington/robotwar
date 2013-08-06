@@ -1,6 +1,6 @@
 (ns robotwar.core
   (:use [clojure.pprint])
-  (:require [robotwar.foundry :as foundry]
+  (:require [robotwar.assembler :as assembler]
             [robotwar.brain :as braini]
             [robotwar.robot :as robot]
             [robotwar.world :as world]
