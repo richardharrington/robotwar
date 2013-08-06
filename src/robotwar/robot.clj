@@ -1,6 +1,6 @@
 (ns robotwar.robot
-  (:use [clojure.string :only [join]]
-        (robotwar brain game-lexicon)))
+  (:use [clojure.string :only [join]])
+  (:require (robotwar brain game-lexicon)))
 
 (defn init-register 
   "takes a reg-name and a robot-idx (needed to locate the register in the world),
