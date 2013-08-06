@@ -51,9 +51,16 @@
                                      (init-default-register reg-name robot-idx)))]
     (into storage-registers
           [
-           ; INDEX
+           ; AIM, INDEX, SPEEDX and SPEEDY.
+           ; AIM and INDEX's specialized behaviors are only when they're used by
+           ; SHOT and DATA, respectively. In themselves, they're only default registers.
+           ; Likewise, SPEEDX and SPEEDY are used later in step-robot to determine
+           ; the appropriate acceleration, which may have to applied over several ticks.
+           (init-default-register "AIM" robot-idx)
            (init-default-register "INDEX" robot-idx)
-
+           (init-default-register "SPEEDX" robot-idx)
+           (init-default-register "SPEEDY" robot-idx)
+           
            ; DATA
            (letfn [(target-register [world path-to-val]
                      (let [registers (get-registers world path-to-val)
