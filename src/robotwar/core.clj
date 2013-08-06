@@ -8,8 +8,20 @@
             [robotwar.brain-test :as brain-test]))
 
 ; this is a hacky place for messing with stuff. currently imports 
-; all the test data from brain-test, and the function below uses
-; some of those variables to 
+; all the test data from brain-test.
+
+(def world (nth brain-test/worlds 0))
+(def robots (:robots world))
+(def robot (robots 0))
+(def registers (:registers robot))
+(def rr brain/read-register)
+(def wr brain/write-register)
+
+(defn rv [reg-name] (get-in registers [reg-name :val]))
+
+
+
+; ppt uses some of those variables to 
 ; pretty-print a robot-state with line numbers for the obj-code instructions, 
 ; and only the registers you want. Very convenient.
 ;
@@ -18,16 +30,16 @@
 ; (also it only prints the values of the registers, not the register-maps with
 ; their ugly full system-names of the read and write functions.) Very convenient.
 
-(def get-robot (fn [world-tick-idx robot-idx]
+(def get-robot (fn [worlds world-tick-idx robot-idx]
                  ((:robots (world/get-world 
                              world-tick-idx 
                              robot-idx 
                              brain-test/worlds)) 
                   robot-idx)))
 
-(def ppt (fn [world-tick-idx robot-idx & [reg-keys]]
+(def ppt (fn [worlds world-tick-idx robot-idx & [reg-keys]]
            (let [{:keys [brain registers] :as robot} 
-                 (get-robot world-tick-idx robot-idx)]
+                 (get-robot worlds world-tick-idx robot-idx)]
              (pprint 
                (into robot 
                      {:brain (assoc-in 
