@@ -1,7 +1,7 @@
 (ns robotwar.core
   (:use [clojure.pprint])
   (:require [robotwar.assembler :as assembler]
-            [robotwar.brain :as braini]
+            [robotwar.brain :as brain]
             [robotwar.robot :as robot]
             [robotwar.world :as world]
             [robotwar.game-lexicon :as game-lexicon]
