@@ -1,11 +1,13 @@
 (ns robotwar.robot
-  (:use [clojure.string :only [join]])
+  (:use [clojure.string :only [join]]
+        [clojure.pprint :only [pprint]])
   (:require [robotwar.brain :as brain]
             [robotwar.game-lexicon :as game-lexicon]))
 
-; TICK_DURATION is in seconds. 
+; TICK_DURATION is in seconds. MAX_ACCEL is in decimeters per second per second. 
 ; TODO: should be passed in from some higher level module, or a config module.
 (def TICK_DURATION 1)
+(def MAX_ACCEL 40)
 
 (defn init-register 
   "takes a reg-name and a robot-idx (needed to locate the register in the world),
@@ -87,40 +89,53 @@
 
            ; TODO: SHOT AND RADAR
 
-(defn time-to-reach-desired-velocity
+; yay classical mechanics
+
+(defn time-to-reach-desired-v
   [vi vf a]
   (let [v-diff (- vf vi)]
     (if (zero? v-diff)
       0
       (double (/ v-diff a)))))
 
-(defn distance-with-constant-acceleration
+(defn d-with-constant-a
   [vi a t]
   (double (+ (* vi t) (/ (* a (Math/pow t 2)) 2))))
 
-(defn distance-with-desired-velocity
-  "calculates distance travelled in either of two cases: 
+(defn v-with-constant-a
+  [vi a t]
+  (+ vi (* a t)))
+
+(defn d-and-v-given-desired-v
+  "returns a vector of distance and velocity at final position.
+  the function deals with either of two cases:
   1) when the desired velocity is not reached during the 
   given time interval, in which case it's just 
   distance-from-constant-acceleration, and 
   2) when we reach the desired velocity (or are already there)
   and then cruise the rest of the way." 
   [vi vf a t]
-  (let [t' (time-to-reach-desired-velocity vi vf a)]
+  (let [t' (time-to-reach-desired-v vi vf a)]
     (if (<= t t')
-      (distance-with-constant-acceleration vi a t)
-      (+ (distance-with-constant-acceleration vi a t') 
-         (distance-with-constant-acceleration vf 0 (- t t'))))))
+      [(d-with-constant-a vi a t) (v-with-constant-a vi a t)]
+      [(+ (d-with-constant-a vi a t') (d-with-constant-a vf 0 (- t t'))) vf])))
+
+; TODO: velocity-given-desired-velocity-and-distance or something 
+; like that, to figure out the velocity at the point when
+; we collide with the wall or another robot, so we can know the kinetic
+; energy and thus the damage.
 
 (defn init-robot
+  "takes a robot-idx, a program, and a robot attribute map and returns a robot.
+  The distance and distance/time units are all in decimeters and
+  decimeters per second. Yes, you read that right. Don't ask. It fits
+  best with the original specs of the game."
   [idx src-code attributes]
   {:idx idx
    :pos-x (:pos-x attributes)
    :pos-y (:pos-y attributes)
-   :veloc-x 0
-   :veloc-y 0
-   :accel-x 0
-   :accel-y 0
+   :v-x 0
+   :v-y 0
    :damage (:damage attributes)
    :registers (init-registers idx attributes)
    :brain (brain/init-brain src-code game-lexicon/reg-names)})
@@ -128,10 +143,29 @@
 (defn step-robot
   "takes a robot and a world and returns the new state of the world
   after the robot has taken its turn.
-  TODO: add a lot more stuff here that happens after the step-brain function,
-  like moving the robot. Actually, that's the main thing."
-  [robot world]
+  TODO: add support for collision with walls first (right now it just 
+  stops when it gets there, and doesn't get damaged or bounce), 
+  then support for collision with other robots." 
+  [{robot-idx :idx :as robot} world]
   (if (>= (:damage robot) 100)
     world
-    (brain/step-brain robot world)))
+    (let [new-world (brain/step-brain robot world)
+          new-robot (get-in world [new-world :robots robot-idx])
+          desired-v-x (do (pprint new-robot) (brain/read-register 
+                        (get-in new-robot [:registers "SPEEDX"]) 
+                        new-world))
+          desired-v-y (brain/read-register 
+                        (get-in new-robot [:registers "SPEEDY"]) 
+                        new-world)
+          [pos-x v-x] (d-and-v-given-desired-v (:v-x robot) desired-v-x 
+                                               MAX_ACCEL TICK_DURATION)
+          [pos-y v-y] (d-and-v-given-desired-v (:v-y robot) desired-v-y 
+                                               MAX_ACCEL TICK_DURATION)]
+      (assoc-in 
+        new-world 
+        [:robots robot-idx] 
+        (into robot {:pos-x pos-x
+                     :pos-y pos-y
+                     :v-x v-x
+                     :v-y v-y})))))
 
