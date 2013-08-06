@@ -34,7 +34,7 @@
                  ((:robots (world/get-world 
                              world-tick-idx 
                              robot-idx 
-                             brain-test/worlds)) 
+                             worlds)) 
                   robot-idx)))
 
 (def ppt (fn [worlds world-tick-idx robot-idx & [reg-keys]]
