@@ -9,11 +9,9 @@
    :height height
    :shells []
    :robots (vec (map-indexed (fn [idx program]
-                               (robotwar.robot/init-robot
-                                 idx
-                                 (rand-int width)
-                                 (rand-int height)
-                                 program))
+                               (robotwar.robot/init-robot idx program {:pos-x (rand-int width)
+                                                                       :pos-y (rand-int height)
+                                                                       :damage 100}))
                              programs))
    :robot-idx 0})
 

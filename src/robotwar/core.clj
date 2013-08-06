@@ -1,6 +1,6 @@
 (ns robotwar.core
-  (:use [clojure.pprint]
-        (robotwar foundry brain robot world game-lexicon brain-test)))
+  (:use [clojure.pprint])
+  (:require (robotwar foundry brain robot world game-lexicon brain-test)))
 
 ; this is a hacky place for messing with stuff. currently imports 
 ; all the test data from brain-test, and the function below uses
@@ -14,7 +14,11 @@
 ; their ugly full system-names of the read and write functions.) Very convenient.
 
 (def get-robot (fn [world-tick-idx robot-idx]
-                 ((:robots (get-world world-tick-idx robot-idx worlds)) robot-idx)))
+                 ((:robots (robotwar.world/get-world 
+                             world-tick-idx 
+                             robot-idx 
+                             robotwar.brain-test/worlds)) 
+                  robot-idx)))
 
 (def ppt (fn [world-tick-idx robot-idx & [reg-keys]]
            (let [{:keys [brain registers] :as robot} (get-robot world-tick-idx robot-idx)]
@@ -24,6 +28,5 @@
                                brain 
                                [:obj-code :instrs]
                                (sort (zipmap (range) (get-in brain [:obj-code :instrs]))))
-                      :registers (sort (into {} (for [[reg-name reg-map]
-                                                      (select-keys registers reg-keys)]
+                      :registers (sort (into {} (for [[reg-name reg-map] (select-keys registers reg-keys)]
                                                   {reg-name (:val reg-map)})))})))))
