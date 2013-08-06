@@ -16,12 +16,7 @@
                        ENDSUB 
                        200 TO A "
                 
-                 ; program 1: to test RANDOM register
-                 "     1000 TO RANDOM
-                       RANDOM RANDOM RANDOM RANDOM RANDOM
-                       RANDOM RANDOM RANDOM RANDOM RANDOM " 
-
-                 ; program 2: to test INDEX/DATA pair of registers
+                 ; program 1: to test INDEX/DATA pair of registers
                  "     300 TO A
                        1 TO INDEX
                        DATA " ])
@@ -58,6 +53,12 @@
     (is (= (get-in (world/get-world 8 0 worlds) [:robots 0 :registers "A" :val])
            1))))
 
+(deftest index-data-pair-test
+  (testing "registers whose index numbers are push to INDEX can
+           be referenced by accessing DATA"
+    (is (= (get-in (world/get-world 5 1 worlds) [:robots 1 :registers "A" :val])
+           300))))
+
 ; remaining tests will use a different method: 
 ; just push and pull from one sample world and one sample robot
 
@@ -73,20 +74,4 @@
     (is (= (get-in new-world [:robots 0 :registers "RANDOM" :val])
            1000))
     (is (every? #(< -1 % 1000) random-nums))))) 
-;(deftest random-test
-;  (testing "push to random register and pull from it to receive a number
-;           of unequal numbers less than the number that was pushed"
-;    (is (let [random-pairs (map (fn [n]
-;                                  (let [{{random "RANDOM"} :registers, acc :acc} 
-;                                        (nth random-check-history n)]
-;                                    [random acc])) 
-;                                (range 3 13))]
-;          (and (every? #{1000} (map first random-pairs))
-;               (every? #(< -1 % 1000) (map second random-pairs))
-;               (apply not= (map second random-pairs)))))))
-;
-;(deftest index-data-pair-test
-;  (testing "registers whose index numbers are pushed to INDEX can
-;           be referenced by accessing DATA"
-;    (is (= (get-in (nth index-data-check-history 5) [:registers "A"])
-;           300))))
+
