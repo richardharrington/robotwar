@@ -85,8 +85,8 @@
            (init-read-only-register "Y" robot-idx :pos-y (:pos-y attributes))
            (init-read-only-register "DAMAGE" robot-idx :damage (:damage attributes))])))
 
-; REGISTERS DONE: "X" "Y" "DAMAGE" "RANDOM" "INDEX" "DATA" 
-; REGISTERS TODO: "AIM" "SHOT" "RADAR" "SPEEDX" "SPEEDY" 
+           ; TODO: SHOT AND RADAR
+
 
 (defn init-robot
   [idx src-code attributes]
