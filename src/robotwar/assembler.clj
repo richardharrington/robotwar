@@ -1,8 +1,12 @@
 (ns robotwar.assembler
-  (:require [robotwar.kernel-lexicon :as kernel-lexicon])
   (:use (clojure [string :only [split join]] 
                  [pprint :only [pprint]])
         [clojure.core.match :only [match]]))
+
+(def op-commands    [ "-" "+" "*" "/" "=" "#" "<" ">" ])
+(def word-commands  [ "TO" "IF" "GOTO" "GOSUB" "ENDSUB" ])
+
+(def commands (concat op-commands word-commands))
 
 (defn re-seq-with-pos
   "Returns a lazy sequence of successive matches of pattern in string with position.
@@ -22,7 +26,7 @@
   (map #(re-find #"[^;]*" %) lines))
 
 (def lex-re 
-  (let [op-string (join kernel-lexicon/op-commands)]
+  (let [op-string (join op-commands)]
     (re-pattern (str "[" op-string "]|[^" op-string "\\s]+"))))
 
 (defn lex-line
@@ -62,7 +66,7 @@
   [{token-str :token-str :as token} reg-names]
   (let [parser-priority 
         [[(set reg-names)  :register]
-         [(set kernel-lexicon/commands) :command]
+         [(set commands)   :command]
          [str->int         :number]
          [valid-word       :label]
          [return-err       :error]]]

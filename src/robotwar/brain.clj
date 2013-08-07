@@ -1,10 +1,9 @@
 (ns robotwar.brain
   (:use [clojure.string :only [join]]
         [clojure.pprint :only [pprint]])
-  (:require [robotwar.kernel-lexicon :as kernel-lexicon]
-            [robotwar.assembler :as assembler]))
+  (:require [robotwar.assembler :as assembler]))
 
-(def op-map (into {} (for [op kernel-lexicon/op-commands]
+(def op-map (into {} (for [op assembler/op-commands]
                        [op (case op
                              "/" #(int (Math/round (float (/ %1 %2))))
                              "#" not=
