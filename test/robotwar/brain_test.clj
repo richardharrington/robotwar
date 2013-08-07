@@ -1,7 +1,8 @@
 (ns robotwar.brain-test
   (:use [clojure.test]
         [robotwar.brain])
-  (:require [robotwar.world :as world]))
+  (:require [robotwar.world :as world]
+            [robotwar.register :as register]))
 
 (def src-codes [ ; program 0: multi-use program
                  " START 
@@ -69,8 +70,8 @@
   (testing "push to random register and pull a series of numbers all different
            from random register"
     (let [random-register (get-in sample-robot [:registers "RANDOM"])
-          new-world (write-register random-register sample-world 1000)
-          random-nums (repeatedly 5 (partial read-register random-register new-world))]
+          new-world (register/write-register random-register sample-world 1000)
+          random-nums (repeatedly 5 (partial register/read-register random-register new-world))]
     (is (= (get-in new-world [:robots 0 :registers "RANDOM" :val])
            1000))
     (is (every? #(< -1 % 1000) random-nums))))) 

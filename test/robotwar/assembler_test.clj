@@ -2,7 +2,7 @@
   (:use (clojure [string :only [join]]
                  [test])
         [robotwar.assembler])
-  (:require [robotwar.game-lexicon :as game-lexicon]))
+  (:require [robotwar.register :as register]))
 
 (def line1 "IF DAMAGE # D GOTO MOVE    ; comment or something")
 (def line2 "AIM-17 TO AIM              ; other comment")
@@ -212,47 +212,47 @@
 
 (deftest parse-token-register
   (testing "parsing register token"
-    (is (= (parse-token {:token-str "AIM"} game-lexicon/reg-names)
+    (is (= (parse-token {:token-str "AIM"} register/reg-names)
            {:val "AIM", :type :register}))))
 
 (deftest parse-token-command-word
   (testing "parsing command token (word)"
-    (is (= (parse-token {:token-str "GOTO"} game-lexicon/reg-names)
+    (is (= (parse-token {:token-str "GOTO"} register/reg-names)
            {:val "GOTO", :type :command}))))
 
 (deftest parse-token-command-operator
   (testing "parsing command token (operator)"
-    (is (= (parse-token {:token-str "#"} game-lexicon/reg-names)
+    (is (= (parse-token {:token-str "#"} register/reg-names)
            {:val "#", :type :command}))))
 
 (deftest parse-token-number
   (testing "parsing number token"
-    (is (= (parse-token {:token-str "-17"}game-lexicon/reg-names)
+    (is (= (parse-token {:token-str "-17"}register/reg-names)
            {:val -17, :type :number}))))
 
 (deftest parse-token-label
   (testing "parsing label token"
-    (is (= (parse-token {:token-str "SCAN"} game-lexicon/reg-names)
+    (is (= (parse-token {:token-str "SCAN"} register/reg-names)
            {:val "SCAN", :type :label}))))
 
 (deftest parse-token-error
   (testing "parsing error token"
-    (is (= (parse-token {:token-str "-GOTO"} game-lexicon/reg-names)
+    (is (= (parse-token {:token-str "-GOTO"} register/reg-names)
            {:val "Invalid word or symbol", :type :error}))))
 
 (deftest parse-tokens-minus-sign
   (testing "parsing tokens with a binary minus sign"
-    (is (= (parse lexed-tokens2 game-lexicon/reg-names)
+    (is (= (parse lexed-tokens2 register/reg-names)
            parsed-tokens2))))
 
 (deftest parse-tokens-negative-sign
   (testing "parsing tokens with a unary negative sign"
-    (is (= (parse lexed-tokens3 game-lexicon/reg-names)
+    (is (= (parse lexed-tokens3 register/reg-names)
            parsed-tokens3))))
 
 (deftest parse-tokens-error
   (testing "parsing tokens with an invalid operator"
-    (is (= (parse lexed-tokens4 game-lexicon/reg-names)
+    (is (= (parse lexed-tokens4 register/reg-names)
            parsed-tokens4))))
 
 (def minus-sign-disambiguated-tokens2 parsed-tokens2)
@@ -294,17 +294,17 @@
 
 (deftest assemble-test-success
   (testing "compiling successfully"
-    (is (= (assemble (join "\n" [line1 line2 line3]) game-lexicon/reg-names)
+    (is (= (assemble (join "\n" [line1 line2 line3]) register/reg-names)
            multi-line-assembled))))
 
 (deftest assemble-test-failure
   (testing "assemble results in error"
-    (is (= (assemble (join "\n" [line1 line2 line3 line4]) game-lexicon/reg-names)
+    (is (= (assemble (join "\n" [line1 line2 line3 line4]) register/reg-names)
            multi-line-assembled-error))))
 
 (deftest preserving-line-and-pos-metadata-test
   (testing "line and pos metadata preserved through assembly process"
-    (is (= (meta (get-in (assemble (join "\n" [line1 line2 line3]) game-lexicon/reg-names)
+    (is (= (meta (get-in (assemble (join "\n" [line1 line2 line3]) register/reg-names)
                          [:instrs 8 1]))
            {:line 3, :pos 14}))))
 

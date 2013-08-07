@@ -1,27 +1,14 @@
 (ns robotwar.brain
   (:use [clojure.string :only [join]]
         [clojure.pprint :only [pprint]])
-  (:require [robotwar.assembler :as assembler]))
+  (:require [robotwar.assembler :as assembler]
+            [robotwar.register :as register]))
 
 (def op-map (into {} (for [op assembler/op-commands]
                        [op (case op
                              "/" #(int (Math/round (float (/ %1 %2))))
                              "#" not=
                              (-> op read-string eval))])))
-
-(defn read-register
-  "a function to query the robot housing this brain, for information
-  from the registers. takes a register and a world, and returns the 
-  result of running the register's read function on the world."
-  [{read :read} world]
-  (read world))  
-
-(defn write-register
-  "a function to create a new world when the brain pushes data to a register.
-  takes a register, a world, and data, and returns the result of running the 
-  register's write function on the data and the world." 
-  [{write :write} world data]
-  (write world data)) 
 
 (defn init-brain
   "initialize the brain, meaning all the internal state variables that go along
@@ -39,7 +26,7 @@
   (case arg-type
     :label     (labels arg-val)
     :number    arg-val
-    :register  (read-register (registers arg-val) world)
+    :register  (register/read-register (registers arg-val) world)
     nil))
 
 (defn step-brain
@@ -74,7 +61,7 @@
           ("=" ">" "<" "#")  (if ((op-map command) acc (resolve arg))
                                (assoc-world-brain {:instr-ptr (inc instr-ptr)})
                                (assoc-world-brain {:instr-ptr (+ instr-ptr 2)}))
-          "TO"               (write-register 
+          "TO"               (register/write-register 
                                (registers (:val arg))
                                (assoc-world-brain {:instr-ptr (inc instr-ptr)})
                                acc))))))

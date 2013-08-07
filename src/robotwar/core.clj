@@ -4,8 +4,8 @@
             [robotwar.brain :as brain]
             [robotwar.robot :as robot]
             [robotwar.world :as world]
-            [robotwar.game-lexicon :as game-lexicon]
-            [robotwar.brain-test :as brain-test]))
+            [robotwar.brain-test :as brain-test]
+            [robotwar.register :as register]))
 
 ; this is a hacky place for messing with stuff. currently imports 
 ; all the test data from brain-test.
@@ -14,8 +14,8 @@
 (def robots (:robots world))
 (def robot (robots 0))
 (def registers (:registers robot))
-(def rr brain/read-register)
-(def wr brain/write-register)
+(def rr register/read-register)
+(def wr register/write-register)
 
 (defn rv [reg-name] (get-in registers [reg-name :val]))
 
