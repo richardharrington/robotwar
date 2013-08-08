@@ -8,97 +8,104 @@
                  "N" "O" "P" "Q" "R" "S" "T" "U" "V" "W" "X" "Y" "Z"
                  "AIM" "SHOT" "RADAR" "DAMAGE" "SPEEDX" "SPEEDY" "RANDOM" "INDEX" ])
 
-(defn init-register 
-  "takes a reg-name and a robot-idx (needed to locate the register in the world),
-  as well as a read-func, a write-func, and a val. The read-func and write-func
-  take the same set of arguments as get-in and assoc-in, respectively.
-  They are meant to be invoked from inside of interface functions which pass in all
-  the parameters except the vector path to the register val, which is provided by 
-  the let clojure."
-  [reg-name robot-idx read-func write-func val]
-  (let [path-to-val [:robots robot-idx :registers reg-name :val]]
-    {reg-name {:read (fn [world]
-                       (read-func world path-to-val))
-               :write (fn [world data]
-                        (write-func world path-to-val data))
-               :val val}}))
+(defn path-to-robot [robot-idx]
+  (:robots robot-idx))
 
-(defn read-register
-  "a function to query the robot for information
-  from the registers. takes a register and a world, and returns the 
-  result of running the register's read function on the world."
-  [{read :read} world]
-  (read world))  
+(defn path-to-registers [robot-idx]
+ (:robots robot-idx :registers))
 
-(defn write-register
-  "a function to create a new world when data is pushed to a register.
-  takes a register, a world, and data, and returns the result of running the 
-  register's write function on the data and the world." 
-  [{write :write} world data]
-  (write world data)) 
+(defn path-to-register [robot-idx reg-name]
+ (:robots robot-idx :registers reg-name))
 
-(defn get-robot [world path-to-val]
-  (get-in world (take 2 path-to-val)))
+(defn path-to-val [robot-idx reg-name]
+  (:robots robot-idx :registers reg-name :val))
 
-(defn get-registers [world path-to-val]
-  (get-in world (take 3 path-to-val)))
+(defprotocol IRegister
+  (read-register [this world])
+  (write-register [this world data]))
 
-(defn init-default-register
-  "takes a reg-name and robot-idx, and returns a register with initial :val 0,
-  whose read function returns :val and whose write function returns a world
-  with its data argument pushed to :val" 
-  [reg-name robot-idx]
-  (init-register reg-name robot-idx get-in assoc-in 0))
+(defrecord StorageRegister [robot-idx reg-name val]
+  IRegister
+  (read-register 
+    "returns value stored in register"
+    [this world]
+    val)
+  (write-register 
+    "returns world with value in register altered"
+    [this world data]
+    (assoc-in world (path-to-val robot-idx reg-name) data))) 
 
-(defn init-read-only-register
-  "returns a register which has no effect (i.e. returns the world it was given)
-  when it is written to, but which returns a particular robot field when it is read."
-  [reg-name robot-idx field-name val]
-  (init-register reg-name robot-idx 
-                 (fn [world path-to-val]
-                   (field-name (get-robot world path-to-val))) 
-                 (fn [world _ _] world) 
-                 val))
+(defrecord ReadOnlyRegister [robot-idx field-name]
+  IRegister
+  (read-register 
+    "returns the value in a particular robot field" 
+    [this world]
+    (get-in world (conj (path-to-robot robot-idx) field-name)))
+  (write-register 
+    "has no effect (returns the world it was given)" 
+    [this world data]
+    world))
+
+(defn target-register
+  "helper function for DataRegister record"
+  [world robot-idx index-reg-name]
+  (let [registers (get-in world (path-to-registers robot-idx))]
+    (registers (reg-names (read-register (registers index-reg-name) world)))))
+
+(defrecord DataRegister [robot-idx index-reg-name]
+  IRegister
+  (read-register
+    "returns the number stored in whatever register 
+    is pointed to by the index-reg-name register"
+    [this world]
+    (read-register (target-register world robot-idx index-reg-name) world))
+  (write-register
+    "returns a world with the number in the register pointed to 
+    by the index-reg-name register updated with the data argument to write-register"
+    [this world data]
+    (write-register (target-register world robot-idx index-reg-name) world data)))
+
+; TODO: (defrecord RandomRegister [robot-idx reg-name max-rand])
+
+; TODO: (defrecord ShotRegister [robot-idx reg-name])
+
+; TODO: (defrecord RadarRegister [robot-idx reg-name])
+
+;           ; RANDOM
+;           (init-register "RANDOM" robot-idx
+;                          (fn [world path-to-val]
+;                            (rand-int (get-in world path-to-val)))
+;                          assoc-in
+;                          0)
+;
+;           ; X and Y and DAMAGE
+;           (init-read-only-register "X" robot-idx :pos-x (:pos-x attributes))
+;           (init-read-only-register "Y" robot-idx :pos-y (:pos-y attributes))
+;           (init-read-only-register "DAMAGE" robot-idx :damage (:damage attributes))])))
+;
+;           ; TODO: SHOT AND RADAR
+
+
 
 (defn init-registers
+  "AIM, INDEX, SPEEDX and SPEEDY.
+  AIM and INDEX's specialized behaviors are only when they're used by
+  SHOT and DATA, respectively. In themselves, they're only storage registers.
+  Likewise, SPEEDX and SPEEDY are used later in step-robot to determine
+  the appropriate acceleration, which may have to applied over several ticks."
   [robot-idx attributes]
-  (let [storage-registers (into {} (for [reg-name storage-reg-names]
-                                     (init-default-register reg-name robot-idx)))]
-    (into storage-registers
-          [
-           ; AIM, INDEX, SPEEDX and SPEEDY.
-           ; AIM and INDEX's specialized behaviors are only when they're used by
-           ; SHOT and DATA, respectively. In themselves, they're only default registers.
-           ; Likewise, SPEEDX and SPEEDY are used later in step-robot to determine
-           ; the appropriate acceleration, which may have to applied over several ticks.
-           (init-default-register "AIM" robot-idx)
-           (init-default-register "INDEX" robot-idx)
-           (init-default-register "SPEEDX" robot-idx)
-           (init-default-register "SPEEDY" robot-idx)
-           
-           ; DATA
-           (letfn [(target-register [world path-to-val]
-                     (let [registers (get-registers world path-to-val)
-                           index-register (registers "INDEX")]
-                       (registers (reg-names (:val index-register)))))]
-             (init-register "DATA" robot-idx
-               (fn [world path-to-val]
-                 (read-register (target-register world path-to-val) world))
-               (fn [world path-to-val data]
-                 (write-register (target-register world) world data))
-               0))
-
-           ; RANDOM
-           (init-register "RANDOM" robot-idx
-                          (fn [world path-to-val]
-                            (rand-int (get-in world path-to-val)))
-                          assoc-in
-                          0)
-
-           ; X and Y and DAMAGE
-           (init-read-only-register "X" robot-idx :pos-x (:pos-x attributes))
-           (init-read-only-register "Y" robot-idx :pos-y (:pos-y attributes))
-           (init-read-only-register "DAMAGE" robot-idx :damage (:damage attributes))])))
-
-           ; TODO: SHOT AND RADAR
+  (let [storage-registers (for [reg-name storage-reg-names]
+                            {reg-name (->StorageRegister robot-idx reg-name 0)})
+        faux-storage-registers (for [reg-name ["AIM" "INDEX" "SPEEDX" "SPEEDY"]]
+                                 {reg-name (->StorageRegister robot-idx reg-name 0)})]
+    (into {} (concat storage-registers 
+                     faux-storage-registers
+                     [{"X"      (->ReadOnlyRegister robot-idx :pos-x)}
+                      {"Y"      (->ReadOnlyRegister robot-idx :pos-y)}
+                      {"DAMAGE" (->ReadOnlyRegister robot-idx :damage)}
+                      {"DATA"   (->DataRegister robot-idx "INDEX")}
+                      ; TODO: {"RANDOM" (->RandomRegister robot-idx "RANDOM" 0)}
+                      ; TODO: {"SHOT"   (->ShotRegister robot-idx "SHOT")}
+                      ; TODO: {"RADAR"  (->RadarRegister robot-idx "RADAR")}
+                      ]))))
 
