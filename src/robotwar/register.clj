@@ -28,12 +28,12 @@
   "returns a world"
   (write-register [this world data]))
 
-(def default-read-mixin
+(def register-field-read-mixin
   ; returns :val field of register
   {:read-register (fn [this world]
                     (:val this))})
 
-(def default-write-mixin
+(def register-field-write-mixin
   ; returns a world with :val field of register altered
   {:write-register (fn [this world data]
                      (assoc-in world 
@@ -67,16 +67,16 @@
 
 (defrecord StorageRegister [robot-idx reg-name val])
 (extend StorageRegister
-  IReadRegister default-read-mixin
-  IWriteRegister default-write-mixin)
+  IReadRegister register-field-read-mixin
+  IWriteRegister register-field-write-mixin)
 
-(defrecord ReadWriteRegister [robot-idx field-name])
-(extend ReadWriteRegister
+(defrecord ReadWriteRobotFieldRegister [robot-idx field-name])
+(extend ReadWriteRobotFieldRegister
   IReadRegister robot-field-read-mixin
   IWriteRegister robot-field-write-mixin)
 
-(defrecord ReadOnlyRegister [robot-idx field-name])
-(extend ReadOnlyRegister
+(defrecord ReadOnlyRobotFieldRegister [robot-idx field-name])
+(extend ReadOnlyRobotFieldRegister
   IReadRegister robot-field-read-mixin
   IWriteRegister no-op-write-mixin)
 
@@ -121,13 +121,13 @@
         read-only-registers (for [[reg-name robot-field] [["X"      :pos-x]
                                                           ["Y"      :pos-y]
                                                           ["DAMAGE" :damage]]]
-                              {reg-name (->ReadOnlyRegister robot-idx robot-field)})
+                              {reg-name (->ReadOnlyRobotFieldRegister robot-idx robot-field)})
         ; TODO: change reading from these registers into an error, instead of just a wasted
         ; processor cyle for the robot.
         read-write-registers (for [[reg-name robot-field] [["AIM"    :aim]
                                                            ["SPEEDX" :v-x]
                                                            ["SPEEDY" :v-y]]]
-                               {reg-name (->ReadWriteRegister robot-idx robot-field)})]
+                               {reg-name (->ReadWriteRobotFieldRegister robot-idx robot-field)})]
     (into {} (concat storage-registers 
                      read-only-registers
                      read-write-registers
