@@ -80,7 +80,7 @@
   IReadRegister robot-field-read-mixin
   IWriteRegister no-op-write-mixin)
 
-(defrecord RandomRegister [robot-idx field-name val])
+(defrecord RandomRegister [robot-idx reg-name val])
 (extend RandomRegister
   IReadRegister random-read-mixin
   IWriteRegister register-field-write-mixin)
