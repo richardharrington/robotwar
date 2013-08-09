@@ -9,13 +9,13 @@
 
 (defn init-brain
   "initialize the brain, meaning all the internal state variables that go along
-  with the robot program when it's running, except for the registers,
-  which are queried from the robot."
-  [src-code reg-names]
+  with the robot program when it's running."
+  [src-code registers]
   {:acc 0
    :instr-ptr 0
    :call-stack []
-   :obj-code (assembler/assemble src-code reg-names)})
+   :registers registers
+   :obj-code (assembler/assemble src-code (keys registers))})
 
 (defn resolve-arg [{arg-val :val arg-type :type} registers labels world read-register]
   "resolves an instruction argument to a numeric value
@@ -36,9 +36,8 @@
   (returns the current state of the world untouched if the instruction pointer
   has gone beyond the end of the program. TODO: maybe have an error for that."
 
-  [robot world read-register write-register]
-  (let [{:keys [registers brain]} robot
-        {:keys [obj-code acc instr-ptr call-stack]} brain
+  [{brain :brain :as robot} world read-register write-register]
+  (let [{:keys [obj-code acc instr-ptr call-stack registers]} brain
         {:keys [instrs labels]} obj-code]
     (if (>= instr-ptr (count instrs))
       world

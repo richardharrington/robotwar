@@ -63,8 +63,7 @@
    :v-y 0
    :aim (:aim attributes)
    :damage (:damage attributes)
-   :registers (register/init-registers idx)
-   :brain (brain/init-brain src-code register/reg-names)})
+   :brain (brain/init-brain src-code (register/init-registers idx))})
 
 (defn step-robot
   "takes a robot and a world and returns the new state of the world
@@ -75,13 +74,17 @@
   [{robot-idx :idx :as robot} world]
   (if (>= (:damage robot) 100)
     world
-    (let [new-world (brain/step-brain robot world)
+    (let [new-world (brain/step-brain 
+                      robot 
+                      world 
+                      register/read-register 
+                      register/write-register)
           new-robot (get-in new-world [:robots robot-idx])
           desired-v-x (register/read-register 
-                        (get-in new-robot [:registers "SPEEDX"]) 
+                        (get-in new-robot [:brain :registers "SPEEDX"]) 
                         new-world)
           desired-v-y (register/read-register 
-                        (get-in new-robot [:registers "SPEEDY"]) 
+                        (get-in new-robot [:brain :registers "SPEEDY"]) 
                         new-world)
           [pos-x v-x] (d-and-v-given-desired-v (:v-x robot) desired-v-x 
                                                MAX_ACCEL TICK_DURATION)
