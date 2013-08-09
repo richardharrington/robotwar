@@ -1,9 +1,9 @@
 (ns robotwar.register)
 
-(def reg-names [ "DATA" 
-                 "A" "B" "C" "D" "E" "F" "G" "H" "I" "J" "K" "L" "M" 
-                 "N" "O" "P" "Q" "R" "S" "T" "U" "V" "W" "X" "Y" "Z"
-                 "AIM" "SHOT" "RADAR" "DAMAGE" "SPEEDX" "SPEEDY" "RANDOM" "INDEX" ])
+(def reg-names-by-idx [ "DATA" 
+                        "A" "B" "C" "D" "E" "F" "G" "H" "I" "J" "K" "L" "M" 
+                        "N" "O" "P" "Q" "R" "S" "T" "U" "V" "W" "X" "Y" "Z"
+                        "AIM" "SHOT" "RADAR" "DAMAGE" "SPEEDX" "SPEEDY" "RANDOM" "INDEX" ])
 
 (defn path-to-robot [robot-idx]
   [:robots robot-idx])
@@ -86,7 +86,7 @@
   "helper function for DataRegister record"
   [world robot-idx index-reg-name]
   (let [registers (get-in world (path-to-registers robot-idx))]
-    (registers (reg-names (read-register (registers index-reg-name) world)))))
+    (registers (reg-names-by-idx (read-register (registers index-reg-name) world)))))
 
 (defrecord DataRegister [robot-idx index-reg-name]
   IReadRegister
