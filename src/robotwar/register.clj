@@ -102,7 +102,7 @@
   SHOT and DATA, respectively. In themselves, they're only storage registers.
   Likewise, SPEEDX and SPEEDY are used later in step-robot to determine
   the appropriate acceleration, which may have to applied over several ticks."
-  [robot-idx attributes]
+  [robot-idx]
   (let [storage-registers (for [reg-name storage-reg-names]
                             {reg-name (->StorageRegister robot-idx reg-name 0)})
         faux-storage-registers (for [reg-name ["AIM" "INDEX" "SPEEDX" "SPEEDY"]]

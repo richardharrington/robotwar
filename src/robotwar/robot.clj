@@ -62,7 +62,7 @@
    :v-x 0
    :v-y 0
    :damage (:damage attributes)
-   :registers (register/init-registers idx attributes)
+   :registers (register/init-registers idx)
    :brain (brain/init-brain src-code register/reg-names)})
 
 (defn step-robot
