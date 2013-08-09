@@ -83,7 +83,7 @@
 (defrecord RandomRegister [robot-idx field-name val])
 (extend RandomRegister
   IReadRegister random-read-mixin
-  IWriteRegister robot-field-write-mixin)
+  IWriteRegister register-field-write-mixin)
 
 (defn get-target-register
   "helper function for DataRegister record"
@@ -133,7 +133,7 @@
                      read-write-registers
                      [{"INDEX"  (->StorageRegister robot-idx "INDEX" 0)}
                       {"DATA"   (->DataRegister robot-idx "INDEX")}
-                      {"RANDOM" (->RandomRegister robot-idx :random 0)}
+                      {"RANDOM" (->RandomRegister robot-idx "RANDOM" 0)}
                       ; TODO: {"SHOT"   (->ShotRegister robot-idx "SHOT")}
                       ; TODO: {"RADAR"  (->RadarRegister robot-idx "RADAR")}
                       ]))))
