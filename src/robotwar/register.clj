@@ -8,14 +8,8 @@
 (defn path-to-robot [robot-idx]
   [:robots robot-idx])
 
-(defn path-to-brain [robot-idx]
-  [:robots robot-idx :brain])
-
 (defn path-to-registers [robot-idx]
   [:robots robot-idx :brain :registers])
-
-(defn path-to-register [robot-idx reg-name]
-  [:robots robot-idx :brain :registers reg-name])
 
 (defn path-to-val [robot-idx reg-name]
   [:robots robot-idx :brain :registers reg-name :val])
