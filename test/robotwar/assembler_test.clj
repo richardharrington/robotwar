@@ -227,7 +227,7 @@
 
 (deftest parse-token-number
   (testing "parsing number token"
-    (is (= (parse-token {:token-str "-17"}register/reg-names)
+    (is (= (parse-token {:token-str "-17"} register/reg-names)
            {:val -17, :type :number}))))
 
 (deftest parse-token-label
