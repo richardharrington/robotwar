@@ -9,16 +9,16 @@
                  "AIM" "SHOT" "RADAR" "DAMAGE" "SPEEDX" "SPEEDY" "RANDOM" "INDEX" ])
 
 (defn path-to-robot [robot-idx]
-  (:robots robot-idx))
+  [:robots robot-idx])
 
 (defn path-to-registers [robot-idx]
- (:robots robot-idx :registers))
+  [:robots robot-idx :registers])
 
 (defn path-to-register [robot-idx reg-name]
- (:robots robot-idx :registers reg-name))
+  [:robots robot-idx :registers reg-name])
 
 (defn path-to-val [robot-idx reg-name]
-  (:robots robot-idx :registers reg-name :val))
+  [:robots robot-idx :registers reg-name :val])
 
 (defprotocol IRegister
   (read-register [this world])
