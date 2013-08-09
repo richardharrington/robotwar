@@ -17,13 +17,13 @@
    :call-stack []
    :obj-code (assembler/assemble src-code reg-names)})
 
-(defn resolve-arg [{arg-val :val arg-type :type} registers labels world]
+(defn resolve-arg [{arg-val :val arg-type :type} registers labels world read-register]
   "resolves an instruction argument to a numeric value
   (either an arithmetic or logical comparison operand, or an instruction pointer)."
   (case arg-type
     :label     (labels arg-val)
     :number    arg-val
-    :register  (register/read-register (registers arg-val) world)
+    :register  (read-register (registers arg-val) world)
     nil))
 
 (defn step-brain
@@ -36,14 +36,14 @@
   (returns the current state of the world untouched if the instruction pointer
   has gone beyond the end of the program. TODO: maybe have an error for that."
 
-  [robot world]
+  [robot world read-register write-register]
   (let [{:keys [registers brain]} robot
         {:keys [obj-code acc instr-ptr call-stack]} brain
         {:keys [instrs labels]} obj-code]
     (if (>= instr-ptr (count instrs))
       world
       (let [[{command :val} arg] ((:instrs obj-code) instr-ptr)
-            resolve #(resolve-arg % registers labels world)
+            resolve #(resolve-arg % registers labels world read-register)
             assoc-world-brain #(assoc-in world [:robots (:idx robot) :brain] (into brain %))]
         (case command
           "GOTO"             (assoc-world-brain {:instr-ptr (resolve arg)})
@@ -58,7 +58,7 @@
           ("=" ">" "<" "#")  (if ((op-map command) acc (resolve arg))
                                (assoc-world-brain {:instr-ptr (inc instr-ptr)})
                                (assoc-world-brain {:instr-ptr (+ instr-ptr 2)}))
-          "TO"               (register/write-register 
+          "TO"               (write-register 
                                (registers (:val arg))
                                (assoc-world-brain {:instr-ptr (inc instr-ptr)})
                                acc))))))
