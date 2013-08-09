@@ -14,6 +14,7 @@
                                  program 
                                  {:pos-x (rand-int width)
                                   :pos-y (rand-int height)
+                                  :aim 0
                                   :damage 0}))
                              programs))
    :robot-idx 0})

@@ -61,6 +61,7 @@
    :pos-y (:pos-y attributes)
    :v-x 0
    :v-y 0
+   :aim (:aim attributes)
    :damage (:damage attributes)
    :registers (register/init-registers idx)
    :brain (brain/init-brain src-code register/reg-names)})

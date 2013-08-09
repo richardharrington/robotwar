@@ -47,6 +47,14 @@
                       world 
                       (conj (path-to-robot (:robot-idx this)) (:field-name this))))})
 
+(def robot-field-write-mixin
+  ; returns a world with the value of a field in the robot hash map altered
+  {:write-register (fn [this world data]
+                     (assoc-in 
+                       world 
+                       (conj (path-to-robot (:robot-idx this)) (:field-name this)) 
+                       data))})
+
 (def no-op-write-mixin
   ; returns a world with nothing changed
   {:write-register (fn [this world data] 
@@ -62,15 +70,20 @@
   IReadRegister default-read-mixin
   IWriteRegister default-write-mixin)
 
+(defrecord ReadWriteRegister [robot-idx field-name])
+(extend ReadWriteRegister
+  IReadRegister robot-field-read-mixin
+  IWriteRegister robot-field-write-mixin)
+
 (defrecord ReadOnlyRegister [robot-idx field-name])
 (extend ReadOnlyRegister
   IReadRegister robot-field-read-mixin
   IWriteRegister no-op-write-mixin)
 
-(defrecord RandomRegister [robot-idx reg-name val])
+(defrecord RandomRegister [robot-idx field-name val])
 (extend RandomRegister
   IReadRegister random-read-mixin
-  IWriteRegister default-write-mixin)
+  IWriteRegister robot-field-write-mixin)
 
 (defn get-target-register
   "helper function for DataRegister record"
@@ -105,15 +118,22 @@
   [robot-idx]
   (let [storage-registers (for [reg-name storage-reg-names]
                             {reg-name (->StorageRegister robot-idx reg-name 0)})
-        faux-storage-registers (for [reg-name ["AIM" "INDEX" "SPEEDX" "SPEEDY"]]
-                                 {reg-name (->StorageRegister robot-idx reg-name 0)})]
+        read-only-registers (for [[reg-name robot-field] [["X"      :pos-x]
+                                                          ["Y"      :pos-y]
+                                                          ["DAMAGE" :damage]]]
+                              {reg-name (->ReadOnlyRegister robot-idx robot-field)})
+        ; TODO: change reading from these registers into an error, instead of just a wasted
+        ; processor cyle for the robot.
+        read-write-registers (for [[reg-name robot-field] [["AIM"    :aim]
+                                                           ["SPEEDX" :v-x]
+                                                           ["SPEEDY" :v-y]]]
+                               {reg-name (->ReadWriteRegister robot-idx robot-field)})]
     (into {} (concat storage-registers 
-                     faux-storage-registers
-                     [{"X"      (->ReadOnlyRegister robot-idx :pos-x)}
-                      {"Y"      (->ReadOnlyRegister robot-idx :pos-y)}
-                      {"DAMAGE" (->ReadOnlyRegister robot-idx :damage)}
+                     read-only-registers
+                     read-write-registers
+                     [{"INDEX"  (->StorageRegister robot-idx "INDEX" 0)}
                       {"DATA"   (->DataRegister robot-idx "INDEX")}
-                      {"RANDOM" (->RandomRegister robot-idx "RANDOM" 0)}
+                      {"RANDOM" (->RandomRegister robot-idx :random 0)}
                       ; TODO: {"SHOT"   (->ShotRegister robot-idx "SHOT")}
                       ; TODO: {"RADAR"  (->RadarRegister robot-idx "RADAR")}
                       ]))))
