@@ -43,7 +43,9 @@
 (def robot-field-read-mixin
   ; returns the value of a field in the robot hash-map
   {:read-register (fn [this world]
-                    (get-in world (conj path-to-robot (:field-name this))))})
+                    (get-in 
+                      world 
+                      (conj (path-to-robot (:robot-idx this)) (:field-name this))))})
 
 (def no-op-write-mixin
   ; returns a world with nothing changed
