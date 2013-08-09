@@ -1,5 +1,6 @@
 (ns robotwar.brain
-  (:require [robotwar.assembler :as assembler]))
+  (:require [robotwar.assembler :as assembler]
+            [robotwar.register :as register]))
 
 (def op-map (into {} (for [op assembler/op-commands]
                        [op (case op
