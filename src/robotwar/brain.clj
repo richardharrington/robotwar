@@ -1,8 +1,5 @@
 (ns robotwar.brain
-  (:use [clojure.string :only [join]]
-        [clojure.pprint :only [pprint]])
-  (:require [robotwar.assembler :as assembler]
-            [robotwar.register :as register]))
+  (:require [robotwar.assembler :as assembler]))
 
 (def op-map (into {} (for [op assembler/op-commands]
                        [op (case op

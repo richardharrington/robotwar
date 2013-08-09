@@ -1,6 +1,5 @@
 (ns robotwar.assembler
-  (:use (clojure [string :only [split join]] 
-                 [pprint :only [pprint]])
+  (:use (clojure [string :only [split join]])
         [clojure.core.match :only [match]]))
 
 (def op-commands    [ "-" "+" "*" "/" "=" "#" "<" ">" ])
