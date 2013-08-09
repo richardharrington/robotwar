@@ -1,8 +1,5 @@
 (ns robotwar.register)
 
-(def storage-reg-names [ "A" "B" "C" "D" "E" "F" "G" "H" "I" "J" "K" "L" "M" 
-                         "N" "O" "P" "Q" "R" "S" "T" "U" "V" "W" "Z"])
-
 (def reg-names [ "DATA" 
                  "A" "B" "C" "D" "E" "F" "G" "H" "I" "J" "K" "L" "M" 
                  "N" "O" "P" "Q" "R" "S" "T" "U" "V" "W" "X" "Y" "Z"
@@ -116,7 +113,8 @@
   Likewise, SPEEDX and SPEEDY are used later in step-robot to determine
   the appropriate acceleration, which may have to applied over several ticks."
   [robot-idx]
-  (let [storage-registers (for [reg-name storage-reg-names]
+  (let [storage-registers (for [reg-name [ "A" "B" "C" "D" "E" "F" "G" "H" "I" "J" "K" "L" 
+                                           "M" "N" "O" "P" "Q" "R" "S" "T" "U" "V" "W" "Z"]]
                             {reg-name (->StorageRegister robot-idx reg-name 0)})
         read-only-registers (for [[reg-name robot-field] [["X"      :pos-x]
                                                           ["Y"      :pos-y]
