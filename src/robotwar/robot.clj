@@ -61,6 +61,8 @@
    :pos-y (:pos-y attributes)
    :v-x 0
    :v-y 0
+   :desired-v-x 0
+   :desired-v-y 0
    :aim (:aim attributes)
    :damage (:damage attributes)
    :brain (brain/init-brain src-code (register/init-registers idx))})
@@ -80,15 +82,9 @@
                       register/read-register 
                       register/write-register)
           new-robot (get-in new-world [:robots robot-idx])
-          desired-v-x (register/read-register 
-                        (get-in new-robot [:brain :registers "SPEEDX"]) 
-                        new-world)
-          desired-v-y (register/read-register 
-                        (get-in new-robot [:brain :registers "SPEEDY"]) 
-                        new-world)
-          [pos-x v-x] (d-and-v-given-desired-v (:v-x robot) desired-v-x 
+          [pos-x v-x] (d-and-v-given-desired-v (:v-x robot) (:desired-v-x robot)
                                                MAX_ACCEL TICK_DURATION)
-          [pos-y v-y] (d-and-v-given-desired-v (:v-y robot) desired-v-y 
+          [pos-y v-y] (d-and-v-given-desired-v (:v-y robot) (:desired-v-y robot)
                                                MAX_ACCEL TICK_DURATION)]
       (assoc-in 
         new-world 

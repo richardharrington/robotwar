@@ -120,8 +120,8 @@
         ; TODO: change reading from these registers into an error, instead of just a wasted
         ; processor cyle for the robot.
         read-write-registers (for [[reg-name robot-field] [["AIM"    :aim]
-                                                           ["SPEEDX" :v-x]
-                                                           ["SPEEDY" :v-y]]]
+                                                           ["SPEEDX" :desired-v-x]
+                                                           ["SPEEDY" :desired-v-y]]]
                                {reg-name (->ReadWriteRobotFieldRegister robot-idx robot-field)})]
     (into {} (concat storage-registers 
                      read-only-registers
