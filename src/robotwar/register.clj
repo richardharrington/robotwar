@@ -135,4 +135,3 @@
                       ; TODO: {"SHOT"   (->ShotRegister robot-idx "SHOT")}
                       ; TODO: {"RADAR"  (->RadarRegister robot-idx "RADAR")}
                       ]))))
-
