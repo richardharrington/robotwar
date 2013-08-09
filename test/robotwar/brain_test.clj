@@ -51,13 +51,13 @@
 
 (deftest push-test
   (testing "pushing number to register"
-    (is (= (get-in (world/get-world 8 0 worlds) [:robots 0 :registers "A" :val])
+    (is (= (get-in (world/get-world 8 0 worlds) [:robots 0 :brain :registers "A" :val])
            1))))
 
 (deftest index-data-pair-test
   (testing "registers whose index numbers are push to INDEX can
            be referenced by accessing DATA"
-    (is (= (get-in (world/get-world 5 1 worlds) [:robots 1 :registers "A" :val])
+    (is (= (get-in (world/get-world 5 1 worlds) [:robots 1 :brain :registers "A" :val])
            300))))
 
 ; remaining tests will use a different method: 
@@ -69,10 +69,10 @@
 (deftest random-test
   (testing "push to random register and pull a series of numbers all different
            from random register"
-    (let [random-register (get-in sample-robot [:registers "RANDOM"])
+    (let [random-register (get-in sample-robot [:brain :registers "RANDOM"])
           new-world (register/write-register random-register sample-world 1000)
           random-nums (repeatedly 5 (partial register/read-register random-register new-world))]
-    (is (= (get-in new-world [:robots 0 :registers "RANDOM" :val])
+    (is (= (get-in new-world [:robots 0 :brain :registers "RANDOM" :val])
            1000))
     (is (every? #(< -1 % 1000) random-nums))))) 
 

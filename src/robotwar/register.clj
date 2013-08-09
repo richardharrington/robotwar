@@ -1,8 +1,5 @@
 (ns robotwar.register)
 
-(def storage-reg-names [ "A" "B" "C" "D" "E" "F" "G" "H" "I" "J" "K" "L" "M" 
-                         "N" "O" "P" "Q" "R" "S" "T" "U" "V" "W" "Z"])
-
 (def reg-names [ "DATA" 
                  "A" "B" "C" "D" "E" "F" "G" "H" "I" "J" "K" "L" "M" 
                  "N" "O" "P" "Q" "R" "S" "T" "U" "V" "W" "X" "Y" "Z"
@@ -12,13 +9,10 @@
   [:robots robot-idx])
 
 (defn path-to-registers [robot-idx]
-  [:robots robot-idx :registers])
-
-(defn path-to-register [robot-idx reg-name]
-  [:robots robot-idx :registers reg-name])
+  [:robots robot-idx :brain :registers])
 
 (defn path-to-val [robot-idx reg-name]
-  [:robots robot-idx :registers reg-name :val])
+  [:robots robot-idx :brain :registers reg-name :val])
 
 (defprotocol IReadRegister
   "returns the value of a register"
@@ -116,7 +110,8 @@
   Likewise, SPEEDX and SPEEDY are used later in step-robot to determine
   the appropriate acceleration, which may have to applied over several ticks."
   [robot-idx]
-  (let [storage-registers (for [reg-name storage-reg-names]
+  (let [storage-registers (for [reg-name [ "A" "B" "C" "D" "E" "F" "G" "H" "I" "J" "K" "L" 
+                                           "M" "N" "O" "P" "Q" "R" "S" "T" "U" "V" "W" "Z"]]
                             {reg-name (->StorageRegister robot-idx reg-name 0)})
         read-only-registers (for [[reg-name robot-field] [["X"      :pos-x]
                                                           ["Y"      :pos-y]
@@ -125,8 +120,8 @@
         ; TODO: change reading from these registers into an error, instead of just a wasted
         ; processor cyle for the robot.
         read-write-registers (for [[reg-name robot-field] [["AIM"    :aim]
-                                                           ["SPEEDX" :v-x]
-                                                           ["SPEEDY" :v-y]]]
+                                                           ["SPEEDX" :desired-v-x]
+                                                           ["SPEEDY" :desired-v-y]]]
                                {reg-name (->ReadWriteRobotFieldRegister robot-idx robot-field)})]
     (into {} (concat storage-registers 
                      read-only-registers
@@ -137,4 +132,3 @@
                       ; TODO: {"SHOT"   (->ShotRegister robot-idx "SHOT")}
                       ; TODO: {"RADAR"  (->RadarRegister robot-idx "RADAR")}
                       ]))))
-
