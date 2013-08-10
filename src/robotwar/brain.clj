@@ -15,7 +15,7 @@
    :instr-ptr 0
    :call-stack []
    :registers registers
-   :obj-code (assembler/assemble src-code (keys registers))})
+   :obj-code (assembler/assemble src-code)})
 
 (defn resolve-arg [{arg-val :val arg-type :type} registers labels world read-register]
   "resolves an instruction argument to a numeric value

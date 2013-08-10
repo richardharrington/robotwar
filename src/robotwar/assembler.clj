@@ -38,11 +38,10 @@
        (re-seq-with-pos lex-re line)))
 
 (defn lex
-  "Lexes a sequence of lines. After this point, tokens 
-  are no longer grouped by line (line numbers have been 
-  captured in metadata, along with column numbers)."
+  "Lexes a sequence of lines into a sequence of sequences of tokens
+  (referred to in docstrings for parsing functions as lines of tokens)."
   [lines]
-  (apply concat (map-indexed lex-line lines)))
+  (map-indexed lex-line lines))
 
 (defn str->int
   "Integer/parseInt, but returns nil on failure"
@@ -58,16 +57,15 @@
 (def return-err (constantly "Invalid word or symbol"))
 
 (defn parse-token
-  "takes a vector of reg-names and a token with a token-str field and parses the token.
+  "parses a token with a token-str field.
   needs to work with the original token map by using dissoc and into
   (rather than building a new one) because it contains line and column
   number metadata."
-  [{token-str :token-str :as token} reg-names]
+  [{token-str :token-str :as token}]
   (let [parser-priority 
-        [[(set reg-names)  :register]
-         [(set commands)   :command]
+        [[(set commands)   :command]
          [str->int         :number]
-         [valid-word       :label]
+         [valid-word       :identifier]
          [return-err       :error]]]
     (some
       (fn [[parser token-type]]
@@ -76,19 +74,42 @@
                   :token-str)))
       parser-priority)))
 
-(defn parse
-  "take the tokens and convert them to structured source code ready for compiling.
-  if there's an error, returns a different type: just the token,
-  outside of any sequence."
-  [initial-tokens reg-names]
+(defn parse-line
+  "takes a line of tokens and runs each token through parse-token for the first
+  pass of determining its type. Then parse-line further divides :identifier
+  tokens into two types: :label if it's the only thing on its line or it follows
+  a 'GOTO' or a 'GOSUB', and :register otherwise.
+  If we encounter an error, just return the token, not a sequence of tokens."
+  [initial-tokens]
   (loop [[token & tail :as tokens] initial-tokens
          parsed-tokens []]
     (if (empty? tokens)
       parsed-tokens
-      (let [{token-type :type :as parsed-token} (parse-token token reg-names)]
-        (if (= token-type :error)
-          parsed-token
-          (recur tail (conj parsed-tokens parsed-token)))))))
+      (let [{token-type :type token-val :val :as parsed-token} (parse-token token)]
+        (case token-type
+         :error parsed-token
+         (:command :number) (recur tail (conj parsed-tokens parsed-token))
+         :identifier (if (or (= (count initial-tokens) 1)
+                             (#{"GOTO" "GOSUB"} (:val (last parsed-tokens))))
+                       (recur tail (conj parsed-tokens (assoc parsed-token :type :label)))
+                       (recur tail (conj parsed-tokens (assoc parsed-token :type :register)))))))))
+       
+(defn parse
+  "take the lines of tokens and converts them to :val and :type format.
+  After this point, tokens are no longer separated into sequences of sequences
+  according to the linebreaks in the original source code -- 
+  if we need that information later for error reporting, it's in the metadata.
+  if there's an error, this function just returns the token,
+  outside of any sequence."
+  [initial-token-lines]
+  (loop [[token-line & tail :as token-lines] initial-token-lines
+         parsed-token-lines []]
+    (if (empty? token-lines)
+      parsed-token-lines
+      (let [parsed-line (parse-line token-line)]
+        (if (= (:type parsed-line) :error)
+          parsed-line
+          (recur tail (concat parsed-token-lines parsed-line)))))))
 
 (defn disambiguate-minus-signs
   [initial-tokens]
@@ -118,12 +139,12 @@
     (if (empty? tokens)
       result
       (match [token]
-             [{:type (:or :number :register)}] 
-             (recur tail (conj result [(into token {:val ",", :type :command}) token]))
-             [(:or {:type :label} {:type :command, :val "ENDSUB"})]
-             (recur tail (conj result [token nil]))
-             [{:type :command}] 
-             (recur (rest tail) (conj result [token (first tail)]))))))
+        [{:type (:or :number :register)}] 
+          (recur tail (conj result [(into token {:val ",", :type :command}) token]))
+        [(:or {:type :label} {:type :command, :val "ENDSUB"})]
+          (recur tail (conj result [token nil]))
+        [{:type :command}] 
+          (recur (rest tail) (conj result [token (first tail)]))))))
 
 ; TODO: preserve :line and :pos metadata with labels,
 ; when labels are transferred from the instruction list to the label map
@@ -143,17 +164,16 @@
           (recur tail (assoc-in result [:labels (command :val)] next-instr-num))
           (recur tail (assoc-in result [:instrs next-instr-num] instr)))))))
 
-(defn assemble [src-code reg-names]
+(defn assemble [src-code]
   "compiles robotwar code, with error-checking beginning after the lexing
   step. All functions that return errors will return a map with the keyword 
   :error, and then a token with a :val field containing the error string, 
   and metadata containing :pos and :line fields containing the location. 
   So far only parse implements error-checking."
-  (let [parse-with-reg-names #(parse % reg-names)
-        lexed (-> src-code split-lines strip-comments lex)]
+  (let [lexed (-> src-code split-lines strip-comments lex)]
     (reduce (fn [result step]
               (if (= (:type result) :error)
                 result
                 (step result)))
             lexed
-            [parse-with-reg-names disambiguate-minus-signs make-instr-pairs map-labels])))
+            [parse disambiguate-minus-signs make-instr-pairs map-labels])))
