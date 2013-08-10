@@ -1,7 +1,8 @@
 (ns robotwar.register-test
-  (:require [clojure.test :refer :all]
-            [robotwar.register :refer :all]
-            [robotwar.world :as world]))
+  (:use [clojure.test]
+        [midje.sweet]
+        [robotwar.register])
+  (:require [robotwar.world :as world]))
 
 (def world (world/init-world 256 256 [""]))
 (def robot-path [:robots 0])

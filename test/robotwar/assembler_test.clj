@@ -1,6 +1,7 @@
 (ns robotwar.assembler-test
-  (:use (clojure [string :only [join]]
-                 [test])
+  (:use [clojure.string :only [join]]
+        [clojure.test]
+        [midje.sweet]
         [robotwar.assembler]))
 
 (def line1 "IF DAMAGE # D GOTO MOVE    ; comment or something")

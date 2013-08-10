@@ -1,5 +1,6 @@
 (ns robotwar.brain-test
   (:use [clojure.test]
+        [midje.sweet]
         [robotwar.brain])
   (:require [robotwar.world :as world]
             [robotwar.register :as register]
