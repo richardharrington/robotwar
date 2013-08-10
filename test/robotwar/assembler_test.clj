@@ -1,8 +1,7 @@
 (ns robotwar.assembler-test
   (:use (clojure [string :only [join]]
                  [test])
-        [robotwar.assembler])
-  (:require [robotwar.register :as register]))
+        [robotwar.assembler]))
 
 (def line1 "IF DAMAGE # D GOTO MOVE    ; comment or something")
 (def line2 "AIM-17 TO AIM              ; other comment")
@@ -15,37 +14,37 @@
 (def line-no-comments3 "IF X<-5 GOTO SCAN")
 
 (def multi-line ["SCAN" "6 TO AIM"])
-(def lexed-multi-line [{:token-str "SCAN"}
-                       {:token-str "6"}
-                       {:token-str "TO"}
-                       {:token-str "AIM"}])
+(def lexed-multi-line [[{:token-str "SCAN"}]
+                       [{:token-str "6"}
+                        {:token-str "TO"}
+                        {:token-str "AIM"}]])
 
-(def lexed-tokens1 [{:token-str "IF"} 
-                    {:token-str "DAMAGE"} 
-                    {:token-str "#"} 
-                    {:token-str "D"} 
-                    {:token-str "GOTO"} 
-                    {:token-str "MOVE"}])
+(def lexed-tokens1 [[{:token-str "IF"} 
+                     {:token-str "DAMAGE"} 
+                     {:token-str "#"} 
+                     {:token-str "D"} 
+                     {:token-str "GOTO"} 
+                     {:token-str "MOVE"}]])
 
-(def lexed-tokens2 [{:token-str "AIM"} 
-                    {:token-str "-"} 
-                    {:token-str "17"} 
-                    {:token-str "TO"} 
-                    {:token-str "AIM"}])
+(def lexed-tokens2 [[{:token-str "AIM"} 
+                     {:token-str "-"} 
+                     {:token-str "17"} 
+                     {:token-str "TO"} 
+                     {:token-str "AIM"}]])
 
-(def lexed-tokens3 [{:token-str "IF"} 
-                    {:token-str "X"} 
-                    {:token-str "<"} 
-                    {:token-str "-"} 
-                    {:token-str "5"} 
-                    {:token-str "GOTO"} 
-                    {:token-str "SCAN"}])
+(def lexed-tokens3 [[{:token-str "IF"} 
+                     {:token-str "X"} 
+                     {:token-str "<"} 
+                     {:token-str "-"} 
+                     {:token-str "5"} 
+                     {:token-str "GOTO"} 
+                     {:token-str "SCAN"}]])
 
-(def lexed-tokens4 [{:token-str "AIM"} 
-                    {:token-str "@"} 
-                    {:token-str "17"} 
-                    {:token-str "TO"} 
-                    {:token-str "AIM"}])
+(def lexed-tokens4 [[{:token-str "AIM"} 
+                     {:token-str "@"} 
+                     {:token-str "17"} 
+                     {:token-str "TO"} 
+                     {:token-str "AIM"}]])
 
 (def parsed-tokens2 [{:val "AIM", :type :register} 
                      {:val "-", :type :command} 
@@ -212,47 +211,47 @@
 
 (deftest parse-token-register
   (testing "parsing register token"
-    (is (= (parse-token {:token-str "AIM"} register/reg-names)
-           {:val "AIM", :type :register}))))
+    (is (= (parse-token {:token-str "AIM"})
+           {:val "AIM", :type :identifier}))))
 
 (deftest parse-token-command-word
   (testing "parsing command token (word)"
-    (is (= (parse-token {:token-str "GOTO"} register/reg-names)
+    (is (= (parse-token {:token-str "GOTO"})
            {:val "GOTO", :type :command}))))
 
 (deftest parse-token-command-operator
   (testing "parsing command token (operator)"
-    (is (= (parse-token {:token-str "#"} register/reg-names)
+    (is (= (parse-token {:token-str "#"})
            {:val "#", :type :command}))))
 
 (deftest parse-token-number
   (testing "parsing number token"
-    (is (= (parse-token {:token-str "-17"} register/reg-names)
+    (is (= (parse-token {:token-str "-17"})
            {:val -17, :type :number}))))
 
 (deftest parse-token-label
   (testing "parsing label token"
-    (is (= (parse-token {:token-str "SCAN"} register/reg-names)
-           {:val "SCAN", :type :label}))))
+    (is (= (parse-token {:token-str "SCAN"})
+           {:val "SCAN", :type :identifier}))))
 
 (deftest parse-token-error
   (testing "parsing error token"
-    (is (= (parse-token {:token-str "-GOTO"} register/reg-names)
+    (is (= (parse-token {:token-str "-GOTO"})
            {:val "Invalid word or symbol", :type :error}))))
 
 (deftest parse-tokens-minus-sign
   (testing "parsing tokens with a binary minus sign"
-    (is (= (parse lexed-tokens2 register/reg-names)
+    (is (= (parse lexed-tokens2)
            parsed-tokens2))))
 
 (deftest parse-tokens-negative-sign
   (testing "parsing tokens with a unary negative sign"
-    (is (= (parse lexed-tokens3 register/reg-names)
+    (is (= (parse lexed-tokens3)
            parsed-tokens3))))
 
 (deftest parse-tokens-error
   (testing "parsing tokens with an invalid operator"
-    (is (= (parse lexed-tokens4 register/reg-names)
+    (is (= (parse lexed-tokens4)
            parsed-tokens4))))
 
 (def minus-sign-disambiguated-tokens2 parsed-tokens2)
@@ -294,17 +293,17 @@
 
 (deftest assemble-test-success
   (testing "compiling successfully"
-    (is (= (assemble (join "\n" [line1 line2 line3]) register/reg-names)
+    (is (= (assemble (join "\n" [line1 line2 line3]))
            multi-line-assembled))))
 
 (deftest assemble-test-failure
   (testing "assemble results in error"
-    (is (= (assemble (join "\n" [line1 line2 line3 line4]) register/reg-names)
+    (is (= (assemble (join "\n" [line1 line2 line3 line4]))
            multi-line-assembled-error))))
 
 (deftest preserving-line-and-pos-metadata-test
   (testing "line and pos metadata preserved through assembly process"
-    (is (= (meta (get-in (assemble (join "\n" [line1 line2 line3]) register/reg-names)
+    (is (= (meta (get-in (assemble (join "\n" [line1 line2 line3]))
                          [:instrs 8 1]))
            {:line 3, :pos 14}))))
 
