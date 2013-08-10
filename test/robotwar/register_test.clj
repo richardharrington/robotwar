@@ -17,10 +17,6 @@
       (is (= (get-in new-registers ["A" :val])
              42))))) 
 
-
-
-
-
 (deftest index-data-pair-test
   (testing "registers whose index numbers are push to INDEX can
            be referenced by accessing DATA"
@@ -35,14 +31,15 @@
       (is (= (read-register (registers3 "A") world3)
              100)))))
 
+(deftest random-test
+  (testing "write to random register's :val field, 
+           and read a series of numbers all different
+           from random register"
+    (let [new-world (write-register (registers "RANDOM") world 1000)
+          new-registers (get-in new-world reg-path)
+          random-nums (repeatedly 5 (partial read-register (new-registers "RANDOM") new-world))]
+      (is (= (get-in new-registers ["RANDOM" :val])
+             1000))
+      (is (every? #(< -1 % 1000) random-nums))
+      (is (apply not= random-nums)))))
 
-;(deftest random-test
-;  (testing "push to random register and pull a series of numbers all different
-;           from random register"
-;    (let [random-register (get-in initial-multi-use-robot [:brain :registers "RANDOM"])
-;          new-world (register/write-register random-register initial-multi-use-world 1000)
-;          random-nums (repeatedly 5 (partial register/read-register random-register new-world))]
-;    (is (= (get-in new-world [:robots 0 :brain :registers "RANDOM" :val])
-;           1000))
-;    (is (every? #(< -1 % 1000) random-nums))))) 
-;
