@@ -26,21 +26,30 @@
 ; with line numbers for the obj-code instructions, and only the registers specified.
 ; Very convenient.
 
-(def get-robot (fn [worlds world-tick-idx robot-idx]
-                 ((:robots (world/get-world 
-                             world-tick-idx 
-                             robot-idx 
-                             worlds)) 
-                  robot-idx)))
 
-(def ppt (fn [worlds world-tick-idx robot-idx & reg-keys]
-           (let [robot (get-robot worlds world-tick-idx robot-idx)
-                 {{registers :registers, {instrs :instrs} :obj-code} :brain} robot
-                 registers-to-print (if reg-keys 
-                                      (select-keys registers reg-keys)
-                                      registers)]
-             (pprint
-               (assoc-in 
-                 (assoc-in robot [:brain :registers] registers-to-print) 
-                 [:brain :obj-code :instrs]
-                 (sort (zipmap (range) instrs))))))) 
+(def pprint-robot 
+  (fn [robot & reg-keys]
+    (let [{{registers :registers, {instrs :instrs} :obj-code} :brain :as robot} robot
+          registers-to-print (if reg-keys 
+                               (select-keys registers reg-keys)
+                               registers)]
+      (pprint
+        (assoc-in 
+          (assoc-in robot [:brain :registers] registers-to-print) 
+          [:brain :obj-code :instrs]
+          (sort (zipmap (range) instrs))))))) 
+
+(def pprint-robot-in-world 
+  (fn [world robot-idx & reg-keys]
+    (apply pprint-robot (get-in world [:robots robot-idx]) reg-keys)))
+
+(def pprint-robot-at-world-tick 
+  (fn [worlds world-tick-idx robot-idx & reg-keys]
+    (apply pprint-robot-in-world 
+           (world/get-world world-tick-idx robot-idx worlds) 
+           robot-idx 
+           reg-keys)))
+
+(def ppr pprint-robot)
+(def pprw pprint-robot-in-world)
+(def pprwt pprint-robot-at-world-tick)
