@@ -17,28 +17,28 @@
       (double (/ v-diff a)))))
 
 (defn d-with-constant-a
-  [vi a t]
-  (double (+ (* vi t) (/ (* a (Math/pow t 2)) 2))))
+  [d vi a t]
+  (double (+ d (* vi t) (/ (* a (Math/pow t 2)) 2))))
 
 (defn v-with-constant-a
   [vi a t]
   (+ vi (* a t)))
 
 (defn d-and-v-given-desired-v
-  "returns a vector of distance and velocity at final position.
+  "returns a map of distance and velocity at final position.
   the function deals with either of two cases:
   1) when the desired velocity is not reached during the 
-  given time interval, in which case it's just 
-  distance-from-constant-acceleration, and 
+     given time interval, in which case it's just 
+     distance-with-constant-acceleration 
   2) when we reach the desired velocity (or are already there)
-  and then cruise the rest of the way." 
-  [vi vf a t]
+     and then cruise the rest of the way" 
+  [d vi vf a t]
   (let [t' (time-to-reach-desired-v vi vf a)]
-    (if (<= t t')
-      [(d-with-constant-a vi a t) 
-       (v-with-constant-a vi a t)]
-      [(+ (d-with-constant-a vi a t') (d-with-constant-a vf 0 (- t t'))) 
-       vf])))
+    (if (> t' t)
+      {:d (d-with-constant-a d vi a t) 
+       :v (v-with-constant-a vi a t)}
+      {:d (d-with-constant-a (d-with-constant-a d vi a t') vf 0 (- t t')) 
+       :v vf})))
 
 ; TODO: velocity-given-desired-velocity-and-distance or something 
 ; like that, to figure out the velocity at the point when
@@ -82,10 +82,18 @@
                       register/read-register 
                       register/write-register)
           new-robot (get-in new-world [:robots robot-idx])
-          [pos-x v-x] (d-and-v-given-desired-v (:v-x robot) (:desired-v-x robot)
-                                               MAX_ACCEL TICK_DURATION)
-          [pos-y v-y] (d-and-v-given-desired-v (:v-y robot) (:desired-v-y robot)
-                                               MAX_ACCEL TICK_DURATION)]
+          {pos-x :d v-x :v} (d-and-v-given-desired-v 
+                              (:pos-x robot)
+                              (:v-x robot) 
+                              (:desired-v-x robot)
+                              MAX_ACCEL 
+                              TICK_DURATION)
+          {pos-y :d v-y :v} (d-and-v-given-desired-v 
+                              (:pos-y robot)
+                              (:v-y robot) 
+                              (:desired-v-y robot)
+                              MAX_ACCEL 
+                              TICK_DURATION)]
       (assoc-in 
         new-world 
         [:robots robot-idx] 
