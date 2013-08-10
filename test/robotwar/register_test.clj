@@ -46,7 +46,8 @@
       (is (apply not= random-nums)))))
 
 (deftest read-only-test
-  (testing "can read from read-only registers, but not write to them"
+  (testing "can read from read-only registers, but not write to them
+           (and also the robot fields don't get written to)"
     (let [world1 (assoc-in world [:robots 0 :damage] 50)
           registers1 (get-registers world1)
           world2 (write-register (registers "DAMAGE") world1 25)
@@ -54,4 +55,6 @@
       (is (= (read-register (registers1 "DAMAGE") world1)
              50))
       (is (= (read-register (registers2 "DAMAGE") world2)
+             50))
+      (is (= (get-in world2 [:robots 0 :damage])
              50)))))
