@@ -30,6 +30,11 @@
          :robot-idx
          (mod (inc robot-idx) (count robots))))
 
+(defn iterate-worlds
+  "convenience function for creating a sequence of worlds"
+  [world]
+  (iterate tick-world world))
+  
 (defn get-world
   "convenience function for identifying a world in a sequence of worlds
   by its round idx (where one round means all the robots have stepped)
