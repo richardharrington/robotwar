@@ -24,8 +24,7 @@
 ;
 ; it takes a world-tick number and a robot index number, and prettyprints a robot
 ; with line numbers for the obj-code instructions, and only the registers specified.
-; (also it only prints the values of the registers, not the register-maps with
-; their ugly full system-names of the read and write functions.) Very convenient.
+; Very convenient.
 
 (def get-robot (fn [worlds world-tick-idx robot-idx]
                  ((:robots (world/get-world 
@@ -35,14 +34,13 @@
                   robot-idx)))
 
 (def ppt (fn [worlds world-tick-idx robot-idx & reg-keys]
-           (let [{:keys [brain registers] :as robot} 
-                 (get-robot worlds world-tick-idx robot-idx)]
-             (pprint 
-               (into robot 
-                     {:brain (assoc-in 
-                               brain 
-                               [:obj-code :instrs]
-                               (sort (zipmap (range) (get-in 
-                                                       brain 
-                                                       [:obj-code :instrs]))))
-                      :register (sort (select-keys registers reg-keys))})))))
+           (let [robot (get-robot worlds world-tick-idx robot-idx)
+                 {{registers :registers, {instrs :instrs} :obj-code} :brain} robot
+                 registers-to-print (if reg-keys 
+                                      (select-keys registers reg-keys)
+                                      registers)]
+             (pprint
+               (assoc-in 
+                 (assoc-in robot [:brain :registers] registers-to-print) 
+                 [:brain :obj-code :instrs]
+                 (sort (zipmap (range) instrs))))))) 
