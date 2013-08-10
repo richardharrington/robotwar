@@ -58,3 +58,13 @@
              50))
       (is (= (get-in world2 [:robots 0 :damage])
              50)))))
+
+(deftest read-write-test
+  (testing "can read and write from registers that are interfaces
+           for robot fields, and also those robot fields get written to"
+    (let [new-world (write-register (registers "SPEEDX") world 90)
+          new-registers (get-registers new-world)]
+      (is (= (read-register (new-registers "SPEEDX") new-world)
+             90))
+      (is (= (get-in new-world [:robots 0 :desired-v-x])
+             90)))))
