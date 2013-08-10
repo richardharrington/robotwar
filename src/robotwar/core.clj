@@ -1,16 +1,15 @@
 (ns robotwar.core
   (:use [clojure.pprint])
-  (:require [robotwar.assembler :as assembler]
-            [robotwar.brain :as brain]
-            [robotwar.robot :as robot]
+  (:require [robotwar.test-programs :as test-programs]
             [robotwar.world :as world]
-            [robotwar.brain-test :as brain-test]
             [robotwar.register :as register]))
 
-; this is a hacky place for messing with stuff. currently imports 
-; all the test data from brain-test.
+; this is a hacky place for messing with stuff. 
 
-(def world (nth brain-test/worlds 0))
+(def world 
+  (world/init-world 256 256 [test-programs/multi-use-program]))
+(def worlds (iterate world/tick-world world))
+
 (def robots (:robots world))
 (def robot (robots 0))
 (def registers (:registers robot))
@@ -18,8 +17,6 @@
 (def wr register/write-register)
 
 (defn rv [reg-name] (get-in registers [reg-name :val]))
-
-
 
 ; ppt uses some of those variables to 
 ; pretty-print a robot-state with line numbers for the obj-code instructions, 
@@ -48,8 +45,4 @@
                                (sort (zipmap (range) (get-in 
                                                        brain 
                                                        [:obj-code :instrs]))))
-                      :registers (sort (into {} (for [[reg-name reg-map] 
-                                                      (select-keys 
-                                                        registers 
-                                                        reg-keys)]
-                                                  {reg-name (:val reg-map)})))})))))
+                      :register (sort (select-keys registers reg-keys))})))))
