@@ -35,3 +35,8 @@
    robotwar.core=> (= 0 0)
    true
    robotwar.core=>
+
+
+   TODO: Change the function so that the TICK_DURATION comes from the world, not from 
+   a constant in the file. This way, we can easily set it to 1 for tests, and adjust it
+   appropriately for actual game play.
