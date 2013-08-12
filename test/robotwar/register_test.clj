@@ -4,7 +4,7 @@
         [robotwar.register])
   (:require [robotwar.world :as world]))
 
-(def world (world/init-world 256 256 [""]))
+(def world (world/init-world 256.0 256.0 [""]))
 (def robot-path [:robots 0])
 (def reg-path [:robots 0 :brain :registers])
 (def registers (get-in world reg-path))
@@ -48,7 +48,7 @@
 (deftest read-only-test
   (testing "can read from read-only registers, but not write to them
            (and also the robot fields don't get written to)"
-    (let [world1 (assoc-in world [:robots 0 :damage] 50)
+    (let [world1 (assoc-in world [:robots 0 :damage] 50.0)
           registers1 (get-registers world1)
           world2 (write-register (registers "DAMAGE") world1 25)
           registers2 (get-registers world2)]
@@ -57,7 +57,7 @@
       (is (= (read-register (registers2 "DAMAGE") world2)
              50))
       (is (= (get-in world2 [:robots 0 :damage])
-             50)))))
+             50.0)))))
 
 (deftest read-write-test
   (testing "can read and write from registers that are interfaces
@@ -67,4 +67,4 @@
       (is (= (read-register (new-registers "SPEEDX") new-world)
              90))
       (is (= (get-in new-world [:robots 0 :desired-v-x])
-             90)))))
+             90.0)))))

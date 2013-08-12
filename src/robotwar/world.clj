@@ -3,7 +3,7 @@
   (:require [robotwar.robot :as robot]))
 
 
-(def TICK_DURATION 1)
+(def TICK_DURATION 1.0)
 
 
 ; TODO: pass in tick-duration to world from somewhere else.
@@ -20,8 +20,8 @@
                                  program 
                                  {:pos-x (rand-int width)
                                   :pos-y (rand-int height)
-                                  :aim 0
-                                  :damage 0}))
+                                  :aim 0.0
+                                  :damage 0.0}))
                              programs))
    :robot-idx 0})
 

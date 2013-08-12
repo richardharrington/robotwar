@@ -4,7 +4,7 @@
 
 ; MAX_ACCEL is in decimeters per second per second. 
 ; TODO: should be passed in from some higher level module, or a config module.
-(def MAX_ACCEL 40)
+(def MAX_ACCEL 40.0)
 
 ; yay classical mechanics
 
@@ -17,7 +17,7 @@
 
 (defn d-with-constant-a
   [d vi a t]
-  (double (+ d (* vi t) (/ (* a (Math/pow t 2)) 2))))
+  (+ d (* vi t) (/ (* a (Math/pow t 2)) 2.0)))
 
 (defn v-with-constant-a
   [vi a t]
@@ -36,7 +36,7 @@
     (if (> t' t)
       {:d (d-with-constant-a d vi a t) 
        :v (v-with-constant-a vi a t)}
-      {:d (d-with-constant-a (d-with-constant-a d vi a t') vf 0 (- t t')) 
+      {:d (d-with-constant-a (d-with-constant-a d vi a t') vf 0.0 (- t t')) 
        :v vf})))
 
 ; TODO: velocity-given-desired-velocity-and-distance or something 
@@ -58,10 +58,10 @@
   {:idx idx
    :pos-x (:pos-x attributes)
    :pos-y (:pos-y attributes)
-   :v-x 0
-   :v-y 0
-   :desired-v-x 0
-   :desired-v-y 0
+   :v-x 0.0
+   :v-y 0.0
+   :desired-v-x 0.0
+   :desired-v-y 0.0
    :aim (:aim attributes)
    :damage (:damage attributes)
    :brain (brain/init-brain src-code (register/init-registers idx))})

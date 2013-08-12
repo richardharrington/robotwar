@@ -35,19 +35,22 @@
                                data))})
 
 (def robot-field-read-mixin
-  ; returns the value of a field in the robot hash-map
-  {:read-register (fn [this world]
-                    (get-in 
-                      world 
-                      (conj (path-to-robot (:robot-idx this)) (:field-name this))))})
+  ; returns the value of a field in the robot hash-map,
+  ; rounded to an integer
+  {:read-register 
+   (fn [this world]
+     (Math/round (get-in 
+                   world 
+                   (conj (path-to-robot (:robot-idx this)) (:field-name this)))))})
 
 (def robot-field-write-mixin
   ; returns a world with the value of a field in the robot hash map altered
+  ; (with the number being cast to floating point before being pushed)
   {:write-register (fn [this world data]
                      (assoc-in 
                        world 
                        (conj (path-to-robot (:robot-idx this)) (:field-name this)) 
-                       data))})
+                       (float data)))})
 
 (def no-op-write-mixin
   ; returns a world with nothing changed

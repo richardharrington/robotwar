@@ -7,7 +7,7 @@
 ; this is a hacky place for messing with stuff. 
 
 (def world 
-  (world/init-world 256 256 [test-programs/multi-use-program]))
+  (world/init-world 256.0 256.0 [test-programs/multi-use-program]))
 (def worlds (world/iterate-worlds world))
 
 (def robots (:robots world))
