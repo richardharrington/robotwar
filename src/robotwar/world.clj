@@ -1,6 +1,8 @@
 (ns robotwar.world
   (:use [clojure.string :only [join]])
-  (:require [robotwar.robot :as robot]))
+  (:require [clj-time.core :as time]
+            [clj-time.periodic :as periodic]
+            [robotwar.robot :as robot]))
 
 (defn init-world
   "initialize all the variables for a robot world."
@@ -35,7 +37,15 @@
   "convenience function for creating a sequence of worlds"
   [world tick-duration]
   (iterate #(tick-world % tick-duration) world))
-  
+
+(defn world-seq
+  "returns a world-sequence. keeps the tick-duration field
+  as a key instead of just passing it to iterate-worlds and forgetting it,
+  because it's needed later for rendering."
+  [world tick-duration]
+  {:worlds (iterate-worlds world tick-duration)
+   :tick-duration tick-duration})
+
 (defn get-world
   "convenience function for identifying a world in a sequence of worlds
   by its round idx (where one round means all the robots have stepped)
@@ -51,21 +61,39 @@
 
 (defn arena-text-grid
   "outputs the arena, with borders"
-  [{:keys [width height robots]} output-width output-height]
+  [{:keys [width height robots]} print-width print-height]
   (let [horiz-border-char "-"
         vert-border-char "+"
-        header-footer (apply str (repeat (+ output-width 2) horiz-border-char))
-        scale-x #(* % (/ output-width width))
-        scale-y #(* % (/ output-height height))
-        field (for [y (range output-height), x (range output-width)]
+        header-footer (apply str (repeat (+ (* print-width 3) 2) horiz-border-char))
+        scale-x #(* % (/ print-width width))
+        scale-y #(* % (/ print-height height))
+        field (for [y (range print-height), x (range print-width)]
                 (or (some (fn [{:keys [icon pos-x pos-y]}]
                         (when (near-point [(scale-x pos-x) (scale-y pos-y)] [x y])
-                          icon))
+                          (str "(" icon ")")))
                       robots)
-                    " "))]
+                    "   "))]
     (str header-footer
          "\n" 
          (join "\n" (map #(join (apply str %) (repeat 2 vert-border-char))
-                         (partition output-width field))) 
+                         (partition print-width field))) 
          "\n" 
          header-footer)))
+
+(defn animate
+  "takes a world-sequence and animates it,
+  using the :tick-duration to set the frame rate"
+  [{:keys [worlds tick-duration]} print-width print-height]
+  (let [frame-rate (Math/round (/ 1 tick-duration))]
+    (doseq [[world idx next-tick] (map 
+                                    vector 
+                                    worlds 
+                                    (range) 
+                                    (periodic/periodic-seq 
+                                      (time/now) 
+                                      (time/secs tick-duration)))]
+    (println (arena-text-grid world print-width print-height))
+    (println "Animation frame rate:" frame-rate)
+    (println "World-tick number:" idx)
+      )))
+    ;(Thread/sleep (* (time/in-secs (time/interval (time/now) next-tick)) 1000)))))

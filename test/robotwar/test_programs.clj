@@ -27,3 +27,7 @@
     RANDOM TO A
     RANDOM TO A
     RANDOM TO A ")
+
+(def speedy-program
+  " 70 TO SPEEDX
+    140 TO SPEEDY ")
