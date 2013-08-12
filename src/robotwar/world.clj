@@ -55,8 +55,8 @@
     (nth worlds world-idx)))
 
 (defn near-point [[pos-x pos-y] [x y]] 
-  (and (= (Math/round pos-x) x)
-       (= (Math/round pos-y) y)))
+  (and (= (int pos-x) x)
+       (= (int pos-y) y)))
 
 (defn arena-text-grid
   "outputs the arena, with borders"
