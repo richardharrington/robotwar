@@ -2,9 +2,8 @@
   (:require [robotwar.brain :as brain]
             [robotwar.register :as register]))
 
-; TICK_DURATION is in seconds. MAX_ACCEL is in decimeters per second per second. 
+; MAX_ACCEL is in decimeters per second per second. 
 ; TODO: should be passed in from some higher level module, or a config module.
-(def TICK_DURATION 1)
 (def MAX_ACCEL 40)
 
 ; yay classical mechanics
@@ -73,7 +72,7 @@
   TODO: add support for collision with walls first (right now it just 
   stops when it gets there, and doesn't get damaged or bounce), 
   then support for collision with other robots." 
-  [{robot-idx :idx :as robot} world]
+  [{robot-idx :idx :as robot} world tick-duration]
   (if (>= (:damage robot) 100)
     world
     (let [new-world (brain/step-brain 
