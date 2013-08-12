@@ -92,8 +92,12 @@
                                     (periodic/periodic-seq 
                                       (time/now) 
                                       (time/secs tick-duration)))]
-    (println (arena-text-grid world print-width print-height))
-    (println "Animation frame rate:" frame-rate)
-    (println "World-tick number:" idx)
+      (println (arena-text-grid world print-width print-height))
+      (doseq [robot-idx (range (count (:robots world)))]
+        (println (str robot-idx ": "
+                      "x " (get-in world [:robots robot-idx :pos-x]) ", "
+                      "y " (get-in world [:robots robot-idx :pos-y]))))
+      (println "Animation frame rate:" frame-rate)
+      (println "World-tick number:" idx)
       )))
-    ;(Thread/sleep (* (time/in-secs (time/interval (time/now) next-tick)) 1000)))))
+;(Thread/sleep (* (time/in-secs (time/interval (time/now) next-tick)) 1000)))))
