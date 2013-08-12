@@ -14,8 +14,7 @@
                                (robot/init-robot 
                                  idx 
                                  program 
-                                 {:icon (str idx)
-                                  :pos-x (rand-int width)
+                                 { :pos-x (rand-int width)
                                   :pos-y (rand-int height)
                                   :aim 0.0
                                   :damage 0.0}))
@@ -68,9 +67,9 @@
         scale-x #(* % (/ print-width width))
         scale-y #(* % (/ print-height height))
         field (for [y (range print-height), x (range print-width)]
-                (or (some (fn [{:keys [icon pos-x pos-y]}]
+                (or (some (fn [{:keys [idx pos-x pos-y]}]
                         (when (near-point [(scale-x pos-x) (scale-y pos-y)] [x y])
-                          (str "(" icon ")")))
+                          (str "(" idx ")")))
                       robots)
                     "   "))]
     (str header-footer
