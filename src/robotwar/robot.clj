@@ -82,23 +82,18 @@
                       register/read-register 
                       register/write-register)
           new-robot (get-in new-world [:robots robot-idx])
-          {pos-x :d v-x :v} (d-and-v-given-desired-v 
-                              (:pos-x robot)
-                              (:v-x robot) 
-                              (:desired-v-x robot)
-                              MAX_ACCEL 
-                              TICK_DURATION)
-          {pos-y :d v-y :v} (d-and-v-given-desired-v 
-                              (:pos-y robot)
-                              (:v-y robot) 
-                              (:desired-v-y robot)
-                              MAX_ACCEL 
-                              TICK_DURATION)]
-      (assoc-in 
-        new-world 
-        [:robots robot-idx] 
-        (into new-robot {:pos-x pos-x
-                         :pos-y pos-y
-                         :v-x v-x
-                         :v-y v-y})))))
+          {:keys [pos-x pos-y v-x v-y desired-v-x desired-v-y]} new-robot 
+          max-accel-x (if (pos? desired-v-x) MAX_ACCEL (- MAX_ACCEL))
+          max-accel-y (if (pos? desired-v-y) MAX_ACCEL (- MAX_ACCEL))
+          {new-pos-x :d new-v-x :v} (d-and-v-given-desired-v 
+                                      pos-x v-x desired-v-x max-accel-x tick-duration)
+          {new-pos-y :d new-v-y :v} (d-and-v-given-desired-v 
+                                      pos-y v-y desired-v-y max-accel-y tick-duration)]
+          (assoc-in 
+            new-world 
+            [:robots robot-idx] 
+            (into new-robot {:pos-x pos-x
+                             :pos-y pos-y
+                             :v-x v-x
+                             :v-y v-y})))))
 
