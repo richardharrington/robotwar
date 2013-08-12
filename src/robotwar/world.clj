@@ -37,8 +37,9 @@
   [world tick-duration]
   (iterate #(tick-world % tick-duration) world))
 
-(defn world-seq
-  "returns a world-sequence. keeps the tick-duration field
+(defn worlds-with-timer
+  "returns a map containing a world-sequence and a tick-duration. 
+  keeps the tick-duration field
   as a key instead of just passing it to iterate-worlds and forgetting it,
   because it's needed later for rendering."
   [world tick-duration]
