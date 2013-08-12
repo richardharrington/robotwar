@@ -84,7 +84,7 @@
   "takes a world-sequence and animates it,
   using the :tick-duration to set the frame rate"
   [{:keys [worlds tick-duration]} print-width print-height]
-  (let [frame-rate (Math/round (/ 1 tick-duration))]
+  (let [frame-rate (/ 1 tick-duration)]
     (doseq [[world idx next-tick] (map 
                                     vector 
                                     worlds 
@@ -97,7 +97,7 @@
         (println (str robot-idx ": "
                       "x " (get-in world [:robots robot-idx :pos-x]) ", "
                       "y " (get-in world [:robots robot-idx :pos-y]))))
-      (println "Animation frame rate:" frame-rate)
+      (println (format "Animation frame rate: %.1f frames per second", frame-rate))
       (println "World-tick number:" idx)
       )))
 ;(Thread/sleep (* (time/in-secs (time/interval (time/now) next-tick)) 1000)))))
