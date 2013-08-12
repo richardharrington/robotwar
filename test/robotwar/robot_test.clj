@@ -7,6 +7,10 @@
 
 (def world (world/init-world 256.0 256.0 [""]))
 
+; The next four tests are pretty much cut and pasted from each other. So sue me.
+; To change them significantly, delete three of them and build up from the first one
+; again. TODO: write a wrapper for these.
+
 (deftest positive-acceleration-x-test
   (testing "application of SPEEDX register in
            positive direction has expected behavior"
