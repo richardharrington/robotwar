@@ -10,7 +10,7 @@
 (deftest positive-acceleration-test
   (testing "application of SPEEDX register in
            positive direction has expected behavior"
-    (let [zeroed-world (assoc-in world [:robots 0 :pos-x] 0)
+    (let [zeroed-world (assoc-in world [:robots 0 :pos-x] 0.0)
           zeroed-registers (get-in world [:robots 0 :brain :registers])
           speedy-world (register/write-register (zeroed-registers "SPEEDX") zeroed-world 140)
           speedy-worlds (world/iterate-worlds speedy-world 1.0)]
