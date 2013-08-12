@@ -67,4 +67,4 @@
       (is (= (read-register (new-registers "SPEEDX") new-world)
              90))
       (is (= (get-in new-world [:robots 0 :desired-v-x])
-             90.0)))))
+             9.0)))))

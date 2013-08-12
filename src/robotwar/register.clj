@@ -39,18 +39,20 @@
   ; rounded to an integer
   {:read-register 
    (fn [this world]
-     (Math/round (get-in 
-                   world 
-                   (conj (path-to-robot (:robot-idx this)) (:field-name this)))))})
+     (Math/round (/ (get-in 
+                      world 
+                      (conj (path-to-robot (:robot-idx this)) (:field-name this))) 
+                    (:multiplier this))))})
 
 (def robot-field-write-mixin
   ; returns a world with the value of a field in the robot hash map altered
   ; (with the number being cast to floating point before being pushed)
-  {:write-register (fn [this world data]
-                     (assoc-in 
-                       world 
-                       (conj (path-to-robot (:robot-idx this)) (:field-name this)) 
-                       (float data)))})
+  {:write-register 
+   (fn [this world data]
+     (assoc-in 
+       world 
+       (conj (path-to-robot (:robot-idx this)) (:field-name this)) 
+       (float (* data (:multiplier this)))))})
 
 (def no-op-write-mixin
   ; returns a world with nothing changed
@@ -67,12 +69,12 @@
   IReadRegister register-field-read-mixin
   IWriteRegister register-field-write-mixin)
 
-(defrecord ReadWriteRobotFieldRegister [robot-idx field-name])
+(defrecord ReadWriteRobotFieldRegister [robot-idx field-name multiplier])
 (extend ReadWriteRobotFieldRegister
   IReadRegister robot-field-read-mixin
   IWriteRegister robot-field-write-mixin)
 
-(defrecord ReadOnlyRobotFieldRegister [robot-idx field-name])
+(defrecord ReadOnlyRobotFieldRegister [robot-idx field-name multiplier])
 (extend ReadOnlyRobotFieldRegister
   IReadRegister robot-field-read-mixin
   IWriteRegister no-op-write-mixin)
@@ -114,18 +116,18 @@
   the appropriate acceleration, which may have to applied over several ticks."
   [robot-idx]
   (let [storage-registers (for [reg-name [ "A" "B" "C" "D" "E" "F" "G" "H" "I" "J" "K" "L" 
-                                           "M" "N" "O" "P" "Q" "R" "S" "T" "U" "V" "W" "Z"]]
+                                          "M" "N" "O" "P" "Q" "R" "S" "T" "U" "V" "W" "Z"]]
                             {reg-name (->StorageRegister robot-idx reg-name 0)})
-        read-only-registers (for [[reg-name robot-field] [["X"      :pos-x]
-                                                          ["Y"      :pos-y]
-                                                          ["DAMAGE" :damage]]]
-                              {reg-name (->ReadOnlyRobotFieldRegister robot-idx robot-field)})
+        read-only-registers (for [[reg-name robot-field mult] [["X"      :pos-x  1.0]
+                                                               ["Y"      :pos-y  1.0]
+                                                               ["DAMAGE" :damage 1.0]]]
+                              {reg-name (->ReadOnlyRobotFieldRegister robot-idx robot-field mult)})
         ; TODO: change reading from these registers into an error, instead of just a wasted
         ; processor cyle for the robot.
-        read-write-registers (for [[reg-name robot-field] [["AIM"    :aim]
-                                                           ["SPEEDX" :desired-v-x]
-                                                           ["SPEEDY" :desired-v-y]]]
-                               {reg-name (->ReadWriteRobotFieldRegister robot-idx robot-field)})]
+        read-write-registers (for [[reg-name robot-field mult] [["AIM"    :aim         1.0]
+                                                                ["SPEEDX" :desired-v-x 0.1]
+                                                                ["SPEEDY" :desired-v-y 0.1]]]
+                               {reg-name (->ReadWriteRobotFieldRegister robot-idx robot-field mult)})]
     (into {} (concat storage-registers 
                      read-only-registers
                      read-write-registers

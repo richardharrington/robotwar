@@ -4,7 +4,7 @@
 
 ; MAX_ACCEL is in decimeters per second per second. 
 ; TODO: should be passed in from some higher level module, or a config module.
-(def MAX_ACCEL 40.0)
+(def MAX_ACCEL 4.0)
 
 ; yay classical mechanics
 
@@ -12,12 +12,12 @@
   [vi vf a]
   (let [v-diff (- vf vi)]
     (if (zero? v-diff)
-      0
+      0.0
       (double (/ v-diff a)))))
 
 (defn d-with-constant-a
   [d vi a t]
-  (+ d (* vi t) (/ (* a (Math/pow t 2)) 2.0)))
+  (+ d (* vi t) (/ (* a (Math/pow t 2)) 2)))
 
 (defn v-with-constant-a
   [vi a t]
