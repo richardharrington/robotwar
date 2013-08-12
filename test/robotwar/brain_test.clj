@@ -9,7 +9,7 @@
 (def initial-world 
   (world/init-world 256.0 256.0 [test-programs/multi-use-program]))
 
-(def worlds (iterate world/tick-world initial-world))
+(def worlds (world/iterate-worlds initial-world 1.0))
 
 (deftest branching-test
   (testing "comparison statement should cause jump in instr-ptr"

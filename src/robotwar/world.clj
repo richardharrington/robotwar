@@ -2,12 +2,6 @@
   (:use [clojure.string :only [join]])
   (:require [robotwar.robot :as robot]))
 
-
-(def TICK_DURATION 1.0)
-
-
-; TODO: pass in tick-duration to world from somewhere else.
-;
 (defn init-world
   "initialize all the variables for a robot world."
   [width height programs]
@@ -31,15 +25,15 @@
   (where each robot gets to go) rather than just a stream of worlds, one for 
   each robot. Because otherwise, do we step the shells after every 
   single robot has their turn?"
-  [{:keys [robots robot-idx] :as world}]
-  (assoc (robot/step-robot (robots robot-idx) world TICK_DURATION)
+  [{:keys [robots robot-idx] :as world} tick-duration]
+  (assoc (robot/step-robot (robots robot-idx) world tick-duration)
          :robot-idx
          (mod (inc robot-idx) (count robots))))
 
 (defn iterate-worlds
   "convenience function for creating a sequence of worlds"
-  [world]
-  (iterate tick-world world))
+  [world tick-duration]
+  (iterate #(tick-world % tick-duration) world))
   
 (defn get-world
   "convenience function for identifying a world in a sequence of worlds

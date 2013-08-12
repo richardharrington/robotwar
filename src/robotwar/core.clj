@@ -8,7 +8,7 @@
 
 (def world 
   (world/init-world 256.0 256.0 [test-programs/multi-use-program]))
-(def worlds (world/iterate-worlds world))
+(def worlds (world/iterate-worlds world 1.0))
 
 (def robots (:robots world))
 (def robot (robots 0))
