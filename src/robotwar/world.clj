@@ -45,21 +45,27 @@
         world-idx (+ (* round-idx num-robots) robot-idx)]
     (nth worlds world-idx)))
 
+(defn near-point [[pos-x pos-y] [x y]] 
+  (and (= (Math/round pos-x) x)
+       (= (Math/round pos-y) y)))
+
 (defn arena-text-grid
   "outputs the arena, with borders"
-  [{:keys [width height robots]}]
+  [{:keys [width height robots]} output-width output-height]
   (let [horiz-border-char "-"
         vert-border-char "+"
-        header-footer (apply str (repeat (+ width 2) horiz-border-char))
-        field (for [y (range height), x (range width)]
-                (some (fn [{{{robot-x "X" robot-y "Y"} :registers} :internal-state, icon :icon}]
-                        (if (= [x y] [robot-x robot-y])
-                          icon
-                          " "))
-                      robots))]
+        header-footer (apply str (repeat (+ output-width 2) horiz-border-char))
+        scale-x #(* % (/ output-width width))
+        scale-y #(* % (/ output-height height))
+        field (for [y (range output-height), x (range output-width)]
+                (or (some (fn [{:keys [icon pos-x pos-y]}]
+                        (when (near-point [(scale-x pos-x) (scale-y pos-y)] [x y])
+                          icon))
+                      robots)
+                    " "))]
     (str header-footer
          "\n" 
          (join "\n" (map #(join (apply str %) (repeat 2 vert-border-char))
-                         (partition width field))) 
+                         (partition output-width field))) 
          "\n" 
          header-footer)))
