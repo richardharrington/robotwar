@@ -91,8 +91,8 @@
           (assoc-in 
             new-world 
             [:robots robot-idx] 
-            (into new-robot {:pos-x pos-x
-                             :pos-y pos-y
-                             :v-x v-x
-                             :v-y v-y})))))
+            (into new-robot {:pos-x new-pos-x
+                             :pos-y new-pos-y
+                             :v-x new-v-x
+                             :v-y new-v-y})))))
 
