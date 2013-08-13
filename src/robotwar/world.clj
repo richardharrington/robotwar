@@ -14,8 +14,8 @@
                                (robot/init-robot 
                                  idx 
                                  program 
-                                 { :pos-x (rand-int width)
-                                  :pos-y (rand-int height)
+                                 {:pos-x (rand width)
+                                  :pos-y (rand height)
                                   :aim 0.0
                                   :damage 0.0}))
                              programs))
