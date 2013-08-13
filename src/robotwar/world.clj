@@ -95,10 +95,15 @@
                                       (time/millis tick-duration-millis)))]
       (println (arena-text-grid world print-width print-height))
       (doseq [robot-idx (range (count (:robots world)))]
-        (println (format "%d: x %.1f, y %.1f" 
+        (println (format "%d: x %.1f, y %.1f, v-x %.1f, v-y %.1f, desired-v-x %.1f, desired-v-y %.1f" 
                          robot-idx 
                          (get-in world [:robots robot-idx :pos-x])
-                         (get-in world [:robots robot-idx :pos-y]))))
+                         (get-in world [:robots robot-idx :pos-y])
+                         (get-in world [:robots robot-idx :v-x])
+                         (get-in world [:robots robot-idx :v-y])
+                         (get-in world [:robots robot-idx :desired-v-x])
+                         (get-in world [:robots robot-idx :desired-v-y])
+                         )))
       (println (format "Animation frame rate: %.1f frames per second", frame-rate))
       (println "World-tick number:" idx)
       (let [now (time/now)]
