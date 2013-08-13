@@ -94,9 +94,10 @@
                                       (time/secs tick-duration)))]
       (println (arena-text-grid world print-width print-height))
       (doseq [robot-idx (range (count (:robots world)))]
-        (println (str robot-idx ": "
-                      "x " (get-in world [:robots robot-idx :pos-x]) ", "
-                      "y " (get-in world [:robots robot-idx :pos-y]))))
+        (println (format "%d: x %.1f, y %.1f" 
+                         robot-idx 
+                         (get-in world [:robots robot-idx :pos-x])
+                         (get-in world [:robots robot-idx :pos-y]))))
       (println (format "Animation frame rate: %.1f frames per second", frame-rate))
       (println "World-tick number:" idx)
       )))
