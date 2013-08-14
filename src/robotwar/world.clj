@@ -83,16 +83,17 @@
 (defn animate
   "takes a world-sequence and animates it,
   using the :tick-duration to set the frame rate"
-  [{:keys [worlds tick-duration]} print-width print-height]
-  (let [frame-rate (/ 1 tick-duration)
-        tick-duration-millis (Math/round (* tick-duration 1000))]
+  [{:keys [worlds tick-duration]} print-width print-height fast-forward]
+  (let [frame-duration (/ tick-duration fast-forward)
+        frame-rate (/ 1 frame-duration)
+        frame-duration-millis (Math/round (* frame-duration 1000))]
     (doseq [[world idx next-tick] (map 
                                     vector 
                                     worlds 
                                     (range) 
                                     (periodic/periodic-seq 
                                       (time/now) 
-                                      (time/millis tick-duration-millis)))]
+                                      (time/millis frame-duration-millis)))]
       (println (arena-text-grid world print-width print-height))
       (doseq [robot-idx (range (count (:robots world)))]
         (println (format "%d: x %.1f, y %.1f, v-x %.1f, v-y %.1f, desired-v-x %.1f, desired-v-y %.1f" 
