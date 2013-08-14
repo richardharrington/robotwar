@@ -62,7 +62,7 @@
   stops when it gets there, and doesn't get damaged or bounce), 
   then support for collision with other robots." 
   [{robot-idx :idx :as robot} world tick-duration]
-  (if (>= (:damage robot) 100)
+  (if (<= (:damage robot) 0)
     world
     (let [new-world (brain/step-brain 
                       robot 

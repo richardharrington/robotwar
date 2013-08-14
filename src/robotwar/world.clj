@@ -17,7 +17,7 @@
                                  {:pos-x (rand width)
                                   :pos-y (rand height)
                                   :aim 0.0
-                                  :damage 0.0}))
+                                  :damage 100.0}))
                              programs))
    :robot-idx 0})
 
