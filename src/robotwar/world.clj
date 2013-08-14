@@ -106,7 +106,8 @@
                          (get-in world [:robots robot-idx :desired-v-y])
                          )))
       (println (format "Animation frame rate: %.1f frames per second", frame-rate))
-      (println "World-tick number:" idx)
+      (println "Tick number:" idx)
+      (println (format "Seconds elapsed in the game-world: %.1f", (* tick-duration idx)))
       (let [now (time/now)]
         (if (time/before? now next-tick)
           (do 
