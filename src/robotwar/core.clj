@@ -1,5 +1,5 @@
 (ns robotwar.core
-  (:use [clojure.pprint])
+  (:use [clojure.pprint :only [pprint]])
   (:require [robotwar.test-programs :as test-programs]
             [robotwar.world :as world]
             [robotwar.register :as register]))
