@@ -1,6 +1,7 @@
 (ns robotwar.test-programs)
 
-(def multi-use-program
+(def programs
+  {:multi-use
   " START 
         0 TO A
     TEST 
@@ -11,23 +12,48 @@
     INCREMENT 
         A + 1 TO A 
         ENDSUB 
-        200 TO A ")
-
-(def index-data-program
+        200 TO A "
+  
+  :index-data
   ; to test the INDEX/DATA pair of registers
   " 300 TO A
     1 TO INDEX
-    DATA TO B")
-
-(def random-program
+    DATA TO B"
+  
+  :random
   ; to test the RANDOM register
   " 1000 TO RANDOM
     RANDOM TO A
     RANDOM TO A
     RANDOM TO A
     RANDOM TO A
-    RANDOM TO A ")
+    RANDOM TO A "
 
-(def speedy-program
-  " 70 TO SPEEDX
-    140 TO SPEEDY ")
+ :speedy
+ " 140 TO SPEEDX
+   250 TO SPEEDY "
+
+ :moving-to-spot
+ " 
+   256 TO RANDOM              ; the width and height of the arena
+  
+   LOOP
+       0 TO SPEEDX
+       0 TO SPEEDY
+       RANDOM TO A
+       RANDOM TO B
+   
+   MOVE
+       IF A # X GOSUB MOVEX
+       TO N                   ; N means no-op
+       IF B # Y GOSUB MOVEY
+       IF A = X GOTO LOOP 
+       GOTO MOVE
+        
+   MOVEX 
+       A - X TO SPEEDX
+       ENDSUB
+   
+   MOVEY
+       B - Y TO SPEEDY
+       ENDSUB "}) 

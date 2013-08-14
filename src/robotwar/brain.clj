@@ -1,4 +1,5 @@
 (ns robotwar.brain
+  (:use [clojure.pprint :only [pprint]])
   (:require [robotwar.assembler :as assembler]))
 
 (def op-map (into {} (for [op assembler/op-commands]
