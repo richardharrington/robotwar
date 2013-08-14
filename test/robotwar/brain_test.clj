@@ -7,7 +7,7 @@
             [robotwar.test-programs :as test-programs]))
 
 (def initial-world 
-  (world/init-world 256.0 256.0 [test-programs/multi-use-program]))
+  (world/init-world 256.0 256.0 [(:multi-use test-programs/programs)]))
 
 (def worlds (world/iterate-worlds initial-world 1.0))
 
