@@ -39,15 +39,7 @@
       {:d (d-with-constant-a (d-with-constant-a d vi a t') vf 0.0 (- t t')) 
        :v vf})))
 
-; TODO: velocity-given-desired-velocity-and-distance or something 
-; like that, to figure out the velocity at the point when
-; we collide with the wall or another robot, so we can know the kinetic
-; energy and thus the damage.
-;
-; TODO: fix any bugs, then account for initial distance in these calculations.
-; I think it would go into the basic physics calculations; why not? 
-; ALSO: deal with acceleration being negative, when it should be.
-; And deal with bumping into walls.
+; TODO: deal with bumping into walls and other robots.
 
 (defn init-robot
   "takes a robot-idx, a program, and a robot attribute map and returns a robot.
