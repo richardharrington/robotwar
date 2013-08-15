@@ -32,20 +32,6 @@
          :robot-idx
          (mod (inc robot-idx) (count robots))))
 
-(defn iterate-worlds
-  "convenience function for creating a sequence of worlds"
-  [world tick-duration]
-  (iterate #(tick-world % tick-duration) world))
-
-(defn worlds-with-timer
-  "returns a map containing a world-sequence and a tick-duration. 
-  keeps the tick-duration field
-  as a key instead of just passing it to iterate-worlds and forgetting it,
-  because it's needed later for rendering."
-  [world tick-duration]
-  {:worlds (iterate-worlds world tick-duration)
-   :tick-duration tick-duration})
-
 (defn get-world
   "convenience function for identifying a world in a sequence of worlds
   by its round idx (where one round means all the robots have stepped)
