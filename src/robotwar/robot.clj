@@ -4,7 +4,8 @@
 
 ; MAX_ACCEL is in decimeters per second per second. 
 ; TODO: should be passed in from some higher level module, or a config module.
-(def MAX_ACCEL 4.0)
+(def MAX-ACCEL 4.0)
+(def ^:dynamic *GAME-SECONDS-PER-TICK* 0.03)
 
 ; yay classical mechanics
 
@@ -61,7 +62,7 @@
   TODO: add support for collision with walls first (right now it just 
   stops when it gets there, and doesn't get damaged or bounce), 
   then support for collision with other robots." 
-  [{robot-idx :idx :as robot} world tick-duration]
+  [{robot-idx :idx :as robot} world]
   (if (<= (:damage robot) 0)
     world
     (let [new-world (brain/step-brain 
@@ -71,12 +72,20 @@
                       register/write-register)
           new-robot (get-in new-world [:robots robot-idx])
           {:keys [pos-x pos-y v-x v-y desired-v-x desired-v-y]} new-robot 
-          max-accel-x (if (pos? desired-v-x) MAX_ACCEL (- MAX_ACCEL))
-          max-accel-y (if (pos? desired-v-y) MAX_ACCEL (- MAX_ACCEL))
+          max-accel-x (if (pos? desired-v-x) MAX-ACCEL (- MAX-ACCEL))
+          max-accel-y (if (pos? desired-v-y) MAX-ACCEL (- MAX-ACCEL))
           {new-pos-x :d new-v-x :v} (d-and-v-given-desired-v 
-                                      pos-x v-x desired-v-x max-accel-x tick-duration)
+                                      pos-x 
+                                      v-x 
+                                      desired-v-x 
+                                      max-accel-x 
+                                      *GAME-SECONDS-PER-TICK*)
           {new-pos-y :d new-v-y :v} (d-and-v-given-desired-v 
-                                      pos-y v-y desired-v-y max-accel-y tick-duration)]
+                                      pos-y 
+                                      v-y 
+                                      desired-v-y 
+                                      max-accel-y 
+                                      *GAME-SECONDS-PER-TICK*)]
           (assoc-in 
             new-world 
             [:robots robot-idx] 

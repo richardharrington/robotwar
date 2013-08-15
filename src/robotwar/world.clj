@@ -27,8 +27,8 @@
   (where each robot gets to go) rather than just a stream of worlds, one for 
   each robot. Because otherwise, do we step the shells after every 
   single robot has their turn?"
-  [{:keys [robots robot-idx] :as world} tick-duration]
-  (assoc (robot/step-robot (robots robot-idx) world tick-duration)
+  [{:keys [robots robot-idx] :as world}]
+  (assoc (robot/step-robot (robots robot-idx) world)
          :robot-idx
          (mod (inc robot-idx) (count robots))))
 
