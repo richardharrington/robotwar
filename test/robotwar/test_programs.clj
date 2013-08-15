@@ -34,26 +34,31 @@
    250 TO SPEEDY "
 
  :moving-to-spot
- " 
-   256 TO RANDOM              ; the width and height of the arena
+ "
+                              ; Note: # means !=
+
+   256 TO RANDOM              ; All random numbers will now have as their maximum
+                              ; the width and height of the arena (in meters).
   
    LOOP
-       0 TO SPEEDX
-       0 TO SPEEDY
-       RANDOM TO A
-       RANDOM TO B
+       0 TO SPEEDX            ; Stop the robot (X). 
+       0 TO SPEEDY            ; Stop the robot (Y).
+       RANDOM TO A            ; Store a random X-coordinate in the arena.
+       RANDOM TO B            ; Store a random Y-coordinate in the arena.
    
    MOVE
-       IF A # X GOSUB MOVEX
-       TO N                   ; N means no-op
-       IF B # Y GOSUB MOVEY
-       IF A = X GOTO LOOP 
-       GOTO MOVE
+       IF A # X GOSUB MOVEX   ; If we're moving in the X direction, recalibrate our SPEEDX.
+       TO N                   ; N is for no-op. (This accounts for the lack of an ELSE clause).
+       IF B # Y GOSUB MOVEY   ; If we're moving in the Y direction, recalibrate our SPEEDY. 
+       IF A = X GOTO LOOP     ; A = X and B = Y, so we've stopped moving, so start over. 
+       GOTO MOVE              ; Continue to move.
         
    MOVEX 
-       A - X TO SPEEDX
+       A - X TO SPEEDX        ; New speed: take distance from destination in meters and use
+                              ; it to set SPEEDX, which is measured in decimeters/second.
        ENDSUB
    
    MOVEY
-       B - Y TO SPEEDY
+       B - Y TO SPEEDY        ; New speed: take distance from destination in meters and use
+                              ; it to set SPEEDY, which is measured in decimeters/second.
        ENDSUB "}) 
