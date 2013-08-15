@@ -2,21 +2,27 @@
   (:use [clojure.pprint :only [pprint]])
   (:require [robotwar.test-programs :as test-programs]
             [robotwar.world :as world]
-            [robotwar.register :as register]))
+            [robotwar.register :as register]
+            [robotwar.robot :as robot]
+            [robotwar.animate :as animate]))
 
 ; this is a hacky place for messing with stuff. 
 
-(def world 
-  (world/init-world 256.0 256.0 [(:multi-use test-programs/programs)]))
-(def worlds (iterate world/tick-world world))
 
-(def robots (:robots world))
-(def robot (robots 0))
-(def registers (:registers robot))
+
+(defn progs [] 
+  (vals test-programs/programs))
+(defn world [] 
+  (world/init-world 256.0 256.0 (progs))) 
+(defn worlds [] 
+  (iterate world/tick-world (world)))
+(defn simulation-rounds [] 
+  (animate/build-simulation-rounds (worlds) 25))
+(defn make-it-so []
+  (animate/animate (simulation-rounds) 25 25 20.0))
+
 (def rr register/read-register)
 (def wr register/write-register)
-
-(defn rv [reg-name] (get-in registers [reg-name :val]))
 
 ; ppt uses some of those variables to 
 ; pretty-print a robot-state with line numbers for the obj-code instructions, 
