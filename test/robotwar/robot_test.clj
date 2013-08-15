@@ -1,7 +1,8 @@
 (ns robotwar.robot-test
   (:use [clojure.test]
         [midje.sweet]
-        [robotwar.robot])
+        [robotwar.robot]
+        [robotwar.constants])
   (:require [robotwar.register :as register]
             [robotwar.world :as world]))
 

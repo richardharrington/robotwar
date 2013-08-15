@@ -1,11 +1,7 @@
 (ns robotwar.robot
+  (:use [robotwar.constants])
   (:require [robotwar.brain :as brain]
             [robotwar.register :as register]))
-
-; MAX_ACCEL is in decimeters per second per second. 
-; TODO: should be passed in from some higher level module, or a config module.
-(def MAX-ACCEL 4.0)
-(def ^:dynamic *GAME-SECONDS-PER-TICK* 0.03)
 
 ; yay classical mechanics
 
