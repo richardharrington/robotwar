@@ -17,7 +17,10 @@
     (let [zeroed-world (assoc-in world [:robots 0 :pos-x] 0.0)
           zeroed-registers (get-in world [:robots 0 :brain :registers])
           speedy-world (register/write-register (zeroed-registers "SPEEDX") zeroed-world 140)
-          speedy-worlds (world/iterate-worlds speedy-world 1.0)]
+          speedy-worlds (iterate (fn [{[robot] :robots :as world}]
+                                   (binding [*GAME-SECONDS-PER-TICK* 1.0]
+                                     (step-robot robot world)))
+                                 speedy-world)]
       (is (= (take 6 (map (fn [world] 
                             {:pos-x (get-in world [:robots 0 :pos-x]) 
                              :v-x (get-in world [:robots 0 :v-x]) 
@@ -36,7 +39,10 @@
     (let [zeroed-world (assoc-in world [:robots 0 :pos-x] 100.0)
           zeroed-registers (get-in world [:robots 0 :brain :registers])
           speedy-world (register/write-register (zeroed-registers "SPEEDX") zeroed-world -140)
-          speedy-worlds (world/iterate-worlds speedy-world 1.0)]
+          speedy-worlds (iterate (fn [{[robot] :robots :as world}]
+                                   (binding [*GAME-SECONDS-PER-TICK* 1.0]
+                                     (step-robot robot world)))
+                                 speedy-world)]
       (is (= (take 6 (map (fn [world] 
                             {:pos-x (get-in world [:robots 0 :pos-x]) 
                              :v-x (get-in world [:robots 0 :v-x]) 
@@ -55,7 +61,10 @@
     (let [zeroed-world (assoc-in world [:robots 0 :pos-y] 0.0)
           zeroed-registers (get-in world [:robots 0 :brain :registers])
           speedy-world (register/write-register (zeroed-registers "SPEEDY") zeroed-world 140)
-          speedy-worlds (world/iterate-worlds speedy-world 1.0)]
+          speedy-worlds (iterate (fn [{[robot] :robots :as world}]
+                                   (binding [*GAME-SECONDS-PER-TICK* 1.0]
+                                     (step-robot robot world)))
+                                 speedy-world)]
       (is (= (take 6 (map (fn [world] 
                             {:pos-y (get-in world [:robots 0 :pos-y]) 
                              :v-y (get-in world [:robots 0 :v-y]) 
@@ -74,7 +83,10 @@
     (let [zeroed-world (assoc-in world [:robots 0 :pos-y] 100.0)
           zeroed-registers (get-in world [:robots 0 :brain :registers])
           speedy-world (register/write-register (zeroed-registers "SPEEDY") zeroed-world -140)
-          speedy-worlds (world/iterate-worlds speedy-world 1.0)]
+          speedy-worlds (iterate (fn [{[robot] :robots :as world}]
+                                   (binding [*GAME-SECONDS-PER-TICK* 1.0]
+                                     (step-robot robot world)))
+                                 speedy-world)]
       (is (= (take 6 (map (fn [world] 
                             {:pos-y (get-in world [:robots 0 :pos-y]) 
                              :v-y (get-in world [:robots 0 :v-y]) 
