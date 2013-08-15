@@ -46,7 +46,7 @@
     (println (apply format 
                     "%d: x %.1f, y %.1f, v-x %.1f, v-y %.1f, desired-v-x %.1f, desired-v-y %.1f" 
                     (map #(get-in world [:robots robot-idx %]) 
-                         [:idx :pox-x :pox-y :v-x :v-y :desired-v-x :desired-v-y]))))) 
+                         [:idx :pos-x :pos-y :v-x :v-y :desired-v-x :desired-v-y]))))) 
 
 (defn animate
   "takes a simulation and animates it."
