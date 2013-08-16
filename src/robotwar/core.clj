@@ -11,7 +11,8 @@
 
 
 (defn progs [] 
-  (vals test-programs/programs))
+  (repeat 3 (:moving-to-spot test-programs/programs)))
+
 (defn world [] 
   (world/init-world 256.0 256.0 (progs))) 
 (defn worlds [] 

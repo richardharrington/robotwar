@@ -47,18 +47,18 @@
        RANDOM TO B            ; Store a random Y-coordinate in the arena.
    
    MOVE
-       IF A # X GOSUB MOVEX   ; If we're moving in the X direction, recalibrate our SPEEDX.
-       TO N                   ; N is for no-op. (This accounts for the lack of an ELSE clause).
-       IF B # Y GOSUB MOVEY   ; If we're moving in the Y direction, recalibrate our SPEEDY. 
+       IF A # X GOSUB MOVEX   ; If we're moving in the X direction, recalibrate SPEEDX.
+       TO N                   ; N is for no-op. (needed because there's no ELSE command).
+       IF B # Y GOSUB MOVEY   ; If we're moving in the Y direction, recalibrate SPEEDY. 
        IF A = X GOTO LOOP     ; A = X and B = Y, so we've stopped moving, so start over. 
        GOTO MOVE              ; Continue to move.
         
    MOVEX 
-       A - X TO SPEEDX        ; New speed: take distance from destination in meters and use
+       A - X TO SPEEDX        ; Take distance from destination in meters and use
                               ; it to set SPEEDX, which is measured in decimeters/second.
        ENDSUB
    
    MOVEY
-       B - Y TO SPEEDY        ; New speed: take distance from destination in meters and use
+       B - Y TO SPEEDY        ; Take distance from destination in meters and use
                               ; it to set SPEEDY, which is measured in decimeters/second.
        ENDSUB "}) 
