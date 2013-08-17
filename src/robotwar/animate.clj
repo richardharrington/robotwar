@@ -8,7 +8,10 @@
 (defn build-sim-worlds [combined-worlds fast-forward]
   (let [tick-duration (/ *GAME-SECONDS-PER-TICK* fast-forward)]
     (map-indexed (fn [idx combined-world]
-                  {:sim-world combined-world
+                  {:sim-world (assoc 
+                                combined-world
+                                :robots
+                                (vec (map #(dissoc % :brain) (:robots combined-world))))
                    :idx idx
                    :timestamp (int (* idx tick-duration 1000))})
                  combined-worlds)))
