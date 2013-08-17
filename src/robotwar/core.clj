@@ -15,12 +15,12 @@
 
 (defn world [] 
   (world/init-world 256.0 256.0 (progs))) 
-(defn worlds [] 
-  (iterate world/tick-world (world)))
-(defn simulation-rounds [] 
-  (animate/build-simulation-rounds (worlds) 25))
+(defn combined-worlds [] 
+  (world/build-combined-worlds (world)))
+(defn sim-worlds [] 
+  (animate/build-sim-worlds (combined-worlds) 25))
 (defn make-it-so []
-  (animate/animate (simulation-rounds) 25 25 20.0))
+  (animate/animate (sim-worlds) 25 25 20.0))
 
 (def rr register/read-register)
 (def wr register/write-register)

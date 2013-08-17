@@ -5,16 +5,13 @@
   (:require [clj-time.core :as time]
             [clj-time.periodic :as periodic]))
 
-(defn build-simulation-rounds [worlds fast-forward]
-  (let [round-duration (/ *GAME-SECONDS-PER-TICK* fast-forward)
-        num-robots (count (:robots (nth worlds 0)))
-        rounds (partition num-robots worlds)]
-    ;(println round-duration num-robots (nth rounds 0))
-    (map-indexed (fn [idx worlds]
-                  {:worlds worlds
+(defn build-sim-worlds [combined-worlds fast-forward]
+  (let [tick-duration (/ *GAME-SECONDS-PER-TICK* fast-forward)]
+    (map-indexed (fn [idx combined-world]
+                  {:sim-world combined-world
                    :idx idx
-                   :timestamp (int (* idx round-duration 1000))})
-                 rounds)))
+                   :timestamp (int (* idx tick-duration 1000))})
+                 combined-worlds)))
 
 (defn near-point [[pos-x pos-y] [x y]] 
   (and (= (int pos-x) x)
@@ -41,43 +38,42 @@
          "\n" 
          header-footer)))
 
-(defn display-robots-info [world]
-  (doseq [robot-idx (range (count (:robots world)))]
+(defn display-robots-info [sim-world idx fps]
+  (doseq [robot-idx (range (count (:robots sim-world)))]
     (println (apply format 
                     "%d: x %.1f, y %.1f, v-x %.1f, v-y %.1f, desired-v-x %.1f, desired-v-y %.1f" 
-                    (map #(get-in world [:robots robot-idx %]) 
-                         [:idx :pos-x :pos-y :v-x :v-y :desired-v-x :desired-v-y]))))) 
+                    (map #(get-in sim-world [:robots robot-idx %]) 
+                         [:idx :pos-x :pos-y :v-x :v-y :desired-v-x :desired-v-y]))))
+  (println (format "Animation frame rate: %.1f frames per second", fps))
+  (println "Round number:" idx)
+  (println (format "Seconds elapsed in the game-world: %.1f", (* idx *GAME-SECONDS-PER-TICK*)))
+  (println))
 
 (defn animate
   "takes a simulation and animates it."
-  [initial-simulation-rounds print-width print-height fps]
+  [initial-sim-worlds print-width print-height fps]
   (let [frame-period (time/millis (* (/ 1 fps) 1000))
         starting-instant (time/now)]
-    (loop [[{:keys [worlds idx]} :as rounds] initial-simulation-rounds
+    (loop [[{:keys [sim-world idx]} :as sim-worlds] initial-sim-worlds
            frame-start starting-instant]
-      (doseq [world worlds]
-        (println (arena-text-grid world print-width print-height))
-        (display-robots-info world) 
-        (println (format "Animation frame rate: %.1f frames per second", fps))
-        (println "Round number:" idx)
-        (println (format "Seconds elapsed in the game-world: %.1f", (* idx *GAME-SECONDS-PER-TICK*)))
-        (println))
-
-      (let [desired-next-frame-start (time/plus frame-start frame-period)
+      (println (arena-text-grid sim-world print-width print-height))
+      (display-robots-info sim-world idx fps) 
+      (let [desired-next-frame-calc-start (time/plus frame-start frame-period)
             this-instant (time/now)
-            next-frame-start (if (time/after? this-instant desired-next-frame-start)
-                               this-instant
-                               (do
-                                 (Thread/sleep (time/in-msecs (time/interval
-                                                                this-instant
-                                                                desired-next-frame-start)))
-                                 desired-next-frame-start))
+            next-frame-calc-start (if (time/after? this-instant desired-next-frame-calc-start)
+                                    this-instant
+                                    (do
+                                      (-> (time/interval 
+                                            this-instant 
+                                            desired-next-frame-calc-start)
+                                          (time/in-msecs)
+                                          (Thread/sleep))
+                                      desired-next-frame-calc-start))
             animation-timestamp (time/in-msecs (time/interval
                                                  starting-instant
-                                                 next-frame-start))]
-        (recur (drop-while (fn [round]
-                             (< (:timestamp round) animation-timestamp))
-                           rounds)
-               next-frame-start)))))
+                                                 next-frame-calc-start))]
+        (recur (drop-while #(< (:timestamp %) animation-timestamp) 
+                           sim-worlds)
+               next-frame-calc-start)))))
                            
 
