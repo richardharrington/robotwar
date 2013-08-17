@@ -21,12 +21,11 @@
 (def worlds (agent (core/worlds-for-browser-display)))
 
 (defroutes app-routes
-  (GET "/" [] "Hello World, Welcome to Robotwar.")
   (GET "/json-test" [] (response/response {:foo 6 :bar 8}))
   (GET "/programs" [] (response/response test-programs/programs))
   (GET "/worlds/:n" [n] (response/response 
                               (take-drop-send worlds (Integer/parseInt n))))
-  (route/resources "/")
+  (route/files "/")
   (route/not-found "Not Found"))
 
 (def app
