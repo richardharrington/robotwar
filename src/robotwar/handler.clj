@@ -18,14 +18,14 @@
     (send a (constantly (drop n coll)))
     (take n coll)))
 
-(def sim-worlds (agent (core/sim-worlds 25)))
+(def worlds (agent (core/worlds-for-browser-display)))
 
 (defroutes app-routes
   (GET "/" [] "Hello World, Welcome to Robotwar.")
   (GET "/json-test" [] (response/response {:foo 6 :bar 8}))
   (GET "/programs" [] (response/response test-programs/programs))
-  (GET "/sim-worlds/:n" [n] (response/response 
-                              (take-drop-send sim-worlds (Integer/parseInt n))))
+  (GET "/worlds/:n" [n] (response/response 
+                              (take-drop-send worlds (Integer/parseInt n))))
   (route/resources "/")
   (route/not-found "Not Found"))
 

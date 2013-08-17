@@ -21,6 +21,8 @@
 (defn make-it-so [fast-forward fps]
   (animate/animate (worlds-for-terminal-display fast-forward) 25 25 fps))
 
+(defn worlds-for-browser-display []
+  (animate/worlds-for-browser (combined-worlds)))
 
 (def rr register/read-register)
 (def wr register/write-register)
