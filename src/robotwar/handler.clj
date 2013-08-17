@@ -7,6 +7,17 @@
             [robotwar.test-programs :as test-programs]
             [robotwar.core :as core]))
 
+(defn take-drop-send 
+  "takes a collection agent and a number n,
+  returns a collection of the first n items and 
+  drops those items from the agent's state.
+  TODO: find a built-in way to do this.
+  There must be one."
+  [a n] 
+  (let [coll @a]
+    (send a (constantly (drop n coll)))
+    (take n coll)))
+
 (defroutes app-routes
   (GET "/" [] "Hello World, Welcome to Robotwar.")
   (GET "/json-test" [] (response/response {:foo 6 :bar 8}))
