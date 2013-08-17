@@ -11,7 +11,7 @@
   (GET "/" [] "Hello World, Welcome to Robotwar.")
   (GET "/json-test" [] (response/response {:foo 6 :bar 8}))
   (GET "/programs" [] (response/response test-programs/programs))
-  (GET "/simulations" [] (response/response (take 1 (core/sim-worlds)))) 
+  (GET "/simulations" [] (response/response (take 5000 (core/sim-worlds 25)))) 
   (route/resources "/")
   (route/not-found "Not Found"))
 
