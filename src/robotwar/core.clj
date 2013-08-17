@@ -10,13 +10,12 @@
 
 
 
-(defn progs [] 
+(def progs 
   (repeat 3 (:moving-to-spot test-programs/programs)))
-
-(defn world [] 
-  (world/init-world 256.0 256.0 (progs))) 
+(def world
+  (world/init-world 256.0 256.0 progs)) 
 (defn combined-worlds [] 
-  (world/build-combined-worlds (world)))
+  (world/build-combined-worlds world))
 (defn sim-worlds [fast-forward] 
   (animate/build-sim-worlds (combined-worlds) fast-forward))
 (defn make-it-so [fast-forward fps]
