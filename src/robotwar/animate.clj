@@ -5,16 +5,18 @@
   (:require [clj-time.core :as time]
             [clj-time.periodic :as periodic]))
 
-(defn build-sim-worlds [combined-worlds fast-forward]
+(defn worlds-for-terminal
+  "takes worlds and a fast-forward factor, and
+  adds two fields to each world: idx and timestamp.
+  useful for our hacky display-in-terminal situation."
+  [worlds fast-forward]
   (let [tick-duration (/ *GAME-SECONDS-PER-TICK* fast-forward)]
-    (map-indexed (fn [idx combined-world]
-                  {:sim-world (assoc 
-                                combined-world
-                                :robots
-                                (vec (map #(dissoc % :brain) (:robots combined-world))))
-                   :idx idx
-                   :timestamp (int (* idx tick-duration 1000))})
-                 combined-worlds)))
+    (map-indexed (fn [idx world]
+                   (into world
+                         {:idx idx
+                          :timestamp (int (* idx tick-duration 1000))}))
+                 worlds)))
+
 
 (defn near-point [[pos-x pos-y] [x y]] 
   (and (= (int pos-x) x)
@@ -41,11 +43,11 @@
          "\n" 
          header-footer)))
 
-(defn display-robots-info [sim-world time-since-start idx fps]
-  (doseq [robot-idx (range (count (:robots sim-world)))]
+(defn display-robots-info [{idx :idx :as world} time-since-start fps]
+  (doseq [robot-idx (range (count (:robots world)))]
     (println (apply format 
                     "%d: x %.1f, y %.1f, v-x %.1f, v-y %.1f, desired-v-x %.1f, desired-v-y %.1f" 
-                    (map #(get-in sim-world [:robots robot-idx %]) 
+                    (map #(get-in world [:robots robot-idx %]) 
                          [:idx :pos-x :pos-y :v-x :v-y :desired-v-x :desired-v-y]))))
   (println (format "Animation frame rate: %.1f frames per second", fps))
   (println "Round number:" idx)
@@ -54,14 +56,14 @@
   (println))
 
 (defn animate
-  "takes a simulation and animates it."
-  [initial-sim-worlds print-width print-height fps]
+  "animates a sequence of worlds in the terminal"
+  [initial-worlds print-width print-height fps]
   (let [frame-period (time/millis (* (/ 1 fps) 1000))
         starting-instant (time/now)]
-    (loop [[{:keys [sim-world idx]} :as sim-worlds] initial-sim-worlds
+    (loop [[world :as worlds] initial-worlds
            frame-start starting-instant]
-      (println (arena-text-grid sim-world print-width print-height))
-      (display-robots-info sim-world (time/interval starting-instant frame-start) idx fps) 
+      (println (arena-text-grid world print-width print-height))
+      (display-robots-info world (time/interval starting-instant frame-start) fps) 
       (let [desired-next-frame-calc-start (time/plus frame-start frame-period)
             this-instant (time/now)
             next-frame-calc-start (if (time/after? this-instant desired-next-frame-calc-start)
@@ -77,7 +79,7 @@
                                                  starting-instant
                                                  next-frame-calc-start))]
         (recur (drop-while #(< (:timestamp %) animation-timestamp) 
-                           sim-worlds)
+                           worlds)
                next-frame-calc-start)))))
                            
 

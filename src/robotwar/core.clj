@@ -16,10 +16,11 @@
   (world/init-world 256.0 256.0 progs)) 
 (defn combined-worlds [] 
   (world/build-combined-worlds world))
-(defn sim-worlds [fast-forward] 
-  (animate/build-sim-worlds (combined-worlds) fast-forward))
+(defn worlds-for-terminal-display [fast-forward] 
+  (animate/worlds-for-terminal (combined-worlds) fast-forward))
 (defn make-it-so [fast-forward fps]
-  (animate/animate (sim-worlds fast-forward) 25 25 fps))
+  (animate/animate (worlds-for-terminal-display fast-forward) 25 25 fps))
+
 
 (def rr register/read-register)
 (def wr register/write-register)
