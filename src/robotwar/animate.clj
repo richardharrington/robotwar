@@ -46,7 +46,7 @@
                          [:idx :pos-x :pos-y :v-x :v-y :desired-v-x :desired-v-y]))))
   (println (format "Animation frame rate: %.1f frames per second", fps))
   (println "Round number:" idx)
-  (println (format "Seconds elapsed in the game-world: %.1f", (* idx *GAME-SECONDS-PER-TICK*)))
+  (println (format "Seconds elapsed in the game world: %d", (int (* idx *GAME-SECONDS-PER-TICK*))))
   (println))
 
 (defn animate
