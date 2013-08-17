@@ -38,7 +38,7 @@
          "\n" 
          header-footer)))
 
-(defn display-robots-info [sim-world idx fps]
+(defn display-robots-info [sim-world time-since-start idx fps]
   (doseq [robot-idx (range (count (:robots sim-world)))]
     (println (apply format 
                     "%d: x %.1f, y %.1f, v-x %.1f, v-y %.1f, desired-v-x %.1f, desired-v-y %.1f" 
@@ -47,6 +47,7 @@
   (println (format "Animation frame rate: %.1f frames per second", fps))
   (println "Round number:" idx)
   (println (format "Seconds elapsed in the game world: %d", (int (* idx *GAME-SECONDS-PER-TICK*))))
+  (println (format "Seconds elapsed in the real world: %d", (time/in-secs time-since-start)))
   (println))
 
 (defn animate
@@ -57,7 +58,7 @@
     (loop [[{:keys [sim-world idx]} :as sim-worlds] initial-sim-worlds
            frame-start starting-instant]
       (println (arena-text-grid sim-world print-width print-height))
-      (display-robots-info sim-world idx fps) 
+      (display-robots-info sim-world (time/interval starting-instant frame-start) idx fps) 
       (let [desired-next-frame-calc-start (time/plus frame-start frame-period)
             this-instant (time/now)
             next-frame-calc-start (if (time/after? this-instant desired-next-frame-calc-start)
