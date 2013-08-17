@@ -49,6 +49,16 @@ function Queue(){
 
   }
 
+  /* Enqueues multiple items at once.
+   */
+
+  this.enqueue_array = function(arr) {
+    // enqueue an entire array
+    queue.concat(arr);
+  }
+  
+  
+  
   /* Dequeues an item and returns it. If the queue is empty then undefined is
    * returned.
    */
