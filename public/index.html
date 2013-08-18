@@ -11,7 +11,71 @@
             Hello World, Welcome to Robotwar.
         </p>
         <script>
+            var debugCountdown = 10;
+            var debugAnimationCounter = 0;
+            var debugSimulationCounter = 0;
+            
+            var tickQueue = new Queue();
+            var fastForward = 5;
+            var GAME_SECONDS_PER_TICK = 0.03;
+            var tickDuration = parseInt (GAME_SECONDS_PER_TICK / fastForward * 1000);
+
+            var fps = 60;
+            var frameDuration = parseInt (1000 / fps);
+
+            var animationLoopId;
+
+            function display(world) {
+                console.log(world);
+            }
+
+            function simulationLoop(tick) {
+                console.log("simulationCounter " + debugSimulationCounter);
+                debugSimulationCounter++;
+                if (tickQueue.isEmpty() || debugCountdown === 0) {
+                    clearTimeout(animationLoopId);
+                    return;
+                }
+                else {
+                    debugCountdown -= 1;
+                }
+                if (tickQueue.getLength() < 500) {
+                    fetchWorlds();
+                }
+                tickQueue.dequeue();
+                var nextTick = tick + tickDuration;
+                setTimeout(function() {
+                    simulationLoop(nextTick);
+                }, nextTick - Date.now()); 
+            }
+
+            function animationLoop(frame) {
+                console.log("animationCounter " + debugAnimationCounter);
+                debugAnimationCounter++;
+                if (tickQueue.isEmpty()) {
+                    return;
+                }
+                display(tickQueue.peek());
+                var nextFrame = frame + frameDuration;
+                animationLoopId = setTimeout(function() {
+                    animationLoop(nextFrame);
+                }, nextFrame - Date.now());
+            }
+
+            function fetchWorlds(callback) {
+                $.getJSON('worlds/500', function(worlds) {
+                    tickQueue.enqueueArray(worlds);
+                    if (callback) callback();
+                });
+            }
+
+            fetchWorlds(function() {
+                console.log(tickQueue.getLength());
+                var now = Date.now();
+                simulationLoop(now);
+                animationLoop(now);
             });
+
         </script>
     </body>
 </html>
