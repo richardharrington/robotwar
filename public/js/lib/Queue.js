@@ -28,7 +28,7 @@ function Queue(){
   }
 
   this.enqueue_array = function(arr) {
-    queue.concat(arr);
+    return queue.concat(arr);
   }
   
   this.dequeue = function(){
