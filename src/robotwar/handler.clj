@@ -21,7 +21,6 @@
 (def worlds (agent (core/worlds-for-browser-display)))
 
 (defroutes app-routes
-  (GET "/json-test" [] (response/response {:foo 6 :bar 8}))
   (GET "/programs" [] (response/response test-programs/programs))
   (GET "/worlds/:n" [n] (response/response 
                               (take-drop-send worlds (Integer/parseInt n))))
