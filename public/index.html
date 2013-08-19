@@ -22,11 +22,10 @@
         <canvas id="canvas" width="600" height="600"></canvas>
 
         <script>
-            var debugCountdown = 1500;
             var debugAnimationCounter = 0;
             var debugSimulationCounter = 0;
 
-            var ROBOT_RADIUS = 5;
+            var ROBOT_RADIUS = 10;
             var ROBOT_MAX_X = 256.0;
             var ROBOT_MAX_Y = 256.0;
 
@@ -51,14 +50,24 @@
             ctx.fillStyle = "#6aea2a";
             
             var tickQueue = new Queue();
-            var fastForward = 20;
+            var fastForward = 5;
             var GAME_SECONDS_PER_TICK = 0.03;
+
+            // fastForward can be a maximum of 5 if we want tickDuration to be greater
+            // than a 6 milliseconds, which is close to the official 4-millisecond limit 
+            // for setTimeout. TODO: set this as a limit in the user interface, 
+            // and also look into how we can speed up faster by dropping ticks, while
+            // still having things happen like having collisions happen. Perhaps if we
+            // make sure to animate collisions for several ticks, it will work.
+
             var tickDuration = parseInt (GAME_SECONDS_PER_TICK / fastForward * 1000);
+            console.log(tickDuration);
 
             var fps = 60;
             var frameDuration = parseInt (1000 / fps);
 
             var animationLoopId;
+            var debugTimeLoopInterval;
 
             var robotRadiusDisplay = ROBOT_RADIUS * scaleFactor;
             var radiansInCircle = Math.PI*2;
@@ -97,15 +106,11 @@
                 debugSimulationCounter++;
                 if (tickQueue.isEmpty()) {
                     clearTimeout(animationLoopId);
+                    clearInterval(debugTimeLoopInterval);
+                }
+                if (tickQueue.isEmpty()) {
                     return;
                 }
-                if (debugCountdown === 0) {
-                    clearTimeout(animationLoopId);
-                    return;
-                }
-                debugCountdown -= 1;
-                console.log("tickQueue: " + tickQueue.getLength());
-
                 if (tickQueue.getLength() < 500) {
                     worlds.fetch();
                 }
@@ -117,9 +122,6 @@
             }
 
             function animationLoop(frame) {
-                if (debugAnimationCounter % 100 === 0) {
-                    console.log(debugSimulationCounter + " " + debugAnimationCounter);
-                }
                 debugAnimationCounter++;
                 if (tickQueue.isEmpty()) {
                     return;
@@ -131,19 +133,25 @@
                 }, nextFrame - Date.now());
             }
 
+            function debugTimeLoop() {
+                var start = Date.now();
+                debugTimeLoopInterval = setInterval(function() {
+                    console.log(Math.floor((Date.now() - start) / 1000) + " " + debugAnimationCounter + " " + debugSimulationCounter);
+                }, 1000);
+            }
+
             function fetchWorlds(callback) {
                 $.getJSON('worlds/500', function(worlds) {
-                    console.log("length of downloaded stuff: " + worlds.length);
                     tickQueue.enqueueArray(worlds);
                     if (callback) callback();
                 });
             }
 
             fetchWorlds(function() {
-                console.log(tickQueue.getLength());
                 var now = Date.now();
                 simulationLoop(now);
                 animationLoop(now);
+                debugTimeLoop();
             });
 
         </script>
