@@ -53,12 +53,13 @@
             var fastForward = 5;
             var GAME_SECONDS_PER_TICK = 0.03;
 
-            // fastForward can be a maximum of 5 if we want tickDuration to be greater
-            // than a 6 milliseconds, which is close to the official 4-millisecond limit 
+            // fastForward can't be more than 5 if we want tickDuration to be greater
+            // than 6 milliseconds, which is close to the official 4-millisecond limit 
             // for setTimeout. TODO: set this as a limit in the user interface, 
-            // and also look into how we can speed up faster by dropping ticks, while
-            // still having things happen like having collisions happen. Perhaps if we
-            // make sure to animate collisions for several ticks, it will work.
+            // and also look into how we can speed up by dropping ticks, while
+            // still having things like having collisions happen when they're supposed
+            // to happen. Perhaps if we make sure to animate collisions over 
+            // several ticks, it will work.
 
             var tickDuration = parseInt (GAME_SECONDS_PER_TICK / fastForward * 1000);
             console.log(tickDuration);
