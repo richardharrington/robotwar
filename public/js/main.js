@@ -8,7 +8,7 @@
     // TODO: This game info should probably come from the server
     // in a preliminary ajax call.
     var GAME_INFO = {
-        robotRadius: 7,
+        robotRadius: 8,
         robotXMax: 256.0,
         robotYMax: 256.0,
         gameSecondsPerTick: 0.03
