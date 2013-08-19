@@ -70,7 +70,6 @@
     // several ticks, it will work.
 
     var tickDuration = parseInt (GAME_INFO.gameSecondsPerTick / fastForward * 1000);
-    console.log(tickDuration);
 
     var fps = 60;
     var frameDuration = parseInt (1000 / fps);
