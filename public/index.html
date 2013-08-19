@@ -29,26 +29,41 @@
             var ROBOT_MAX_X = 256.0;
             var ROBOT_MAX_Y = 256.0;
 
+            var ROBOT_COLORS = ["#6aea2a", "#380bfa", "#fa2d0b", "#0bfaf7", "#faf20b"];
+
             var arenaWidth = ROBOT_MAX_X + (ROBOT_RADIUS * 2);
             var arenaHeight = ROBOT_MAX_Y + (ROBOT_RADIUS * 2);
-
-            var canvasEl = $('#canvas')[0];
-            var canvasWidth = parseInt(canvasEl.width);
-            var canvasHeight = parseInt(canvasEl.height);
-
-            var scaleFactor = parseInt($('#canvas').attr('width')) / arenaWidth;
-
-            function offsetX(x) {
-                return scaleFactor * (ROBOT_RADIUS + x);
-            }
-            function offsetY(y) {
-                return scaleFactor * (ROBOT_RADIUS + y);
-            }
-
-            var canvasEl = $('#canvas')[0];
-            var ctx = canvasEl.getContext('2d');
-            ctx.fillStyle = "#6aea2a";
             
+            var canvas = (function(el) {
+                var width = parseInt(el.width);
+                var height = parseInt(el.height);
+                var scaleFactor = parseInt(width / arenaWidth);
+                var offsetX = function(x) {return scaleFactor * (ROBOT_RADIUS + x)};
+                var offsetY = function(y) {return scaleFactor * (ROBOT_RADIUS + y)};
+                var robotDisplayRadius = ROBOT_RADIUS * scaleFactor;
+                var ctx = el.getContext('2d');
+
+                var drawRobot = function(robot, idx) {
+                    ctx.fillStyle = ROBOT_COLORS[idx];
+                    ctx.beginPath();
+                    ctx.arc(
+                        offsetX(robot["pos-x"]), 
+                        offsetY(robot["pos-y"]), 
+                        robotDisplayRadius, 
+                        0, 
+                        Math.PI * 2,
+                        true);
+                    ctx.fill();
+                }
+                
+                var draw = function(world) {
+                    ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+                    world.robots.forEach(drawRobot);
+                }
+
+                return {draw: draw};
+            })($('#canvas')[0]);
+
             var tickQueue = new Queue();
             var fastForward = 5;
             var GAME_SECONDS_PER_TICK = 0.03;
@@ -69,24 +84,6 @@
 
             var animationLoopId;
             var debugTimeLoopInterval;
-
-            var robotRadiusDisplay = ROBOT_RADIUS * scaleFactor;
-            var radiansInCircle = Math.PI*2;
- 
-            function display(world) {
-                ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-                world.robots.forEach(function(robot) {
-                    ctx.beginPath();
-                    ctx.arc(
-                        offsetX(robot["pos-x"]), 
-                        offsetY(robot["pos-y"]), 
-                        robotRadiusDisplay, 
-                        0, 
-                        radiansInCircle, 
-                        true);
-                    ctx.fill();
-                });
-            }
 
             var worlds = (function() {
                 var isFetching = false;
@@ -127,7 +124,7 @@
                 if (tickQueue.isEmpty()) {
                     return;
                 }
-                display(tickQueue.peek());
+                canvas.draw(tickQueue.peek());
                 var nextFrame = frame + frameDuration;
                 animationLoopId = setTimeout(function() {
                     animationLoop(nextFrame);
