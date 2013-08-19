@@ -22,7 +22,8 @@
 
 (defroutes app-routes
   (GET "/programs" [] (response/response test-programs/programs))
-  (GET "/worlds/:n" [n] (response/response 
+  (GET "/worlds/:n" [n] (println "sending 500 more")
+                        (response/response 
                               (take-drop-send worlds (Integer/parseInt n))))
   (route/files "/")
   (route/not-found "Not Found"))

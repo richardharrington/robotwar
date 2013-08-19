@@ -1,6 +1,15 @@
 <!doctype html>
 <html lang="en">
     <head>
+        <style>
+            #canvas {
+                width: 600px;
+                height: 600px;
+                border: solid black 2px;
+                border-radius: 15px;
+                background-color: black;
+            }
+        </style>
         <meta charset="UTF-8">
         <title>Robotwar</title>
         <script type="text/javascript" src="js/lib/jquery-2.0.3.min.js"></script>
@@ -10,13 +19,39 @@
         <p>
             Hello World, Welcome to Robotwar.
         </p>
+        <canvas id="canvas" width="600" height="600"></canvas>
+
         <script>
-            var debugCountdown = 10;
+            var debugCountdown = 1500;
             var debugAnimationCounter = 0;
             var debugSimulationCounter = 0;
+
+            var ROBOT_RADIUS = 5;
+            var ROBOT_MAX_X = 256.0;
+            var ROBOT_MAX_Y = 256.0;
+
+            var arenaWidth = ROBOT_MAX_X + (ROBOT_RADIUS * 2);
+            var arenaHeight = ROBOT_MAX_Y + (ROBOT_RADIUS * 2);
+
+            var canvasEl = $('#canvas')[0];
+            var canvasWidth = parseInt(canvasEl.width);
+            var canvasHeight = parseInt(canvasEl.height);
+
+            var scaleFactor = parseInt($('#canvas').attr('width')) / arenaWidth;
+
+            function offsetX(x) {
+                return scaleFactor * (ROBOT_RADIUS + x);
+            }
+            function offsetY(y) {
+                return scaleFactor * (ROBOT_RADIUS + y);
+            }
+
+            var canvasEl = $('#canvas')[0];
+            var ctx = canvasEl.getContext('2d');
+            ctx.fillStyle = "#6aea2a";
             
             var tickQueue = new Queue();
-            var fastForward = 5;
+            var fastForward = 20;
             var GAME_SECONDS_PER_TICK = 0.03;
             var tickDuration = parseInt (GAME_SECONDS_PER_TICK / fastForward * 1000);
 
@@ -25,22 +60,54 @@
 
             var animationLoopId;
 
+            var robotRadiusDisplay = ROBOT_RADIUS * scaleFactor;
+            var radiansInCircle = Math.PI*2;
+ 
             function display(world) {
-                console.log(world);
+                ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+                world.robots.forEach(function(robot) {
+                    ctx.beginPath();
+                    ctx.arc(
+                        offsetX(robot["pos-x"]), 
+                        offsetY(robot["pos-y"]), 
+                        robotRadiusDisplay, 
+                        0, 
+                        radiansInCircle, 
+                        true);
+                    ctx.fill();
+                });
             }
 
+            var worlds = (function() {
+                var isFetching = false;
+                return {
+                    fetch: function() {
+                        if (isFetching) {
+                            return;
+                        }
+                        isFetching = true;
+                        fetchWorlds(function() {
+                            isFetching = false;
+                        });
+                    }
+                };
+            })();
+           
             function simulationLoop(tick) {
-                console.log("simulationCounter " + debugSimulationCounter);
                 debugSimulationCounter++;
-                if (tickQueue.isEmpty() || debugCountdown === 0) {
+                if (tickQueue.isEmpty()) {
                     clearTimeout(animationLoopId);
                     return;
                 }
-                else {
-                    debugCountdown -= 1;
+                if (debugCountdown === 0) {
+                    clearTimeout(animationLoopId);
+                    return;
                 }
+                debugCountdown -= 1;
+                console.log("tickQueue: " + tickQueue.getLength());
+
                 if (tickQueue.getLength() < 500) {
-                    fetchWorlds();
+                    worlds.fetch();
                 }
                 tickQueue.dequeue();
                 var nextTick = tick + tickDuration;
@@ -50,7 +117,9 @@
             }
 
             function animationLoop(frame) {
-                console.log("animationCounter " + debugAnimationCounter);
+                if (debugAnimationCounter % 100 === 0) {
+                    console.log(debugSimulationCounter + " " + debugAnimationCounter);
+                }
                 debugAnimationCounter++;
                 if (tickQueue.isEmpty()) {
                     return;
@@ -64,6 +133,7 @@
 
             function fetchWorlds(callback) {
                 $.getJSON('worlds/500', function(worlds) {
+                    console.log("length of downloaded stuff: " + worlds.length);
                     tickQueue.enqueueArray(worlds);
                     if (callback) callback();
                 });
