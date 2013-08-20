@@ -113,13 +113,13 @@
             ctx.fill();
         }
         
-        var draw = function(world) {
+        var drawWorld = function(world) {
             ctx.clearRect(0, 0, width, height);
             world.robots.forEach(drawRobot);
         }
 
         return {
-            draw: draw
+            drawWorld: drawWorld
         };
     }
 
@@ -158,7 +158,7 @@
         });
         loop(worlds, frameDuration, function() {
             debugAnimationCounter++;
-            canvas.draw(worlds.peek());
+            canvas.drawWorld(worlds.peek());
         });
         loop(worlds, 1000, function() {
             debugSecondsCounter++;
