@@ -5,7 +5,8 @@
             [ring.util.response :as response]
             [compojure.route :as route]
             [robotwar.test-programs :as test-programs]
-            [robotwar.core :as core]))
+            [robotwar.world :as world]
+            [robotwar.browser :as browser]))
 
 (defn take-drop-send 
   "takes a collection agent and a number n,
@@ -18,7 +19,17 @@
     (send a (constantly (drop n coll)))
     (take n coll)))
 
-(def worlds (agent (core/worlds-for-browser-display)))
+; TODO: have this source-code-picking be done in requests from the UI
+; in the browser, not hard-coded here.
+
+(def progs 
+  (repeat 3 (:moving-to-spot test-programs/programs)))
+(def world
+  (world/init-world 256.0 256.0 progs)) 
+(defn combined-worlds [] 
+  (world/build-combined-worlds world))
+
+(def worlds (agent (browser/worlds-for-browser (combined-worlds))))
 
 (defroutes app-routes
   (GET "/programs" [] (response/response test-programs/programs))
