@@ -28,33 +28,33 @@
 
 (def register-field-read-mixin
   ; returns :val field of register
-  (fn [this world]
-    (:val this)))
+  (fn [{val :val} world]
+    val))
 
 (def register-field-write-mixin
   ; returns a world with :val field of register altered
-  (fn [this world data]
+  (fn [{:keys [robot-idx reg-name]} world data]
     (assoc-in world 
-              (path-to-val (:robot-idx this) (:reg-name this))
+              (path-to-val robot-idx reg-name)
               data)))
 
 (def robot-field-read-mixin
   ; returns the value of a field in the robot hash-map,
   ; rounded to an integer
-  (fn [this world]
+  (fn [{:keys [robot-idx field-name multiplier]} world]
     (Math/round (/ (get-in 
                      world 
-                     (path-to-robot-field (:robot-idx this) (:field-name this))) 
-                   (:multiplier this)))))
+                     (path-to-robot-field robot-idx field-name)) 
+                   multiplier))))
 
 (def robot-field-write-mixin
   ; returns a world with the value of a field in the robot hash map altered
   ; (with the number being cast to floating point before being pushed)
-  (fn [this world data]
+  (fn [{:keys [robot-idx field-name multiplier]} world data]
     (assoc-in 
       world 
-      (path-to-robot-field (:robot-idx this) (:field-name this))
-      (float (* data (:multiplier this))))))
+      (path-to-robot-field robot-idx field-name)
+      (float (* data multiplier)))))
 
 (defrecord StorageRegister [robot-idx reg-name val])
 (extend StorageRegister
@@ -83,8 +83,8 @@
 (extend RandomRegister
   IReadRegister 
     ; returns a random number. maximum value is the :val field of the register
-    {:read-register (fn [this world]
-                      (rand-int (:val this)))}
+    {:read-register (fn [{val :val} world]
+                      (rand-int val))}
   IWriteRegister 
     {:write-register register-field-write-mixin})
 
@@ -96,15 +96,15 @@
     ; adds a shell to the list of shells.
     ; It's a no-op if the shot clock hasn't reached zero yet.
     {:write-register 
-     (fn [this world data]
-       (let [robot (get-in world (path-to-robot (:robot-idx this)))]
-         (if (> (:shot-timer robot) 0)
+     (fn [{:keys [robot-idx field-name]} world data]
+       (let [{:keys [pos-x pos-y aim shot-timer] :as robot} 
+                 (get-in world (path-to-robot robot-idx))]
+         (if (> shot-timer 0)
            world
            (let [shells (:shells world)
                  world-with-new-shot-timer (assoc-in
                                              world
-                                             (path-to-robot-field (:robot-idx this)
-                                                                  :shot-timer)
+                                             (path-to-robot-field robot-idx :shot-timer)
                                              GAME-SECONDS-PER-SHOT)]
              ; TODO: change this next line to something 
              ; that actually releases a shell. This is a
