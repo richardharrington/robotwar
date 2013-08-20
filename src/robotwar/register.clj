@@ -1,4 +1,5 @@
-(ns robotwar.register)
+(ns robotwar.register
+  (:use robotwar.constants))
 
 (def reg-names [ "DATA" 
                  "A" "B" "C" "D" "E" "F" "G" "H" "I" "J" "K" "L" "M" 
@@ -87,6 +88,36 @@
   IWriteRegister 
     {:write-register register-field-write-mixin})
 
+(defrecord ShotRegister [robot-idx field-name multiplier])
+(extend ShotRegister
+  IReadRegister
+    {:read-register robot-field-read-mixin}
+  IWriteRegister
+    ; adds a shell to the list of shells.
+    ; It's a no-op if the shot clock hasn't reached zero yet.
+    {:write-register 
+     (fn [this world data]
+       (let [robot (get-in world (path-to-robot (:robot-idx this)))]
+         (if (> (:shot-timer robot) 0)
+           world
+           (let [shells (:shells world)
+                 world-with-new-shot-timer (assoc-in
+                                             world
+                                             (path-to-robot-field (:robot-idx this)
+                                                                  :shot-timer)
+                                             GAME-SECONDS-PER-SHOT)]
+             ; TODO: change this next line to something 
+             ; that actually releases a shell. This is a
+             ; very temporary version to test the shot-timer.
+             world-with-new-shot-timer))))})
+
+;(conj shells (shell/new-shell
+;               (:pos-x robot)
+;               (:pox-y robot)
+;               (:aim robot))
+;               data))]
+
+
 
 (defn get-target-register
   "helper function for DataRegister record"
@@ -138,6 +169,6 @@
                      [{"INDEX"  (->StorageRegister robot-idx "INDEX" 0)}
                       {"DATA"   (->DataRegister robot-idx "INDEX")}
                       {"RANDOM" (->RandomRegister robot-idx "RANDOM" 0)}
-                      ; TODO: {"SHOT"   (->ShotRegister robot-idx "SHOT")}
+                      {"SHOT"   (->ShotRegister robot-idx :shot-timer *GAME-SECONDS-PER-TICK*)}
                       ; TODO: {"RADAR"  (->RadarRegister robot-idx "RADAR")}
                       ]))))

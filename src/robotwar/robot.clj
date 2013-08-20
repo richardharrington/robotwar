@@ -50,6 +50,7 @@
          :v-y 0.0
          :desired-v-x 0.0
          :desired-v-y 0.0
+         :shot-timer 0.0
          :brain (brain/init-brain src-code (register/init-registers idx))}))
 
 (defn step-robot

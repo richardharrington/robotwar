@@ -37,23 +37,23 @@
 ; Very convenient.
 
 
-(def pprint-robot 
-  (fn [robot & reg-keys]
-    (let [{{registers :registers, {instrs :instrs} :obj-code} :brain :as robot} robot
-          registers-to-print (if reg-keys 
-                               (select-keys registers reg-keys)
-                               registers)]
-      (pprint
-        (assoc-in 
-          (assoc-in robot [:brain :registers] registers-to-print) 
-          [:brain :obj-code :instrs]
-          (sort (zipmap (range) instrs))))))) 
+(defn pprint-robot 
+  [robot & reg-keys]
+  (let [{{registers :registers, {instrs :instrs} :obj-code} :brain :as robot} robot
+        registers-to-print (if reg-keys 
+                             (select-keys registers reg-keys)
+                             registers)]
+    (pprint
+      (assoc-in 
+        (assoc-in robot [:brain :registers] registers-to-print) 
+        [:brain :obj-code :instrs]
+        (sort (zipmap (range) instrs)))))) 
 
-(def pprint-robot-at-combined-world 
-  (fn [combined-worlds world-idx robot-idx & reg-keys]
-    (apply pprint-robot 
-           (get-in (nth combined-worlds world-idx) [:robots robot-idx]) 
-           reg-keys)))
+(defn pprint-robot-at-combined-world 
+  [combined-worlds world-idx robot-idx & reg-keys]
+  (apply pprint-robot 
+         (get-in (nth combined-worlds world-idx) [:robots robot-idx]) 
+         reg-keys))
 
 (def ppr pprint-robot)
 (def pprw pprint-robot-at-combined-world)
