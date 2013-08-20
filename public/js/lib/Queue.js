@@ -48,6 +48,34 @@ function Queue(){
 
   }
 
+  this.drop = function() {
+      // this function is like dequeue, but returns nothing.
+      // Maybe it's slightly faster.
+      
+      // if the queue is empty, return undefined
+      if (queue.length == 0) return;
+
+      // increment the offset and remove free space if necessary
+      if (++ offset * 2 >= queue.length) {
+          queue  = queue.slice(offset);
+          offset = 0;
+      }
+  }
+  
+  this.dropMulti = function(n) {
+  
+      // if they're asking to remove zero items, or there
+      // are zero items in the queue, return undefined.
+      if (n == 0 || queue.length == 0) return undefined;
+
+      // update the offset and remove the free space if necessary
+      offset = offset + n;
+      if (offset * 2 >= queue.length) {
+          queue = queue.slice(offset);
+          offset = 0;
+      }
+  }
+
   this.peek = function(){
     return (queue.length > 0 ? queue[offset] : undefined);
   }
