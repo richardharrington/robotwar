@@ -57,16 +57,6 @@
        (path-to-robot-field (:robot-idx this) (:field-name this))
        (float (* data (:multiplier this)))))})
 
-(def no-op-write-mixin
-  ; returns a world with nothing changed
-  {:write-register (fn [this world data] 
-                     world)})
-
-(def random-read-mixin
-  ; returns a random number. maximum value is the :val field of the register
-  {:read-register (fn [this world]
-                    (rand-int (:val this)))})
-
 (defrecord StorageRegister [robot-idx reg-name val])
 (extend StorageRegister
   IReadRegister register-field-read-mixin
@@ -79,13 +69,21 @@
 
 (defrecord ReadOnlyRobotFieldRegister [robot-idx field-name multiplier])
 (extend ReadOnlyRobotFieldRegister
-  IReadRegister robot-field-read-mixin
-  IWriteRegister no-op-write-mixin)
+  IReadRegister 
+    robot-field-read-mixin
+  IWriteRegister 
+    ; returns a world with nothing changed
+    {:write-register (fn [this world data] 
+                       world)})
 
 (defrecord RandomRegister [robot-idx reg-name val])
 (extend RandomRegister
-  IReadRegister random-read-mixin
-  IWriteRegister register-field-write-mixin)
+  IReadRegister 
+    ; returns a random number. maximum value is the :val field of the register
+    {:read-register (fn [this world]
+                      (rand-int (:val this)))}
+  IWriteRegister 
+    register-field-write-mixin)
 
 (defn get-target-register
   "helper function for DataRegister record"
