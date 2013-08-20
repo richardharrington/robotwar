@@ -29,20 +29,19 @@
                 if (callback) callback();
             });
         }
-        function dequeue() {
-            var result = queue.dequeue();
+        function dropMulti(fastForward) {
+            queue.dropMulti(fastForward);
             if (!isFetching && queue.getLength() < bufferLength) {
                 isFetching = true;
                 fetch(function() {
                     isFetching = false;
                 });
             }
-            return result;
         }
 
         fetch(constructorCallback);
         return {
-            dequeue:       dequeue,
+            dropMulti:     dropMulti,
             enqueueArray:  queue.enqueueArray.bind(queue),
             isEmpty:       queue.isEmpty.bind(queue),
             getLength:     queue.getLength.bind(queue),
@@ -123,6 +122,7 @@
     var debugAnimationCounter = 0;
     var debugSimulationCounter = 0;
     var debugSecondsCounter = 0;
+    var debugStartTime = Date.now();
 
     var canvas = new Canvas($('#canvas')[0]);
     var worlds = new Worlds(BUFFER_LENGTH, function() {
@@ -136,7 +136,7 @@
         });
         loop(worlds, 1000, function() {
             debugSecondsCounter++;
-            console.log(Math.floor((Date.now() - start) / 1000) + 
+            console.log(Math.floor((Date.now() - debugStartTime) / 1000) + 
                 " " + debugAnimationCounter + 
                 " " + debugSimulationCounter);
         });
