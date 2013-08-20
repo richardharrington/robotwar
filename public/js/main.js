@@ -5,6 +5,8 @@
     var STARTING_FAST_FORWARD = 15;
     var FPS = 60;
     var ROBOT_COLORS = ["#6aea2a", "#380bfa", "#fa2d0b", "#0bfaf7", "#faf20b"];
+    var GUN_LENGTH = 14;
+    var GUN_WIDTH = 3;
  
     // TODO: This game info should probably come from the server
     // in a preliminary ajax call.
@@ -98,24 +100,41 @@
         // scaleFactorY?
        
         var robotDisplayRadius = scaleX(GAME_INFO.robotRadius);
+        var gunDisplayLength = scaleX(GUN_LENGTH);
+        var gunDisplayWidth = scaleY(GUN_WIDTH);
+        
         var ctx = el.getContext('2d');
+        ctx.lineWidth = gunDisplayWidth;
+        ctx.lineCap = 'square';
 
-        var drawRobot = function(robot, idx) {
-            ctx.fillStyle = ROBOT_COLORS[idx];
+        var drawCircle = function(x, y, r, color) {
+            ctx.fillStyle = color;
             ctx.beginPath();
-            ctx.arc(
-                offsetX(robot["pos-x"]), 
-                offsetY(robot["pos-y"]), 
-                robotDisplayRadius, 
-                0, 
-                Math.PI * 2,
-                true);
+            ctx.arc(x, y, r, 0, Math.PI * 2, true);
             ctx.fill();
+        }
+
+        var drawLinePolar = function(x, y, angle, d, color) {
+            var delta = Geom.polarToCartesian(angle, d);
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+            ctx.lineTo(x + delta.x, y + delta.y);
+            ctx.strokeStyle = color;
+            ctx.stroke();
+        }
+
+        var drawRobot = function(robot, color) {
+            var x = scaleX(robot['pos-x']);
+            var y = scaleY(robot['pos-y']);
+            drawCircle(x, y, robotDisplayRadius, color);
+            drawLinePolar(x, y, Geom.degreesToRadians(robot['aim']), gunDisplayLength, color); 
         }
         
         var drawWorld = function(world) {
             ctx.clearRect(0, 0, width, height);
-            world.robots.forEach(drawRobot);
+            world.robots.forEach(function(robot, idx) {
+                drawRobot(robot, ROBOT_COLORS[idx]);
+            });
         }
 
         return {
