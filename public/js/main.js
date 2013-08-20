@@ -29,11 +29,13 @@
     }
 
     function Worlds(bufferLength, constructorCallback) {
-        
-        // This constructor function mostly mixes in the behavior
-        // of Queue, but it adds functionality to Queue's
-        // dequeue method, to fetch new items from the server
+        // this class mostly mixes in the behavior of Queue,
+        // but it adds functionality to Queue's dropMulti
+        // method, to fetch new itmes from the server
         // when the queue is running low.
+        //
+        // The constructor first gets a game id from the server,
+        // then runs the first fetch.
 
         var queue = new Queue();
         var gameId;
