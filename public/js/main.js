@@ -1,6 +1,7 @@
 ;(function() {
 
     var BUFFER_LENGTH = 500;
+    var MAX_FAST_FORWARD = 40;
     var FPS = 60;
     var ROBOT_COLORS = ["#6aea2a", "#380bfa", "#fa2d0b", "#0bfaf7", "#faf20b"];
  
@@ -116,7 +117,7 @@
     // several ticks, it will work.
 
     var fastForward = 5;
-    var tickDuration = parseInt (GAME_INFO.gameSecondsPerTick / fastForward * 1000);
+    var tickDuration = parseInt (GAME_INFO.gameSecondsPerTick * 1000);
     var frameDuration = parseInt (1000 / FPS);
 
     var debugAnimationCounter = 0;
@@ -128,7 +129,7 @@
     var worlds = new Worlds(BUFFER_LENGTH, function() {
         loop(worlds, tickDuration, function() {
             debugSimulationCounter++;
-            worlds.dequeue();
+            worlds.dropMulti(fastForward);
         });
         loop(worlds, frameDuration, function() {
             debugAnimationCounter++;
