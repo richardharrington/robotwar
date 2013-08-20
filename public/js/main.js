@@ -109,14 +109,6 @@
         })(Date.now());
     }
 
-    // NOTE: fastForward can't be greater than 5 if we want tickDuration to be greater
-    // than 6 milliseconds, which is close to the official 4-millisecond limit 
-    // for setTimeout. TODO: set this as a limit in the user interface, 
-    // and also look into how we can speed up by dropping ticks, while
-    // still having things like having collisions happen when they're supposed
-    // to happen. Perhaps if we make sure to animate collisions over 
-    // several ticks, it will work.
-
     var fastForward = STARTING_FAST_FORWARD;
     var tickDuration = parseInt (GAME_INFO.gameSecondsPerTick * 1000);
     var frameDuration = parseInt (1000 / FPS);
