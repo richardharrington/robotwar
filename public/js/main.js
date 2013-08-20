@@ -23,10 +23,11 @@
         // when the queue is running low.
 
         var queue = new Queue();
+        var gameId;
         var isFetching = false;
 
         function fetch(callback) {
-            $.getJSON('worlds/' + bufferLength, function(data) {
+            $.getJSON('worlds/' + gameId + '/' + bufferLength, function(data) {
                 queue.enqueueArray(data);
                 if (callback) callback();
             });
@@ -41,7 +42,11 @@
             }
         }
 
-        fetch(constructorCallback);
+        $.getJSON('init', function(data) {
+            gameId = data['id'];
+            fetch(constructorCallback);
+        });
+
         return {
             dropMulti:     dropMulti,
             enqueueArray:  queue.enqueueArray.bind(queue),
