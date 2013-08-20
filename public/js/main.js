@@ -142,7 +142,7 @@
     });
 
     // Keyboard event listeners for fast-forward control
-    $('body').bind('keyup', function(event) {
+    $('body').bind('keydown', function(event) {
         if (event.which === 37) {
             fastForward = Math.max(fastForward - 1, 1);
         }
