@@ -27,50 +27,52 @@
 
 (def register-field-read-mixin
   ; returns :val field of register
-  {:read-register (fn [this world]
-                    (:val this))})
+  (fn [this world]
+    (:val this)))
 
 (def register-field-write-mixin
   ; returns a world with :val field of register altered
-  {:write-register (fn [this world data]
-                     (assoc-in world 
-                               (path-to-val (:robot-idx this) (:reg-name this))
-                               data))})
+  (fn [this world data]
+    (assoc-in world 
+              (path-to-val (:robot-idx this) (:reg-name this))
+              data)))
 
 (def robot-field-read-mixin
   ; returns the value of a field in the robot hash-map,
   ; rounded to an integer
-  {:read-register 
-   (fn [this world]
-     (Math/round (/ (get-in 
-                      world 
-                      (path-to-robot-field (:robot-idx this) (:field-name this))) 
-                    (:multiplier this))))})
+  (fn [this world]
+    (Math/round (/ (get-in 
+                     world 
+                     (path-to-robot-field (:robot-idx this) (:field-name this))) 
+                   (:multiplier this)))))
 
 (def robot-field-write-mixin
   ; returns a world with the value of a field in the robot hash map altered
   ; (with the number being cast to floating point before being pushed)
-  {:write-register 
-   (fn [this world data]
-     (assoc-in 
-       world 
-       (path-to-robot-field (:robot-idx this) (:field-name this))
-       (float (* data (:multiplier this)))))})
+  (fn [this world data]
+    (assoc-in 
+      world 
+      (path-to-robot-field (:robot-idx this) (:field-name this))
+      (float (* data (:multiplier this))))))
 
 (defrecord StorageRegister [robot-idx reg-name val])
 (extend StorageRegister
-  IReadRegister register-field-read-mixin
-  IWriteRegister register-field-write-mixin)
+  IReadRegister 
+    {:read-register register-field-read-mixin}
+  IWriteRegister 
+    {:write-register register-field-write-mixin})
 
 (defrecord ReadWriteRobotFieldRegister [robot-idx field-name multiplier])
 (extend ReadWriteRobotFieldRegister
-  IReadRegister robot-field-read-mixin
-  IWriteRegister robot-field-write-mixin)
+  IReadRegister 
+    {:read-register robot-field-read-mixin}
+  IWriteRegister 
+    {:write-register robot-field-write-mixin})
 
 (defrecord ReadOnlyRobotFieldRegister [robot-idx field-name multiplier])
 (extend ReadOnlyRobotFieldRegister
   IReadRegister 
-    robot-field-read-mixin
+    {:read-register robot-field-read-mixin}
   IWriteRegister 
     ; returns a world with nothing changed
     {:write-register (fn [this world data] 
@@ -83,7 +85,8 @@
     {:read-register (fn [this world]
                       (rand-int (:val this)))}
   IWriteRegister 
-    register-field-write-mixin)
+    {:write-register register-field-write-mixin})
+
 
 (defn get-target-register
   "helper function for DataRegister record"
