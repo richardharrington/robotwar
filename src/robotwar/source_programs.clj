@@ -1,4 +1,4 @@
-(ns robotwar.test-programs)
+(ns robotwar.source-programs)
 
 (def programs
   {:multi-use

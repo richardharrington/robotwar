@@ -4,10 +4,10 @@
         [robotwar.brain])
   (:require [robotwar.world :as world]
             [robotwar.register :as register]
-            [robotwar.test-programs :as test-programs]))
+            [robotwar.source-programs :as source-programs]))
 
 (def initial-world 
-  (world/init-world 256.0 256.0 [(:multi-use test-programs/programs)]))
+  (world/init-world [(:multi-use source-programs/programs)]))
 
 (def combined-worlds (world/build-combined-worlds initial-world))
 

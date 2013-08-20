@@ -1,6 +1,6 @@
 (ns robotwar.core
   (:use [clojure.pprint :only [pprint]])
-  (:require [robotwar.test-programs :as test-programs]
+  (:require [robotwar.source-programs :as source-programs]
             [robotwar.world :as world]
             [robotwar.register :as register]
             [robotwar.robot :as robot]
@@ -12,7 +12,7 @@
 
 
 (def progs 
-  (repeat 3 (:moving-to-spot test-programs/programs)))
+  (repeat 3 (:moving-to-spot source-programs/programs)))
 (def world
   (world/init-world progs)) 
 (defn combined-worlds [] 

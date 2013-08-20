@@ -4,7 +4,7 @@
             [ring.middleware.json :as middleware]
             [ring.util.response :as response]
             [compojure.route :as route]
-            [robotwar.test-programs :as test-programs]
+            [robotwar.source-programs :as source-programs]
             [robotwar.world :as world]
             [robotwar.browser :as browser]))
 
@@ -23,7 +23,7 @@
 ; in the browser, not hard-coded here.
 
 (def progs 
-  (repeat 3 (:moving-to-spot test-programs/programs)))
+  (repeat 3 (:moving-to-spot source-programs/programs)))
 (def world
   (world/init-world progs)) 
 (defn combined-worlds [] 
@@ -32,7 +32,7 @@
 (def worlds (agent (browser/worlds-for-browser (combined-worlds))))
 
 (defroutes app-routes
-  (GET "/programs" [] (response/response test-programs/programs))
+  (GET "/programs" [] (response/response source-programs/programs))
   (GET "/worlds/:n" [n] (response/response 
                               (take-drop-send worlds (Integer/parseInt n))))
   (route/files "/")

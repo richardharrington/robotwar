@@ -4,7 +4,7 @@
         [robotwar.register])
   (:require [robotwar.world :as world]))
 
-(def world (world/init-world 256.0 256.0 [""]))
+(def world (world/init-world [""]))
 (def robot-path [:robots 0])
 (def reg-path [:robots 0 :brain :registers])
 (def registers (get-in world reg-path))
