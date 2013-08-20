@@ -15,6 +15,19 @@
         gameSecondsPerTick: 0.0333333333333333333333333
     }
 
+    var Geom = {
+        degreesToRadians: function(angle) {
+            return angle * Math.PI / 180;
+        },
+
+        polarToCartesian: function(angle, d) {
+            return {
+                x: d * Math.cos(angle),
+                y: d * Math.sin(angle)
+            }
+        }
+    }
+
     function Worlds(bufferLength, constructorCallback) {
         
         // This constructor function mostly mixes in the behavior
