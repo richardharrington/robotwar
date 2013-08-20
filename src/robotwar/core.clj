@@ -4,7 +4,8 @@
             [robotwar.world :as world]
             [robotwar.register :as register]
             [robotwar.robot :as robot]
-            [robotwar.animate :as animate]))
+            [robotwar.terminal :as terminal]
+            [robotwar.browser :as browser]))
 
 ; this is a hacky place for messing with stuff. 
 
@@ -17,12 +18,12 @@
 (defn combined-worlds [] 
   (world/build-combined-worlds world))
 (defn worlds-for-terminal-display [fast-forward] 
-  (animate/worlds-for-terminal (combined-worlds) fast-forward))
+  (terminal/worlds-for-terminal (combined-worlds) fast-forward))
 (defn make-it-so [fast-forward fps]
-  (animate/animate (worlds-for-terminal-display fast-forward) 25 25 fps))
+  (terminal/animate (worlds-for-terminal-display fast-forward) 25 25 fps))
 
 (defn worlds-for-browser-display []
-  (animate/worlds-for-browser (combined-worlds)))
+  (browser/worlds-for-browser (combined-worlds)))
 
 (def rr register/read-register)
 (def wr register/write-register)
