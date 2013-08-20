@@ -23,13 +23,13 @@
 
 (defn arena-text-grid
   "outputs the arena, with borders"
-  [{:keys [width height robots]} print-width print-height]
+  [{robots :robots} print-robot-range-x print-robot-range-y]
   (let [horiz-border-char "-"
         vert-border-char "+"
-        header-footer (apply str (repeat (+ (* print-width 3) 2) horiz-border-char))
-        scale-x #(* % (/ print-width width))
-        scale-y #(* % (/ print-height height))
-        field (for [y (range print-height), x (range print-width)]
+        header-footer (apply str (repeat (+ (* print-robot-range-x 3) 2) horiz-border-char))
+        scale-x #(* % (/ print-robot-range-x ROBOT-RANGE-X))
+        scale-y #(* % (/ print-robot-range-y ROBOT-RANGE-Y))
+        field (for [y (range print-robot-range-y), x (range print-robot-range-x)]
                 (or (some (fn [{:keys [idx pos-x pos-y]}]
                         (when (near-point [(scale-x pos-x) (scale-y pos-y)] [x y])
                           (str "(" idx ")")))
@@ -38,7 +38,7 @@
     (str header-footer
          "\n" 
          (join "\n" (map #(join (apply str %) (repeat 2 vert-border-char))
-                         (partition print-width field))) 
+                         (partition print-robot-range-x field))) 
          "\n" 
          header-footer)))
 
@@ -56,12 +56,12 @@
 
 (defn animate
   "animates a sequence of worlds in the terminal"
-  [initial-worlds print-width print-height fps]
+  [initial-worlds print-robot-range-x print-robot-range-y fps]
   (let [frame-period (time/millis (* (/ 1 fps) 1000))
         starting-instant (time/now)]
     (loop [[world :as worlds] initial-worlds
            frame-start starting-instant]
-      (println (arena-text-grid world print-width print-height))
+      (println (arena-text-grid world print-robot-range-x print-robot-range-y))
       (display-robots-info world (time/interval starting-instant frame-start) fps) 
       (let [desired-next-frame-calc-start (time/plus frame-start frame-period)
             this-instant (time/now)

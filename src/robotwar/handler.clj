@@ -25,7 +25,7 @@
 (def progs 
   (repeat 3 (:moving-to-spot test-programs/programs)))
 (def world
-  (world/init-world 256.0 256.0 progs)) 
+  (world/init-world progs)) 
 (defn combined-worlds [] 
   (world/build-combined-worlds world))
 
