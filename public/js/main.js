@@ -2,6 +2,7 @@
 
     var BUFFER_LENGTH = 500;
     var MAX_FAST_FORWARD = 40;
+    var STARTING_FAST_FORWARD = 15;
     var FPS = 60;
     var ROBOT_COLORS = ["#6aea2a", "#380bfa", "#fa2d0b", "#0bfaf7", "#faf20b"];
  
@@ -116,7 +117,7 @@
     // to happen. Perhaps if we make sure to animate collisions over 
     // several ticks, it will work.
 
-    var fastForward = 5;
+    var fastForward = STARTING_FAST_FORWARD;
     var tickDuration = parseInt (GAME_INFO.gameSecondsPerTick * 1000);
     var frameDuration = parseInt (1000 / FPS);
 
