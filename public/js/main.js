@@ -141,13 +141,13 @@
         });
     });
 
-
+    // Keyboard event listeners for fast-forward control
     $('body').bind('keyup', function(event) {
         if (event.which === 37) {
-            fastForward = Math.max(1, fastForward - 1);
+            fastForward = Math.max(fastForward - 1, 1);
         }
         if (event.which === 39) {
-            fastForward = Math.min(MAX_FAST_FORWARD, fastForward + 1);
+            fastForward = Math.min(fastForward + 1, MAX_FAST_FORWARD);
         }
         console.log("fast forward: " + fastForward);
     });
