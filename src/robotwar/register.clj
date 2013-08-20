@@ -95,17 +95,17 @@
 
 (defrecord DataRegister [robot-idx index-reg-name]
   IReadRegister
-  (read-register
-    ; returns the number stored in whatever register 
-    ; is pointed to by the index-reg-name register
-    [this world]
-    (read-register (get-target-register world robot-idx index-reg-name) world))
+    (read-register
+      ; returns the number stored in whatever register 
+      ; is pointed to by the index-reg-name register
+      [this world]
+      (read-register (get-target-register world robot-idx index-reg-name) world))
   IWriteRegister
-  (write-register
-    ; returns a world with the number in the register pointed to 
-    ; by the index-reg-name register updated with the data argument to write-register
-    [this world data]
-    (write-register (get-target-register world robot-idx index-reg-name) world data)))
+    (write-register
+      ; returns a world with the number in the register pointed to 
+      ; by the index-reg-name register updated with the data argument to write-register
+      [this world data]
+      (write-register (get-target-register world robot-idx index-reg-name) world data)))
 
 ; TODO: (defrecord ShotRegister [robot-idx reg-name])
 
