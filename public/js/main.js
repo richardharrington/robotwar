@@ -142,4 +142,15 @@
                 " " + debugSimulationCounter);
         });
     });
+
+
+    $('body').bind('keyup', function(event) {
+        if (event.which === 37) {
+            fastForward = Math.max(1, fastForward - 1);
+        }
+        if (event.which === 39) {
+            fastForward = Math.min(MAX_FAST_FORWARD, fastForward + 1);
+        }
+        console.log("fast forward: " + fastForward);
+    });
 })();
