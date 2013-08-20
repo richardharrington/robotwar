@@ -37,6 +37,9 @@
  "
                               ; Note: # means !=
 
+   360 TO RANDOM              
+   RANDOM TO AIM              ; Set a random direction to aim the gun
+ 
    256 TO RANDOM              ; All random numbers will now have as their maximum
                               ; the width and height of the arena (in meters).
   
