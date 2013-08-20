@@ -120,6 +120,11 @@
 
     var canvas = new Canvas($('#canvas')[0]);
     var worlds = new Worlds(BUFFER_LENGTH, function() {
+        
+        // TODO: remove this tick loop entirely,
+        // and just have the animation loop calculate which
+        // simulation to pick each time.
+        
         loop(worlds, tickDuration, function() {
             debugSimulationCounter++;
             worlds.dropMulti(fastForward);
