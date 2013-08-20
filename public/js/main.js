@@ -77,20 +77,27 @@
         var roomForRobots = GAME_INFO.robotRadius * 2;
         var arenaWidth =  GAME_INFO.robotXMax + roomForRobots;
         var arenaHeight = GAME_INFO.robotYMax + roomForRobots;
-        var scaleFactorX = parseInt(width / arenaWidth);
-        var scaleFactorY = parseInt(height / arenaHeight);
+        var scaleFactorX = width / arenaWidth;
+        var scaleFactorY = height / arenaHeight;
+        var scaleX = function(x) {
+            return Math.round(x * scaleFactorX);
+        }
+        var scaleY = function(y) {
+            return Math.round(y * scaleFactorY);
+        }
         var offsetX = function(x) {
-            return scaleFactorX * (GAME_INFO.robotRadius + x)
+            return scaleX(GAME_INFO.robotRadius + x);
         }
         var offsetY = function(y) {
-            return scaleFactorY * (GAME_INFO.robotRadius + y)
+            return scaleY(GAME_INFO.robotRadius + y);
         }
+        
         // TODO: regularize this here and on the server so that
         // the arena is always square, and there's no ambiguity or question,
         // like why are we using scaleFactorX here and don't need
         // scaleFactorY?
-        var robotDisplayRadius = GAME_INFO.robotRadius * scaleFactorX;
-
+       
+        var robotDisplayRadius = scaleX(GAME_INFO.robotRadius);
         var ctx = el.getContext('2d');
 
         var drawRobot = function(robot, idx) {
