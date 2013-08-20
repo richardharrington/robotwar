@@ -8,6 +8,9 @@
 (defn path-to-robot [robot-idx]
   [:robots robot-idx])
 
+(defn path-to-robot-field [robot-idx robot-field]
+  [:robots robot-idx robot-field])
+
 (defn path-to-registers [robot-idx]
   [:robots robot-idx :brain :registers])
 
@@ -41,7 +44,7 @@
    (fn [this world]
      (Math/round (/ (get-in 
                       world 
-                      (conj (path-to-robot (:robot-idx this)) (:field-name this))) 
+                      (path-to-robot-field (:robot-idx this) (:field-name this))) 
                     (:multiplier this))))})
 
 (def robot-field-write-mixin
@@ -51,7 +54,7 @@
    (fn [this world data]
      (assoc-in 
        world 
-       (conj (path-to-robot (:robot-idx this)) (:field-name this)) 
+       (path-to-robot-field (:robot-idx this) (:field-name this))
        (float (* data (:multiplier this)))))})
 
 (def no-op-write-mixin
