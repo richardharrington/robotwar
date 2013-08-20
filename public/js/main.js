@@ -10,7 +10,7 @@
         robotRadius: 8,
         robotXMax: 256.0,
         robotYMax: 256.0,
-        gameSecondsPerTick: 0.03
+        gameSecondsPerTick: 0.0333333333333333333333333
     }
 
     function Worlds(bufferLength, constructorCallback) {
