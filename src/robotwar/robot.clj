@@ -68,7 +68,7 @@
                       register/read-register 
                       register/write-register)
           new-robot (get-in new-world [:robots robot-idx])
-          {:keys [pos-x pos-y v-x v-y desired-v-x desired-v-y]} new-robot 
+          {:keys [pos-x pos-y v-x v-y desired-v-x desired-v-y shot-timer]} new-robot 
           max-accel-x (if (pos? desired-v-x) MAX-ACCEL (- MAX-ACCEL))
           max-accel-y (if (pos? desired-v-y) MAX-ACCEL (- MAX-ACCEL))
           {new-pos-x :d new-v-x :v} (d-and-v-given-desired-v 
@@ -89,5 +89,7 @@
             (into new-robot {:pos-x new-pos-x
                              :pos-y new-pos-y
                              :v-x new-v-x
-                             :v-y new-v-y})))))
+                             :v-y new-v-y
+                             :shot-timer (max (- shot-timer *GAME-SECONDS-PER-TICK*)
+                                              0.0)})))))
 
