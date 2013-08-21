@@ -31,17 +31,15 @@
     }
 
     function Worlds(bufferLength, constructorCallback) {
-        // this class mostly mixes in the behavior of Queue,
-        // but it adds functionality to Queue's dropMulti
-        // method, to fetch new itmes from the server
-        // when the queue is running low.
-        //
+        
         // The constructor first gets a game id from the server,
         // then runs the first fetch.
 
         var queue = new Queue();
         var gameId;
         var isFetching = false;
+        var previousWorld = null;
+        var currentWorld = null;
 
         function fetch(callback) {
             $.getJSON('worlds/' + gameId + '/' + bufferLength, function(data) {
@@ -49,8 +47,10 @@
                 if (callback) callback();
             });
         }
-        function dropMulti(fastForward) {
+        function advance(fastForward) {
+            previousWorld = currentWorld;
             queue.dropMulti(fastForward);
+            currentWorld = queue.peek();
             if (!isFetching && queue.getLength() < bufferLength) {
                 isFetching = true;
                 fetch(function() {
@@ -61,15 +61,17 @@
 
         $.getJSON('init', function(data) {
             gameId = data['id'];
-            fetch(constructorCallback);
+            fetch(function() {
+                currentWorld = queue.peek();
+                constructorCallback();
+            });
         });
 
         return {
-            dropMulti:     dropMulti,
-            enqueueArray:  queue.enqueueArray.bind(queue),
-            isEmpty:       queue.isEmpty.bind(queue),
-            getLength:     queue.getLength.bind(queue),
-            peek:          queue.peek.bind(queue)
+            advance:          advance,
+            finished:         queue.isEmpty.bind(queue),
+            getPreviousWorld: function() {return previousWorld;},
+            getCurrentWorld:  function() {return currentWorld;}
         }
     }
 
@@ -173,11 +175,11 @@
         
         loop(worlds, tickDuration, function() {
             debugSimulationCounter++;
-            worlds.dropMulti(fastForward);
+            worlds.advance(fastForward);
         });
         loop(worlds, frameDuration, function() {
             debugAnimationCounter++;
-            canvas.drawWorld(worlds.peek());
+            canvas.drawWorld(worlds.getCurrentWorld());
         });
         loop(worlds, 1000, function() {
             debugSecondsCounter++;
