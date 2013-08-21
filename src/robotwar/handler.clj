@@ -11,7 +11,8 @@
 ; TODO: have this source-code-picking be done in requests from the UI
 ; in the browser, not hard-coded here.
 (def progs 
-  (repeat 3 (:moving-to-spot source-programs/programs)))
+  (conj (repeat 3 (:moving-to-spot source-programs/programs))
+        (:shooter source-programs/programs)))
 
 (defn add-game
   "a function to update the games store agent state. 

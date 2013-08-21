@@ -64,4 +64,14 @@
    MOVEY
        B - Y TO SPEEDY        ; Take distance from destination in meters and use
                               ; it to set SPEEDY, which is measured in decimeters/second.
-       ENDSUB "}) 
+       ENDSUB "
+  
+ :shooter
+ "
+       90 TO AIM
+       Y TO RANDOM
+       RANDOM TO S
+   SHOOT
+       ; S TO SHOT
+       GOTO SHOOT "
+   }) 
