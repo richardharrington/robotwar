@@ -1,4 +1,4 @@
-(ns robotwar.phys)
+(ns robotwar.physics)
 
 ; trig functions
 

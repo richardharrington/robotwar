@@ -2,7 +2,7 @@
   (:use [robotwar.constants])
   (:require [robotwar.brain :as brain]
             [robotwar.register :as register]
-            [robotwar.phys :as phys]))
+            [robotwar.physics :as physics]))
 
 ; TODO: deal with bumping into walls and other robots.
 
@@ -27,13 +27,13 @@
   [{:keys [pos-x pos-y v-x v-y desired-v-x desired-v-y] :as robot}]
   (let [max-accel-x (if (neg? desired-v-x) (- MAX-ACCEL) MAX-ACCEL)
         max-accel-y (if (neg? desired-v-y) (- MAX-ACCEL) MAX-ACCEL)
-        {new-pos-x :d, new-v-x :v} (phys/d-and-v-given-desired-v 
+        {new-pos-x :d, new-v-x :v} (physics/d-and-v-given-desired-v 
                                      pos-x 
                                      v-x 
                                      desired-v-x 
                                      max-accel-x 
                                      *GAME-SECONDS-PER-TICK*)
-        {new-pos-y :d, new-v-y :v} (phys/d-and-v-given-desired-v 
+        {new-pos-y :d, new-v-y :v} (physics/d-and-v-given-desired-v 
                                      pos-y 
                                      v-y 
                                      desired-v-y 
