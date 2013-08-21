@@ -21,7 +21,7 @@
          :shot-timer 0.0
          :brain (brain/init-brain src-code (register/init-registers idx))}))
 
-(defn step-robot
+(defn tick-robot
   "takes a robot and a world and returns the new state of the world
   after the robot has taken its turn.
   TODO: add support for collision with walls first (right now it just 
@@ -30,7 +30,7 @@
   [{robot-idx :idx :as robot} world]
   (if (<= (:damage robot) 0)
     world
-    (let [new-world (brain/step-brain 
+    (let [new-world (brain/tick-brain 
                       robot 
                       world 
                       register/read-register 

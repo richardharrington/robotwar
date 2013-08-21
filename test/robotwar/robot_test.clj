@@ -20,7 +20,7 @@
           speedy-world (register/write-register (zeroed-registers "SPEEDX") zeroed-world 140)
           speedy-worlds (iterate (fn [{[robot] :robots :as world}]
                                    (binding [*GAME-SECONDS-PER-TICK* 1.0]
-                                     (step-robot robot world)))
+                                     (tick-robot robot world)))
                                  speedy-world)]
       (is (= (take 6 (map (fn [world] 
                             {:pos-x (get-in world [:robots 0 :pos-x]) 
@@ -42,7 +42,7 @@
           speedy-world (register/write-register (zeroed-registers "SPEEDX") zeroed-world -140)
           speedy-worlds (iterate (fn [{[robot] :robots :as world}]
                                    (binding [*GAME-SECONDS-PER-TICK* 1.0]
-                                     (step-robot robot world)))
+                                     (tick-robot robot world)))
                                  speedy-world)]
       (is (= (take 6 (map (fn [world] 
                             {:pos-x (get-in world [:robots 0 :pos-x]) 
@@ -64,7 +64,7 @@
           speedy-world (register/write-register (zeroed-registers "SPEEDY") zeroed-world 140)
           speedy-worlds (iterate (fn [{[robot] :robots :as world}]
                                    (binding [*GAME-SECONDS-PER-TICK* 1.0]
-                                     (step-robot robot world)))
+                                     (tick-robot robot world)))
                                  speedy-world)]
       (is (= (take 6 (map (fn [world] 
                             {:pos-y (get-in world [:robots 0 :pos-y]) 
@@ -86,7 +86,7 @@
           speedy-world (register/write-register (zeroed-registers "SPEEDY") zeroed-world -140)
           speedy-worlds (iterate (fn [{[robot] :robots :as world}]
                                    (binding [*GAME-SECONDS-PER-TICK* 1.0]
-                                     (step-robot robot world)))
+                                     (tick-robot robot world)))
                                  speedy-world)]
       (is (= (take 6 (map (fn [world] 
                             {:pos-y (get-in world [:robots 0 :pos-y]) 

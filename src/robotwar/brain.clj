@@ -27,7 +27,7 @@
     :register  (read-register (registers arg-val) world)
     nil))
 
-(defn step-brain
+(defn tick-brain
   "takes a robot and a world. returns a world.
 
   Only the brain (the internal state of the robot)

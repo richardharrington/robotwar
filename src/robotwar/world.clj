@@ -22,7 +22,7 @@
 (defn tick-combined-world
   [starting-world]
   (reduce (fn [{robots :robots :as world} robot-idx]
-            (robot/step-robot (robots robot-idx) world))
+            (robot/tick-robot (robots robot-idx) world))
           starting-world
           (range (count (:robots starting-world)))))
 

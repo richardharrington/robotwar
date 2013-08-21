@@ -140,7 +140,7 @@
   "AIM, INDEX, SPEEDX and SPEEDY.
   AIM and INDEX's specialized behaviors are only when they're used by
   SHOT and DATA, respectively. In themselves, they're only storage registers.
-  Likewise, SPEEDX and SPEEDY are used later in step-robot to determine
+  Likewise, SPEEDX and SPEEDY are used later in tick-robot to determine
   the appropriate acceleration, which may have to applied over several ticks."
   [robot-idx]
   (let [storage-registers (for [reg-name [ "A" "B" "C" "D" "E" "F" "G" "H" "I" "J" "K" "L" 
