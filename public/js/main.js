@@ -7,6 +7,8 @@
     var ROBOT_COLORS = ["#6aea2a", "#380bfa", "#fa2d0b", "#0bfaf7", "#faf20b"];
     var GUN_LENGTH = 14;
     var GUN_WIDTH = 3;
+    var SHELL_RADIUS = 2;
+    var SHELL_COLOR = "#ffffff";
  
     // TODO: This game info should probably come from the server
     // in a preliminary ajax call.
@@ -102,6 +104,7 @@
         // scaleFactorY?
        
         var robotDisplayRadius = scaleX(GAME_INFO.robotRadius);
+        var shellDisplayRadius = scaleX(SHELL_RADIUS);
         var gunDisplayLength = scaleX(GUN_LENGTH);
         var gunDisplayWidth = scaleY(GUN_WIDTH);
         
@@ -131,11 +134,20 @@
             drawCircle(x, y, robotDisplayRadius, color);
             drawLinePolar(x, y, Geom.degreesToRadians(robot['aim']), gunDisplayLength, color); 
         }
+
+        var drawShell = function(shell) {
+            var x = scaleX(shell['pos-x']);
+            var y = scaleY(shell['pos-y']);
+            drawCircle(x, y, shellDisplayRadius, SHELL_COLOR);
+        }
         
-        var drawWorld = function(world) {
+        var drawWorld = function(previousWorld, currentWorld) {
             ctx.clearRect(0, 0, width, height);
-            world.robots.forEach(function(robot, idx) {
+            currentWorld.robots.forEach(function(robot, idx) {
                 drawRobot(robot, ROBOT_COLORS[idx]);
+            });
+            currentWorld.shells.forEach(function(shell) {
+                drawShell(shell);
             });
         }
 
