@@ -1,40 +1,8 @@
 (ns robotwar.robot
   (:use [robotwar.constants])
   (:require [robotwar.brain :as brain]
-            [robotwar.register :as register]))
-
-; yay classical mechanics
-
-(defn time-to-reach-desired-v
-  [vi vf a]
-  (let [v-diff (- vf vi)]
-    (if (zero? v-diff)
-      0.0
-      (double (/ v-diff a)))))
-
-(defn d-with-constant-a
-  [d vi a t]
-  (+ d (* vi t) (/ (* a (Math/pow t 2)) 2)))
-
-(defn v-with-constant-a
-  [vi a t]
-  (+ vi (* a t)))
-
-(defn d-and-v-given-desired-v
-  "returns a map of distance and velocity at final position.
-  the function deals with either of two cases:
-  1) when the desired velocity is not reached during the 
-     given time interval, in which case it's just 
-     distance-with-constant-acceleration 
-  2) when we reach the desired velocity (or are already there)
-     and then cruise the rest of the way" 
-  [d vi vf a t]
-  (let [t' (time-to-reach-desired-v vi vf a)]
-    (if (> t' t)
-      {:d (d-with-constant-a d vi a t) 
-       :v (v-with-constant-a vi a t)}
-      {:d (d-with-constant-a (d-with-constant-a d vi a t') vf 0.0 (- t t')) 
-       :v vf})))
+            [robotwar.register :as register]
+            [robotwar.phys :as phys]))
 
 ; TODO: deal with bumping into walls and other robots.
 
@@ -71,13 +39,13 @@
           {:keys [pos-x pos-y v-x v-y desired-v-x desired-v-y shot-timer]} new-robot 
           max-accel-x (if (pos? desired-v-x) MAX-ACCEL (- MAX-ACCEL))
           max-accel-y (if (pos? desired-v-y) MAX-ACCEL (- MAX-ACCEL))
-          {new-pos-x :d new-v-x :v} (d-and-v-given-desired-v 
+          {new-pos-x :d new-v-x :v} (phys/d-and-v-given-desired-v 
                                       pos-x 
                                       v-x 
                                       desired-v-x 
                                       max-accel-x 
                                       *GAME-SECONDS-PER-TICK*)
-          {new-pos-y :d new-v-y :v} (d-and-v-given-desired-v 
+          {new-pos-y :d new-v-y :v} (phys/d-and-v-given-desired-v 
                                       pos-y 
                                       v-y 
                                       desired-v-y 
