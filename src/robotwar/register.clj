@@ -1,5 +1,6 @@
 (ns robotwar.register
-  (:use robotwar.constants))
+  (:use [robotwar.constants])
+  (:require [robotwar.shell :as shell]))
 
 (def reg-names [ "DATA" 
                  "A" "B" "C" "D" "E" "F" "G" "H" "I" "J" "K" "L" "M" 
@@ -98,7 +99,7 @@
     {:write-register 
      (fn [{:keys [robot-idx field-name]} world data]
        (let [{:keys [pos-x pos-y aim shot-timer] :as robot} 
-                 (get-in world (path-to-robot robot-idx))]
+             (get-in world (path-to-robot robot-idx))]
          (if (> shot-timer 0)
            world
            (let [shells (:shells world)
@@ -106,18 +107,10 @@
                                              world
                                              (path-to-robot-field robot-idx :shot-timer)
                                              GAME-SECONDS-PER-SHOT)]
-             ; TODO: change this next line to something 
-             ; that actually releases a shell. This is a
-             ; very temporary version to test the shot-timer.
-             world-with-new-shot-timer))))})
-
-;(conj shells (shell/new-shell
-;               (:pos-x robot)
-;               (:pox-y robot)
-;               (:aim robot))
-;               data))]
-
-
+             (assoc 
+               world-with-new-shot-timer
+               :shells
+               (conj shells (shell/init-shell pos-x pos-y aim data)))))))})
 
 (defn get-target-register
   "helper function for DataRegister record"

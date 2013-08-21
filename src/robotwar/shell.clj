@@ -1,7 +1,6 @@
 (ns robotwar.shell
   (:use [robotwar.constants]))
 
-
 (defn deg->rad
   [angle]
   (* angle (/ Math/PI 180)))
@@ -11,7 +10,7 @@
   {:x (Math/cos angle)
    :y (Math/sin angle)}) 
 
-(defn new-shell
+(defn init-shell
   [pos-x pos-y aim distance]
   ; TODO: make the starting point dependent upon the robot radius,
   ; which should be in constants.
