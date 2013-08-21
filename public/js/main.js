@@ -146,7 +146,7 @@
 
     function loop(worlds, interval, callback) {
         (function continueLoop(tick) {
-            if (worlds.isEmpty()) {
+            if (worlds.finished()) {
                 return;
             }
             callback();
@@ -179,7 +179,7 @@
         });
         loop(worlds, frameDuration, function() {
             debugAnimationCounter++;
-            canvas.drawWorld(worlds.getCurrentWorld());
+            canvas.drawWorld(worlds.getPreviousWorld(), worlds.getCurrentWorld());
         });
         loop(worlds, 1000, function() {
             debugSecondsCounter++;
