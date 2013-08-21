@@ -1,6 +1,17 @@
 (ns robotwar.phys)
 
-; yay classical mechanics
+; trig functions
+
+(defn deg->rad
+  [angle]
+  (* angle (/ Math/PI 180)))
+
+(defn decompose-angle
+  [angle]
+  {:x (Math/cos angle)
+   :y (Math/sin angle)}) 
+
+; classical mechanics functions
 
 (defn time-to-reach-desired-v
   [vi vf a]
