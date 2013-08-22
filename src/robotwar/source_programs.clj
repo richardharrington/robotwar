@@ -44,12 +44,13 @@
                               ; the width and height of the arena (in meters).
   
    LOOP
-       0 TO SPEEDX            ; Stop the robot (X). 
-       0 TO SPEEDY            ; Stop the robot (Y).
+       0 TO SPEEDX            ; STOP THE ROBOT!
+       0 TO SPEEDY
        RANDOM TO A            ; Store a random X-coordinate in the arena.
        RANDOM TO B            ; Store a random Y-coordinate in the arena.
    
    MOVE
+       AIM + 5 TO AIM
        IF A # X GOSUB MOVEX   ; If we're moving in the X direction, recalibrate SPEEDX.
        TO N                   ; N is for no-op. (needed because there's no ELSE command).
        IF B # Y GOSUB MOVEY   ; If we're moving in the Y direction, recalibrate SPEEDY. 
@@ -65,7 +66,67 @@
        B - Y TO SPEEDY        ; Take distance from destination in meters and use
                               ; it to set SPEEDY, which is measured in decimeters/second.
        ENDSUB "
-  
+
+ :moving-to-left-and-shooting
+ "
+                              ; Note: # means !=
+
+       90 TO AIM              ; Set the gun to shoot right 
+ 
+       15 TO A                ; Set the coordinates for the left side.
+       128 TO B
+   
+   MOVE
+       IF A # X GOSUB MOVEX   ; If we're moving in the X direction, recalibrate SPEEDX.
+       TO N                   ; N is for no-op. (needed because there's no ELSE command).
+       IF B # Y GOSUB MOVEY   ; If we're moving in the Y direction, recalibrate SPEEDY. 
+       IF A = X GOTO SHOOT    ; A = X and B = Y, so we've stopped moving, so shoot.
+       GOTO MOVE              ; Continue to move.
+        
+   MOVEX 
+       A - X TO SPEEDX        ; Take distance from destination in meters and use
+                              ; it to set SPEEDX, which is measured in decimeters/second.
+       ENDSUB
+   
+   MOVEY
+       B - Y TO SPEEDY        ; Take distance from destination in meters and use
+                              ; it to set SPEEDY, which is measured in decimeters/second.
+       ENDSUB 
+
+   SHOOT
+       200 TO SHOT
+       GOTO MOVE "
+ 
+ :moving-to-top-and-shooting
+ "
+                              ; Note: # means !=
+
+       180 TO AIM             ; Set the gun to shoot down 
+ 
+       128 TO A                ; Set the coordinates for the top.
+       15 TO B
+   
+   MOVE
+       IF A # X GOSUB MOVEX   ; If we're moving in the X direction, recalibrate SPEEDX.
+       TO N                   ; N is for no-op. (needed because there's no ELSE command).
+       IF B # Y GOSUB MOVEY   ; If we're moving in the Y direction, recalibrate SPEEDY. 
+       IF A = X GOTO SHOOT    ; A = X and B = Y, so we've stopped moving, so shoot.
+       GOTO MOVE              ; Continue to move.
+        
+   MOVEX 
+       A - X TO SPEEDX        ; Take distance from destination in meters and use
+                              ; it to set SPEEDX, which is measured in decimeters/second.
+       ENDSUB
+   
+   MOVEY
+       B - Y TO SPEEDY        ; Take distance from destination in meters and use
+                              ; it to set SPEEDY, which is measured in decimeters/second.
+       ENDSUB 
+
+   SHOOT
+       200 TO SHOT
+       GOTO MOVE "
+ 
  :shooter
  "
        90 TO AIM
