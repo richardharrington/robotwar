@@ -145,11 +145,11 @@
         
         var drawWorld = function(previousWorld, currentWorld) {
             ctx.clearRect(0, 0, width, height);
-            currentWorld.robots.forEach(function(robot, idx) {
-                drawRobot(robot, ROBOT_COLORS[idx]);
-            });
             currentWorld.shells.forEach(function(shell) {
                 drawShell(shell);
+            });
+            currentWorld.robots.forEach(function(robot, idx) {
+                drawRobot(robot, ROBOT_COLORS[idx]);
             });
             if (currentWorld.shells.length > previousWorld.shells.length) {
                 shotSound.play();
