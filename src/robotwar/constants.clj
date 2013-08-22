@@ -8,7 +8,7 @@
 (def ROBOT-RANGE-X 256.0)
 (def ROBOT-RANGE-Y 256.0)
 
-(def GAME-SECONDS-PER-SHOT 10.0)
+(def GAME-SECONDS-PER-SHOT 20.0)
 
 ; SHELL-SPEED is in meters per second
 (def SHELL-SPEED 25.0)
