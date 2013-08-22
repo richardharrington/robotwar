@@ -6,7 +6,7 @@
   [pos-x pos-y aim distance]
   ; TODO: make the starting point dependent upon the robot radius,
   ; which should be in constants.
-  (let [{unit-x :x unit-y :y} (physics/decompose-angle (physics/deg->rad aim))] 
+  (let [{unit-x :x unit-y :y} (physics/decompose-angle aim)] 
     {:pos-x pos-x
      :pos-y pos-y
      :v-x (* unit-x SHELL-SPEED)

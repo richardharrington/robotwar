@@ -7,9 +7,10 @@
   (* angle (/ Math/PI 180)))
 
 (defn decompose-angle
-  [angle]
-  {:x (Math/cos angle)
-   :y (Math/sin angle)}) 
+  [angle-in-degrees]
+  (let [angle (deg->rad angle-in-degrees)]
+    {:x (Math/cos angle)
+     :y (Math/sin angle)})) 
 
 ; classical mechanics functions
 
