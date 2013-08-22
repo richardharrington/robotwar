@@ -1,6 +1,6 @@
 ;(function() {
 
-    var BUFFER_LENGTH = 500;
+    var BUFFER_LENGTH = 1000;
     var MAX_FAST_FORWARD = 40;
     var STARTING_FAST_FORWARD = 15;
     var FPS = 60;
