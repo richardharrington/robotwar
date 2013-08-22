@@ -71,7 +71,9 @@
             gameId = data['id'];
             fetch(function() {
                 currentWorld = queue.peek();
-                constructorCallback();
+                // TODO: Pass into this callback actual game info from the server.
+                // This returning of local constants is only temporary.
+                constructorCallback(GAME_INFO);
             });
         });
 
@@ -178,23 +180,23 @@
         })(Date.now());
     }
 
-    var fastForward = STARTING_FAST_FORWARD;
-    var tickDuration = parseInt (GAME_INFO.gameSecondsPerTick * 1000);
-    var frameDuration = parseInt (1000 / FPS);
-
-    var debugAnimationCounter = 0;
-    var debugSimulationCounter = 0;
-    var debugSecondsCounter = 0;
-    var debugStartTime = Date.now();
-
-    var canvasEl = $('#canvas')[0];
-    var soundEls = {
-        shotSound: $('#shotSound')[0] 
-    }
-
-    var animation = new Animation(canvasEl, soundEls);
-    var worlds = new Worlds(BUFFER_LENGTH, function() {
+    function startGame(gameInfo) {
+        var debugAnimationCounter = 0;
+        var debugSimulationCounter = 0;
+        var debugSecondsCounter = 0;
+        var debugStartTime = Date.now();
         
+        var fastForward = STARTING_FAST_FORWARD;
+        var tickDuration = parseInt (gameInfo.gameSecondsPerTick * 1000);
+        var frameDuration = parseInt (1000 / FPS);
+
+        var canvasEl = $('#canvas')[0];
+        var soundEls = {
+            shotSound: $('#shotSound')[0] 
+        }
+
+        var animation = new Animation(canvasEl, soundEls, gameInfo);
+
         // TODO: remove this tick loop entirely,
         // and just have the animation loop calculate which
         // simulation to pick each time.
@@ -213,16 +215,19 @@
                 " " + debugAnimationCounter + 
                 " " + debugSimulationCounter);
         });
-    });
+        
+        // Keyboard event listeners for fast-forward control
+        $('body').bind('keydown', function(event) {
+            if (event.which === 37) {
+                fastForward = Math.max(fastForward - 1, 1);
+            }
+            if (event.which === 39) {
+                fastForward = Math.min(fastForward + 1, MAX_FAST_FORWARD);
+            }
+            console.log("fast forward: " + fastForward);
+        });
+    }
 
-    // Keyboard event listeners for fast-forward control
-    $('body').bind('keydown', function(event) {
-        if (event.which === 37) {
-            fastForward = Math.max(fastForward - 1, 1);
-        }
-        if (event.which === 39) {
-            fastForward = Math.min(fastForward + 1, MAX_FAST_FORWARD);
-        }
-        console.log("fast forward: " + fastForward);
-    });
+    var worlds = new Worlds(BUFFER_LENGTH, startGame);
+
 })();
