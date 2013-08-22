@@ -24,7 +24,8 @@
             return angle * Math.PI / 180;
         },
 
-        polarToCartesian: function(angle, d) {
+        polarToCartesian: function(angleInDegrees, d) {
+            var angle = this.degreesToRadians(angleInDegrees);
             return {
                 x: d * Math.cos(angle),
                 y: d * Math.sin(angle)
@@ -132,7 +133,7 @@
             var x = scaleX(robot['pos-x']);
             var y = scaleY(robot['pos-y']);
             drawCircle(x, y, robotDisplayRadius, color);
-            drawLinePolar(x, y, Geom.degreesToRadians(robot['aim']), gunDisplayLength, color); 
+            drawLinePolar(x, y, robot['aim'], gunDisplayLength, color); 
         }
 
         var drawShell = function(shell) {
