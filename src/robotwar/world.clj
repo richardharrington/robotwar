@@ -21,9 +21,16 @@
 
 (defn tick-combined-world
   [starting-world]
-  (reduce (fn [{robots :robots :as world} robot-idx]
-            (robot/tick-robot (robots robot-idx) world))
-          starting-world
-          (range (count (:robots starting-world)))))
+  (let [{shells :shells :as ticked-robots-world} (reduce (fn [{robots :robots :as world} robot-idx]
+                                                           (robot/tick-robot (robots robot-idx) world))
+                                                         starting-world
+                                                         (range (count (:robots starting-world))))
+        ticked-shells (map shell/tick-shell shells)
+        live-shells (remove :exploded ticked-shells)
+        exploded-shells (filter :exploded ticked-shells)]
+    ; TODO: make this a real let-binding, that determines
+    ; which robots were damaged.
+    (let [damaged-world ticked-robots-world]
+      (assoc damaged-world :shells live-shells))))
 
 (def build-combined-worlds (partial iterate tick-combined-world))
