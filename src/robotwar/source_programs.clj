@@ -72,6 +72,6 @@
        Y TO RANDOM
        RANDOM TO S
    SHOOT
-       ; S TO SHOT
+       S TO SHOT
        GOTO SHOOT "
    }) 
