@@ -12,5 +12,21 @@
      :v-x (* unit-x SHELL-SPEED)
      :v-y (* unit-y SHELL-SPEED)
      :dest-x (* unit-x distance)
-     :dest-y (* unit-y distance)})) 
+     :dest-y (* unit-y distance)
+     :exploded false})) 
 
+(defn tick-shell
+  [{:keys [pos-x pos-y v-x v-y dest-x dest-y exploded] :as shell}]
+  (if exploded
+    nil
+    (let [delta-x (* v-x *GAME-SECONDS-PER-TICK*)
+          delta-y (* v-y *GAME-SECONDS-PER-TICK*)
+          remaining-x (- dest-x pos-x)
+          remaining-y (- dest-y pos-y)]
+      ; only need to check one dimension
+      (if (< (Math/abs remaining-x) (Math/abs delta-x))
+        (merge shell {:pos-x dest-x
+                      :pos-y dest-y
+                      :exploded true})
+        (merge shell {:pos-x (+ pos-x delta-x)
+                      :pox-y (+ pos-y delta-y)})))))
