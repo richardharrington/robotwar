@@ -19,19 +19,24 @@
         gameSecondsPerTick: 0.0333333333333333333333333
     }
 
-    var Geom = {
-        degreesToRadians: function(angle) {
+    var Geom = (function() {
+        var degreesToRadians = function(angle) {
             return angle * Math.PI / 180;
-        },
-
-        polarToCartesian: function(angleInDegrees, d) {
-            var angle = this.degreesToRadians(angleInDegrees);
+        }
+        var RWDegreesToJSDegrees = function(angle) {
+            return angle - 90;
+        }
+        var polarToCartesian = function(angleInDegrees, d) {
+            var angle = degreesToRadians(RWDegreesToJSDegrees(angleInDegrees));
             return {
                 x: d * Math.cos(angle),
                 y: d * Math.sin(angle)
             }
         }
-    }
+        return {
+            polarToCartesian: polarToCartesian
+        }
+    })();
 
     function Worlds(bufferLength, constructorCallback) {
         
