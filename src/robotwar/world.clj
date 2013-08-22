@@ -1,9 +1,11 @@
 (ns robotwar.world
   (:use [clojure.string :only [join]]
-        [robotwar.constants])
+        [robotwar.constants]
+        [clojure.pprint :as pprint])
   (:require [clj-time.core :as time]
             [clj-time.periodic :as periodic]
-            [robotwar.robot :as robot]))
+            [robotwar.robot :as robot]
+            [robotwar.shell :as shell]))
 
 (defn init-world
   "initialize all the variables for a robot world."
@@ -28,6 +30,7 @@
         ticked-shells (map shell/tick-shell shells)
         live-shells (remove :exploded ticked-shells)
         exploded-shells (filter :exploded ticked-shells)]
+    (println (count ticked-shells))
     ; TODO: make this a real let-binding, that determines
     ; which robots were damaged.
     (let [damaged-world ticked-robots-world]

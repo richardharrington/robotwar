@@ -11,8 +11,8 @@
      :pos-y pos-y
      :v-x (* unit-x SHELL-SPEED)
      :v-y (* unit-y SHELL-SPEED)
-     :dest-x (* unit-x distance)
-     :dest-y (* unit-y distance)
+     :dest-x (+ pos-x (* unit-x distance))
+     :dest-y (+ pos-y (* unit-y distance))
      :exploded false})) 
 
 (defn tick-shell
@@ -24,9 +24,10 @@
           remaining-x (- dest-x pos-x)
           remaining-y (- dest-y pos-y)]
       ; only need to check one dimension
-      (if (< (Math/abs remaining-x) (Math/abs delta-x))
+      (if (and (< (Math/abs remaining-x) (Math/abs delta-x))
+               (< (Math/abs remaining-y) (Math/abs delta-y)))
         (merge shell {:pos-x dest-x
                       :pos-y dest-y
                       :exploded true})
         (merge shell {:pos-x (+ pos-x delta-x)
-                      :pox-y (+ pos-y delta-y)})))))
+                      :pos-y (+ pos-y delta-y)})))))
