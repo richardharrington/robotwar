@@ -69,8 +69,7 @@
  :shooter
  "
        90 TO AIM
-       Y TO RANDOM
-       RANDOM TO S
+       200 - Y TO S
    SHOOT
        S TO SHOT
        GOTO SHOOT "
