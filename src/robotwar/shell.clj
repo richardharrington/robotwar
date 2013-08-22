@@ -24,8 +24,8 @@
           remaining-x (- dest-x pos-x)
           remaining-y (- dest-y pos-y)]
       ; only need to check one dimension
-      (if (and (< (Math/abs remaining-x) (Math/abs delta-x))
-               (< (Math/abs remaining-y) (Math/abs delta-y)))
+      (if (and (<= (Math/abs remaining-x) (Math/abs delta-x))
+               (<= (Math/abs remaining-y) (Math/abs delta-y)))
         (merge shell {:pos-x dest-x
                       :pos-y dest-y
                       :exploded true})
