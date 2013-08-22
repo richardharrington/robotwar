@@ -112,6 +112,8 @@
         ctx.lineWidth = gunDisplayWidth;
         ctx.lineCap = 'square';
 
+        var shotSound = $('#shotSound')[0]; 
+        
         var drawCircle = function(x, y, r, color) {
             ctx.fillStyle = color;
             ctx.beginPath();
@@ -149,6 +151,9 @@
             currentWorld.shells.forEach(function(shell) {
                 drawShell(shell);
             });
+            if (currentWorld.shells.length > previousWorld.shells.length) {
+                shotSound.play();
+            }
         }
 
         return {
