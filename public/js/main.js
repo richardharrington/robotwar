@@ -77,7 +77,7 @@
         }
     }
 
-    var Canvas = function(el) {
+    var Animation = function(el) {
         var width = parseInt(el.width);
         var height = parseInt(el.height);
         var roomForRobots = GAME_INFO.robotRadius * 2;
@@ -112,8 +112,6 @@
         ctx.lineWidth = gunDisplayWidth;
         ctx.lineCap = 'square';
 
-        var shotSound = $('#shotSound')[0]; 
-        
         var drawCircle = function(x, y, r, color) {
             ctx.fillStyle = color;
             ctx.beginPath();
@@ -143,7 +141,7 @@
             drawCircle(x, y, shellDisplayRadius, SHELL_COLOR);
         }
         
-        var drawWorld = function(previousWorld, currentWorld) {
+        var animateWorld = function(previousWorld, currentWorld) {
             ctx.clearRect(0, 0, width, height);
             currentWorld.shells.forEach(function(shell) {
                 drawShell(shell);
@@ -157,7 +155,7 @@
         }
 
         return {
-            drawWorld: drawWorld
+            animateWorld: animateWorld
         };
     }
 
@@ -183,7 +181,12 @@
     var debugSecondsCounter = 0;
     var debugStartTime = Date.now();
 
-    var canvas = new Canvas($('#canvas')[0]);
+    var canvasEl = $('#canvas')[0];
+    var soundEls = {
+        shotSound: $('#shotSound')[0] 
+    }
+
+    var animation = new Animation(canvasEl, soundEls);
     var worlds = new Worlds(BUFFER_LENGTH, function() {
         
         // TODO: remove this tick loop entirely,
@@ -196,7 +199,7 @@
         });
         loop(worlds, frameDuration, function() {
             debugAnimationCounter++;
-            canvas.drawWorld(worlds.getPreviousWorld(), worlds.getCurrentWorld());
+            animation.animateWorld(worlds.getPreviousWorld(), worlds.getCurrentWorld());
         });
         loop(worlds, 1000, function() {
             debugSecondsCounter++;
