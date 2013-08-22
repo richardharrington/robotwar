@@ -151,13 +151,19 @@
         
         var animateWorld = function(previousWorld, currentWorld) {
             ctx.clearRect(0, 0, width, height);
-            currentWorld.shells.forEach(function(shell) {
-                drawShell(shell);
-            });
+            var shellMap = currentWorld.shells["shell-map"];
+            for (key in shellMap) {
+                if (shellMap.hasOwnProperty(key)) {
+                    drawShell(shellMap[key]);
+                }
+            }
             currentWorld.robots.forEach(function(robot, idx) {
                 drawRobot(robot, ROBOT_COLORS[idx]);
             });
-            if (currentWorld.shells.length > previousWorld.shells.length) {
+            console.log("next:", currentWorld.shells["next-id"]);
+            console.log("last:", previousWorld.shells["next-id"]);
+
+            if (currentWorld.shells["next-id"] !== previousWorld.shells["next-id"]) {
                 shotSound.play();
             }
         }

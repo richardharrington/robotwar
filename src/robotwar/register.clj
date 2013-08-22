@@ -97,20 +97,22 @@
     ; adds a shell to the list of shells.
     ; It's a no-op if the shot clock hasn't reached zero yet.
     {:write-register 
-     (fn [{:keys [robot-idx field-name]} world data]
+     (fn [{:keys [robot-idx field-name]} 
+          {{:keys [shell-map next-id] :as shells} :shells :as world} 
+          data]
        (let [{:keys [pos-x pos-y aim shot-timer] :as robot} 
              (get-in world (path-to-robot robot-idx))]
          (if (> shot-timer 0)
            world
-           (let [shells (:shells world)
-                 world-with-new-shot-timer (assoc-in
+           (let [world-with-new-shot-timer (assoc-in
                                              world
                                              (path-to-robot-field robot-idx :shot-timer)
                                              GAME-SECONDS-PER-SHOT)]
              (assoc 
                world-with-new-shot-timer
                :shells
-               (conj shells (shell/init-shell pos-x pos-y aim data)))))))})
+               {:shell-map (merge shell-map (shell/init-shell pos-x pos-y aim next-id data))
+                :next-id (inc next-id)})))))})
 
 (defn get-target-register
   "helper function for DataRegister record"
