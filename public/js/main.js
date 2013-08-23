@@ -85,7 +85,7 @@
         }
     }
 
-    var Animation = function(el) {
+    var Animation = function(el, sounds, gameInfo) {
         var width = parseInt(el.width);
         var height = parseInt(el.height);
         var roomForRobots = GAME_INFO.robotRadius * 2;
@@ -119,6 +119,18 @@
         var ctx = el.getContext('2d');
         ctx.lineWidth = gunDisplayWidth;
         ctx.lineCap = 'square';
+
+        var nextSoundEl = (function() {
+            var i = 0;
+            return {
+                get: function() {
+                    var el = sounds[i];
+                    i = (i + 1) % 5;
+                    return el;
+                }
+            }
+        })();
+
 
         var drawCircle = function(x, y, r, color) {
             ctx.fillStyle = color;
@@ -164,7 +176,7 @@
             console.log("last:", previousWorld.shells["next-id"]);
 
             if (currentWorld.shells["next-id"] !== previousWorld.shells["next-id"]) {
-                shotSound.play();
+                nextSoundEl.get().play();
             }
         }
 
@@ -197,11 +209,9 @@
         var frameDuration = parseInt (1000 / FPS);
 
         var canvasEl = $('#canvas')[0];
-        var soundEls = {
-            shotSound: $('#shotSound')[0] 
-        }
+        var sounds = $('audio');
 
-        var animation = new Animation(canvasEl, soundEls, gameInfo);
+        var animation = new Animation(canvasEl, sounds, gameInfo);
 
         // TODO: remove this tick loop entirely,
         // and just have the animation loop calculate which
