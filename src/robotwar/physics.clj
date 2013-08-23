@@ -2,17 +2,13 @@
 
 ; trig functions
 
-(defn deg->rad
-  [angle]
-  (* angle (/ Math/PI 180)))
-
 (defn robotwar-deg->clojure-deg
   [angle]
   (- angle 90))
 
 (defn decompose-angle
   [angle-in-degrees]
-  (let [angle (deg->rad (robotwar-deg->clojure-deg angle-in-degrees))]
+  (let [angle (Math/toRadians (robotwar-deg->clojure-deg angle-in-degrees))]
     {:x (Math/cos angle)
      :y (Math/sin angle)})) 
 
