@@ -4,7 +4,7 @@
 
 (def op-map (into {} (for [op assembler/op-commands]
                        [op (case op
-                             "/" #(int (Math/round (float (/ %1 %2))))
+                             "/" #(int (Math/round (double (/ %1 %2))))
                              "#" not=
                              (-> op read-string eval))])))
 

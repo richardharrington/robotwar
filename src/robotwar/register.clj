@@ -50,12 +50,12 @@
 
 (def robot-field-write-mixin
   ; returns a world with the value of a field in the robot hash map altered
-  ; (with the number being cast to floating point before being pushed)
+  ; (with the number being cast to double before being pushed)
   (fn [{:keys [robot-idx field-name multiplier]} world data]
     (assoc-in 
       world 
       (path-to-robot-field robot-idx field-name)
-      (float (* data multiplier)))))
+      (double (* data multiplier)))))
 
 (defrecord StorageRegister [robot-idx reg-name val])
 (extend StorageRegister
