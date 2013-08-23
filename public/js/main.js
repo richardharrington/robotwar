@@ -172,8 +172,6 @@
             currentWorld.robots.forEach(function(robot, idx) {
                 drawRobot(robot, ROBOT_COLORS[idx]);
             });
-            console.log("next:", currentWorld.shells["next-id"]);
-            console.log("last:", previousWorld.shells["next-id"]);
 
             if (currentWorld.shells["next-id"] !== previousWorld.shells["next-id"]) {
                 nextSoundEl.get().play();
