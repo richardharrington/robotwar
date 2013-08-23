@@ -25,8 +25,8 @@
   "takes a robot and returns it, moved through space.
   helper function for tick-robot."
   [{:keys [pos-x pos-y v-x v-y desired-v-x desired-v-y] :as robot}]
-  (let [max-accel-x (if (neg? desired-v-x) (- MAX-ACCEL) MAX-ACCEL)
-        max-accel-y (if (neg? desired-v-y) (- MAX-ACCEL) MAX-ACCEL)
+  (let [max-accel-x (Math/copySign MAX-ACCEL desired-v-x)
+        max-accel-y (Math/copySign MAX-ACCEL desired-v-y)
         {new-pos-x :d, new-v-x :v} (physics/d-and-v-given-desired-v 
                                      pos-x 
                                      v-x 
