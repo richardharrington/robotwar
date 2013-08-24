@@ -11,9 +11,9 @@
 ; TODO: have this source-code-picking be done in requests from the UI
 ; in the browser, not hard-coded here.
 (def progs (concat (vals (select-keys source-programs/programs
-                                      [:moving-to-left-and-shooting
-                                       :moving-to-top-and-shooting]))
-                   (repeat 2 (:moving-to-spot source-programs/programs))))
+                                      [:left-shooter
+                                       :right-shooter]))
+                   (repeat 2 (:mover source-programs/programs))))
 
 (defn add-game
   "a function to update the games store agent state. 

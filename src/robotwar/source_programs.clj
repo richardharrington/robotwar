@@ -33,7 +33,7 @@
  " 140 TO SPEEDX
    250 TO SPEEDY "
 
- :moving-to-spot
+ :mover
  "
                               ; Note: # means !=
 
@@ -67,7 +67,7 @@
                               ; it to set SPEEDY, which is measured in decimeters/second.
        ENDSUB "
 
- :moving-to-left-and-shooting
+ :left-shooter
  "
                               ; Note: # means !=
 
@@ -97,7 +97,7 @@
        200 TO SHOT
        GOTO MOVE "
  
- :moving-to-top-and-shooting
+ :right-shooter
  "
                               ; Note: # means !=
 
