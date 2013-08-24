@@ -241,7 +241,9 @@
                 " " + debugSimulationCounter);
         });
         
-        // Keyboard event listeners for fast-forward control
+        // Keyboard event listener for fast-forward control
+        // TODO: dispose of this if we start a new worlds object.
+        // Or just have it not mutate fastForward.
         $('body').bind('keydown', function(event) {
             if (event.which === 37) {
                 fastForward = Math.max(fastForward - 1, 1);
