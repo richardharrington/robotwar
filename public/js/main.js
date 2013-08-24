@@ -263,6 +263,7 @@
             }
             var programs = this.value;
             worlds = new Worlds(programs, BUFFER_LENGTH, startGame);
+            $(this).blur();
         }
     });
 })();
