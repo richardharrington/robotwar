@@ -17,9 +17,9 @@
 
 (defn get-programs 
   "gets a sequence of programs from the source-code 
-  repository (some may be repeats)"
+  repository. some may be repeats. discards failed matches."
   [program-keys]
-  (map #(% source-programs/programs) program-keys))
+  (filter identity (map #(% source-programs/programs) program-keys)))
 
 (defn add-game
   "a function to update the games store agent state. 
