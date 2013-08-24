@@ -13,7 +13,7 @@
   "takes a string parameter from the browser and returns a seqence
   of program keys"
   [programs-str]
-  (map keyword (split programs-str #"\s+")))
+  (map keyword (split programs-str #"[,\s]\s*")))
 
 (defn get-programs 
   "gets a sequence of programs from the source-code 
