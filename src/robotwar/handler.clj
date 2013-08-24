@@ -49,6 +49,8 @@
                         :games {}}))
 
 (defroutes app-routes
+  (GET "/program-names" [] (response/response
+                             {:names (map name (keys source-programs/programs))}))
   (GET "/init" [programs] (let [next-id (:next-id @games-store)]
                             (swap! games-store add-game programs)
                             (response/response {:id next-id})))
