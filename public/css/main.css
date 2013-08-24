@@ -6,7 +6,7 @@ body {
     font-family: "Data 70";
     background-color: #000;
 }
-h1, h2, h3, p, form {
+h1, h2, h3, p, label {
     margin: 0;
     color: #3ef74e;
 }
@@ -16,8 +16,13 @@ h1 {
 p {
     font-size: 18px;
 }
-form  {
+label  {
+    display: block;
     font-size: 15px;
+}
+.centerer {
+    margin: auto;
+    width: 650px;
 }
 #canvas {
     width: 600px;
@@ -28,13 +33,14 @@ form  {
 
 }
 #programsInput {
+    display: block;
     width: 500px;
     margin-top: 5px;
     margin-bottom: 15px;
-    margin-left: 5px;
+    margin-left: 0;
     background-color: #000;
     color: #3ef74e;
     font-family: "Data 70";
-    font-size: 18px;
+    font-size: 25px;
     border: 0;
 }
