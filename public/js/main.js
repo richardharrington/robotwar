@@ -255,19 +255,31 @@
         });
     }
 
-    // Text and keyboard event listeners for sending program names to 
-    // server
+    function init() {
+        // Text and keyboard event listeners for sending program names to 
+        // server
 
-    $('#programsInput').bind('keydown', function(event) {
-        if (event.which === 13) {
-            event.stopPropagation();
-            event.preventDefault();
-            if (worlds) {
-                worlds.finish();
+        $('#programsInput').bind('keydown', function(event) {
+            if (event.which === 13) {
+                event.stopPropagation();
+                event.preventDefault();
+                if (worlds) {
+                    worlds.finish();
+                }
+                var programs = this.value;
+                worlds = new Worlds(programs, BUFFER_LENGTH, startGame);
+                $(this).blur();
             }
-            var programs = this.value;
-            worlds = new Worlds(programs, BUFFER_LENGTH, startGame);
-            $(this).blur();
-        }
-    });
+        });
+        
+        // Fetch list of robots for user 
+        $.getJSON('program-names', function(data) {
+            $('#programNames').text(data.names.join(", "));
+            $('body').css({display: 'block'});
+        });
+    }
+
+    // Fire it up.
+    $(init);
+
 })();
