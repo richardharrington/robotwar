@@ -9,6 +9,10 @@
     var GUN_WIDTH = 3;
     var SHELL_RADIUS = 2;
     var SHELL_COLOR = "#ffffff";
+
+    // The only real global variable.
+    // TODO: Get rid of this.
+    var worlds;
  
     // TODO: This game info should probably come from the server
     // in a preliminary ajax call.
@@ -248,8 +252,6 @@
             console.log("fast forward: " + fastForward);
         });
     }
-
-    var worlds;
 
     // Text and keyboard event listeners for sending program names to 
     // server
