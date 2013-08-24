@@ -4,9 +4,11 @@
 }
 body {
     font-family: "Data 70";
+    background-color: #000;
 }
-h1, h2, h3, p {
+h1, h2, h3, p, form {
     margin: 0;
+    color: #3ef74e;
 }
 h1 {
     font-size: 80px;
@@ -20,11 +22,19 @@ form  {
 #canvas {
     width: 600px;
     height: 600px;
-    border: solid black 2px;
+    border: solid #3ef74e 5px;
     border-radius: 15px;
     background-color: black;
+
 }
 #programsInput {
-    width: 300px;
+    width: 500px;
+    margin-top: 5px;
     margin-bottom: 15px;
+    margin-left: 5px;
+    background-color: #000;
+    color: #3ef74e;
+    font-family: "Data 70";
+    font-size: 18px;
+    border: 0;
 }

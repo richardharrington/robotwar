@@ -4,7 +4,7 @@
     var MAX_FAST_FORWARD = 40;
     var STARTING_FAST_FORWARD = 15;
     var FPS = 60;
-    var ROBOT_COLORS = ["#6aea2a", "#380bfa", "#fa2d0b", "#0bfaf7", "#faf20b"];
+    var ROBOT_COLORS = ["#3ef74e", "#380bfa", "#fa2d0b", "#0bfaf7", "#faf20b"];
     var GUN_LENGTH = 14;
     var GUN_WIDTH = 3;
     var SHELL_RADIUS = 2;
