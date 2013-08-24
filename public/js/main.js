@@ -38,7 +38,7 @@
         }
     })();
 
-    function Worlds(bufferLength, constructorCallback) {
+    function Worlds(programs, bufferLength, constructorCallback) {
         
         // The constructor first gets a game id from the server,
         // then runs the first fetch.
@@ -46,6 +46,7 @@
         var queue = new Queue();
         var gameId;
         var isFetching = false;
+        var isDisposing = false;
         var previousWorld = null;
         var currentWorld = null;
 
@@ -66,8 +67,14 @@
                 });
             }
         }
-
-        $.getJSON('init', function(data) {
+        function finish() {
+            isDisposing = true;
+        }
+        function isFinished() {
+            return isDisposing || queue.isEmpty();
+        }
+        $.getJSON('init?programs=' + encodeURIComponent(programs))
+        .done(function(data) {
             gameId = data['id'];
             fetch(function() {
                 currentWorld = queue.peek();
@@ -79,7 +86,8 @@
 
         return {
             advance:          advance,
-            finished:         queue.isEmpty.bind(queue),
+            finish:           finish,
+            isFinished:       isFinished,
             getPreviousWorld: function() {return previousWorld;},
             getCurrentWorld:  function() {return currentWorld;}
         }
@@ -130,7 +138,6 @@
                 }
             }
         })();
-
 
         var drawCircle = function(x, y, r, color) {
             ctx.fillStyle = color;
@@ -185,7 +192,7 @@
 
     function loop(worlds, interval, callback) {
         (function continueLoop(tick) {
-            if (worlds.finished()) {
+            if (worlds.isFinished()) {
                 return;
             }
             callback();
@@ -242,6 +249,20 @@
         });
     }
 
-    var worlds = new Worlds(BUFFER_LENGTH, startGame);
+    var worlds;
 
+    // Text and keyboard event listeners for sending program names to 
+    // server
+
+    $('#programsInput').bind('keydown', function(event) {
+        if (event.which === 13) {
+            event.stopPropagation();
+            event.preventDefault();
+            if (worlds) {
+                worlds.finish();
+            }
+            var programs = this.value;
+            worlds = new Worlds(programs, BUFFER_LENGTH, startGame);
+        }
+    });
 })();

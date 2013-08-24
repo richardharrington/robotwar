@@ -1,5 +1,6 @@
 (ns robotwar.handler
-  (:use compojure.core)
+  (:use [compojure.core]
+        [clojure.string :only [split]])
   (:require [compojure.handler :as handler]
             [ring.middleware.json :as middleware]
             [ring.util.response :as response]
@@ -8,24 +9,31 @@
             [robotwar.world :as world]
             [robotwar.browser :as browser]))
 
-; TODO: have this source-code-picking be done in requests from the UI
-; in the browser, not hard-coded here.
-(def progs (concat (vals (select-keys source-programs/programs
-                                      [:left-shooter
-                                       :right-shooter]))
-                   (repeat 2 (:mover source-programs/programs))))
+(defn parse-program-names
+  "takes a string parameter from the browser and returns a seqence
+  of program keys"
+  [programs-str]
+  (map keyword (split programs-str #"\s+")))
+
+(defn get-programs 
+  "gets a sequence of programs from the source-code 
+  repository (some may be repeats)"
+  [program-keys]
+  (map #(% source-programs/programs) program-keys))
 
 (defn add-game
   "a function to update the games store agent state. 
   It keeps a running store of games, which is added
   to upon request from a browser, who is then
   assigned an id number"
-  [{:keys [next-id games]}]
-  {:next-id (inc next-id)
-   :games (merge games {next-id (-> progs
-                                    (world/init-world)
-                                    (world/build-combined-worlds)
-                                    (browser/worlds-for-browser))})}) 
+  [{:keys [next-id games]} programs-str]
+  (let [program-names (parse-program-names programs-str)
+        programs (get-programs program-names)
+        world (world/init-world programs)
+        combined-worlds (world/build-combined-worlds world)
+        worlds-for-browser (browser/worlds-for-browser combined-worlds)] 
+    {:games (merge games {next-id worlds-for-browser})
+     :next-id (inc next-id)})) 
 
 (defn take-drop-send 
   "takes the games store agent, a game id, and a number n, 
@@ -40,10 +48,9 @@
                          :games {}}))
 
 (defroutes app-routes
-  (GET "/programs" [] (response/response source-programs/programs))
-  (GET "/init" [] (let [next-id (:next-id @games-agent)]
-                    (send games-agent add-game)
-                    (response/response {:id next-id})))
+  (GET "/init" [programs] (let [next-id (:next-id @games-agent)]
+                            (send games-agent add-game programs)
+                            (response/response {:id next-id})))
   (GET "/worlds/:id/:n" [id n] (response/response (take-drop-send
                                                     games-agent 
                                                     (Integer/parseInt id) 
