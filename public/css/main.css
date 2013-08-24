@@ -16,7 +16,7 @@ h1 {
 }
 h2 {
     font-size: 24px;
-    margin-bottom: 30px;
+    margin-bottom: 20px;
 }
 p  {
     font-size: 18px;
@@ -25,12 +25,23 @@ p  {
     margin: auto;
     width: 650px;
 }
+.instruction-box {
+    height: 95px;
+    overflow: hidden;
+    -moz-transition: height 0.5s ease;
+    -webkit-transition: height 0.5s ease;
+    transition: height 0.5s ease;
+}
 #canvas {
     width: 600px;
     height: 600px;
     border: solid #3ef74e 5px;
     border-radius: 15px;
     background-color: black;
+    opacity: 0;
+    -moz-transition: opacity 0.5s ease;
+    -webkit-transition: opacity 0.5s ease;
+    transition: opacity 0.5s ease;
 
 }
 #programsInput {

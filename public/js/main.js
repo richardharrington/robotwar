@@ -267,8 +267,21 @@
                     worlds.finish();
                 }
                 var programs = this.value;
-                worlds = new Worlds(programs, BUFFER_LENGTH, startGame);
-                $(this).blur();
+                worlds = new Worlds(programs, BUFFER_LENGTH, function(gameInfo) {
+                    // TODO: instead of these hacky setTimeouts, set up
+                    // some jQuery promise objects such that we make
+                    // sure the css animation happens WHILE the initial
+                    // info and the first 1000 worlds are
+                    // being downloaded, not after.
+                    $('.instruction-box').css({height: 0});
+                    setTimeout(function() {
+                        $('#canvas').css({opacity: 1});
+                        setTimeout(function() {
+                            startGame(gameInfo);
+                        }, 500);
+                    }, 500);
+                    $(this).blur();
+                }.bind(this));
             }
         });
         
