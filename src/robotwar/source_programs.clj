@@ -97,7 +97,7 @@
        200 TO SHOT
        GOTO MOVE "
  
- :right-shooter
+ :top-shooter
  "
                               ; Note: # means !=
 
