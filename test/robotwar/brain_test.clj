@@ -7,7 +7,7 @@
             [robotwar.source-programs :as source-programs]))
 
 (def initial-world 
-  (world/init-world [(:multi-use source-programs/programs)]))
+  (world/init-world [(:multi-use source-programs/dev-programs)]))
 
 (def combined-worlds (world/build-combined-worlds initial-world))
 

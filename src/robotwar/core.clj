@@ -12,7 +12,7 @@
 
 
 (def progs 
-  (repeat 3 (:mover source-programs/programs)))
+  (repeat 3 (:mover source-programs/dev-programs)))
 (def world
   (world/init-world progs)) 
 (defn combined-worlds [] 
