@@ -22,7 +22,7 @@
   (filter identity (map #(% source-programs/programs) program-keys)))
 
 (defn add-game
-  "a function to update the games store agent state. 
+  "a function to update the games-store atom state. 
   It keeps a running store of games, which is added
   to upon request from a browser, who is then
   assigned an id number"
@@ -36,23 +36,23 @@
      :next-id (inc next-id)})) 
 
 (defn take-drop-send 
-  "takes the games store agent, a game id, and a number n, 
+  "takes the games-store atom, a game id, and a number n, 
   and returns a collection of the first n items from that game,
-  then drops those items from the game in the agent's state."
-  [a id n] 
-  (let [coll (get-in @a [:games id])]
-    (send a #(assoc-in % [:games id] (drop n coll)))
+  then drops those items from the game in the atom's state."
+  [games-store id n] 
+  (let [coll (get-in @games-store [:games id])]
+    (swap! games-store #(assoc-in % [:games id] (drop n coll)))
     (take n coll)))
 
-(def games-agent (agent {:next-id 0
-                         :games {}}))
+(def games-store (atom {:next-id 0
+                        :games {}}))
 
 (defroutes app-routes
-  (GET "/init" [programs] (let [next-id (:next-id @games-agent)]
-                            (send games-agent add-game programs)
+  (GET "/init" [programs] (let [next-id (:next-id @games-store)]
+                            (swap! games-store add-game programs)
                             (response/response {:id next-id})))
   (GET "/worlds/:id/:n" [id n] (response/response (take-drop-send
-                                                    games-agent 
+                                                    games-store 
                                                     (Integer/parseInt id) 
                                                     (Integer/parseInt n))))
   (route/files "/")
