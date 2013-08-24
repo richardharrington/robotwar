@@ -1,3 +1,22 @@
+@font-face {
+    font-family: "Data 70";
+    src: url("../fonts/Data_70_LET.ttf");
+}
+body {
+    font-family: "Data 70";
+}
+h1, h2, h3, p {
+    margin: 0;
+}
+h1 {
+    font-size: 80px;
+}
+p {
+    font-size: 18px;
+}
+form  {
+    font-size: 15px;
+}
 #canvas {
     width: 600px;
     height: 600px;
