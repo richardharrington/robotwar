@@ -21,6 +21,18 @@
          :shot-timer 0.0
          :brain (brain/init-brain src-code (register/init-registers idx))}))
 
+(defn update-robot
+  "takes a robot, a world, and a function, and returns a world
+  with the robot updated by passing it through the function"
+  [robot world f]
+  (update-in world [:robots (:idx robot)] f))
+
+(defn update-shot-timer
+  "takes a robot and returns one with the :shot-timer updated"
+  [{shot-timer :shot-timer :as robot}]
+  (merge robot {:shot-timer 
+                (max (- shot-timer *GAME-SECONDS-PER-TICK*) 0.0)}))
+
 (defn move-robot
   "takes a robot and returns it, moved through space.
   helper function for tick-robot."
@@ -44,11 +56,18 @@
                   :v-x new-v-x
                   :v-y new-v-y})))
 
-(defn update-shot-timer
-  "takes a robot and returns one with the :shot-timer updated"
-  [{shot-timer :shot-timer :as robot}]
-  (merge robot {:shot-timer 
-                (max (- shot-timer *GAME-SECONDS-PER-TICK*) 0.0)}))
+(defn collide-or-not
+ "takes a robot and a world and returns the world, with the
+ velocities of robots altered if they have collided with
+ each other. Does not currently calculate damage to robots."
+ [{robot-idx :idx :as robot} {robots :robots :as world}]
+ (let [other-robots (concat (take robot-idx robots)
+                            (drop (inc robot-idx robots)))
+       colliding-x ]
+
+
+
+
 
 (defn tick-robot
   "takes a robot and a world and returns the new state of the world
@@ -63,5 +82,12 @@
                          robot 
                          world 
                          register/read-register 
-                         register/write-register)]
+                         register/write-register)
+          shot-timer-updated-world (update-robot robot ticked-world update-shot-timer)
+          moved-robot-world (update-robot robot shot-timer-updated move-robot)]
+
+
+
+
+
       (update-in ticked-world [:robots robot-idx] (comp update-shot-timer move-robot)))))
