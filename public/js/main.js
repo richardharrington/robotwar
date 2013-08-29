@@ -129,7 +129,6 @@
         var gunDisplayWidth = scaleY(GUN_WIDTH);
         
         var ctx = el.getContext('2d');
-        ctx.lineWidth = gunDisplayWidth;
         ctx.lineCap = 'square';
 
         var nextSoundEl = (function() {
@@ -143,15 +142,36 @@
             }
         })();
 
-        var drawCircle = function(x, y, r, color) {
+        // TODO: this whole drawing section is kind of hacky. reorganize
+        // the behaviors of these functions to be less redundant,
+        // and more abstracted.
+        
+        var fillCircle = function(x, y, r, color) {
             ctx.fillStyle = color;
             ctx.beginPath();
             ctx.arc(x, y, r, 0, Math.PI * 2, true);
             ctx.fill();
         }
 
-        var drawLinePolar = function(x, y, angle, d, color) {
+        var strokeCircle = function(x, y, r, lineWidth) {
+            ctx.lineWidth = lineWidth;
+            ctx.strokeStyle = "#000";
+            ctx.beginPath();
+            ctx.arc(x, y, r, 0, Math.PI * 2, true);
+            ctx.stroke();
+        }
+
+        var fillSquare = function(x, y, size, color) {
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.rect(x - size / 2, y - size / 2, size, size);
+            ctx.fill();
+        }
+
+        var drawLinePolar = function(x, y, angle, d, lineWidth, color) {
             var delta = Geom.polarToCartesian(angle, d);
+            ctx.lineWidth = lineWidth;
+            ctx.strokeStyle = color;
             ctx.beginPath();
             ctx.moveTo(x, y);
             ctx.lineTo(x + delta.x, y + delta.y);
@@ -162,14 +182,15 @@
         var drawRobot = function(robot, color) {
             var x = scaleX(robot['pos-x']);
             var y = scaleY(robot['pos-y']);
-            drawCircle(x, y, robotDisplayRadius, color);
-            drawLinePolar(x, y, robot['aim'], gunDisplayLength, color); 
+            fillSquare(x, y, robotDisplayRadius * 2, color);
+            strokeCircle(x, y, robotDisplayRadius * 0.6, gunDisplayWidth * 0.3);
+            drawLinePolar(x, y, robot['aim'], gunDisplayLength, gunDisplayWidth, color); 
         }
 
         var drawShell = function(shell) {
             var x = scaleX(shell['pos-x']);
             var y = scaleY(shell['pos-y']);
-            drawCircle(x, y, shellDisplayRadius, SHELL_COLOR);
+            fillCircle(x, y, shellDisplayRadius, SHELL_COLOR);
         }
         
         var animateWorld = function(previousWorld, currentWorld) {
