@@ -5,7 +5,7 @@
     var STARTING_FAST_FORWARD = 15;
     var FPS = 60;
     var ROBOT_COLORS = ["#fa2d0b", "#0bfaf7", "#faf20b", "#e312f0", "#4567fb"];
-    var GUN_LENGTH = 14;
+    var GUN_LENGTH = 10;
     var GUN_WIDTH = 3;
     var SHELL_RADIUS = 2;
     var SHELL_COLOR = "#ffffff";
@@ -17,7 +17,7 @@
     // TODO: This game info should probably come from the server
     // in a preliminary ajax call.
     var GAME_INFO = {
-        robotRadius: 8,
+        robotRadius: 7,
         robotXMax: 256.0,
         robotYMax: 256.0,
         gameSecondsPerTick: 0.0333333333333333333333333
