@@ -4,7 +4,7 @@
             [robotwar.register :as register]
             [robotwar.physics :as physics]))
 
-; TODO: deal with bumping into walls and other robots.
+; TODO: deal with bumping into walls.
 
 (defn init-robot
   "takes a robot-idx, a program, and a robot attribute map and returns a robot.
@@ -24,8 +24,8 @@
 (defn update-robot
   "takes a robot, a world, and a function, and returns a world
   with the robot updated by passing it through the function"
-  [robot world f]
-  (update-in world [:robots (:idx robot)] f))
+  [robot-idx world f]
+  (update-in world [:robots robot-idx] f))
 
 (defn update-shot-timer
   "takes a robot and returns one with the :shot-timer updated"
@@ -57,17 +57,41 @@
                   :v-y new-v-y})))
 
 (defn collide-or-not
- "takes a robot and a world and returns the world, with the
- velocities of robots altered if they have collided with
- each other. Does not currently calculate damage to robots."
- [{robot-idx :idx :as robot} {robots :robots :as world}]
- (let [other-robots (concat (take robot-idx robots)
-                            (drop (inc robot-idx robots)))
-       colliding-x ]
-
-
-
-
+  "takes a robot and a world and returns the world, with the
+  velocities of robots altered if they have collided with
+  each other. Does not currently calculate damage to robots.
+  TODO: there's got to be a better way to write this. The whole last
+  two-thirds consists of code that would be a lot shorter even in JavaScript,
+  for Christ's sake."
+  [robot-idx {robots :robots :as world}]
+  (let [robot (get-in world [:robots robot-idx])
+        other-robots (concat (take robot-idx robots)
+                             (drop (inc robot-idx) robots))
+        enemy-colliding-x? (fn [other-robot]
+                                  (< (Math/abs (- (:pos-x robot) (:pos-x other-robot))) 
+                                     (* ROBOT-RADIUS 2)))
+        enemy-colliding-y? (fn [other-robot]
+                                  (< (Math/abs (- (:pos-y robot) (:pos-y other-robot))) 
+                                     (* ROBOT-RADIUS 2)))
+        colliding-enemy-idxs-x (set (map :idx (filter enemy-colliding-x? other-robots)))
+        colliding-enemy-idxs-y (set (map :idx (filter enemy-colliding-y? other-robots)))
+        total-colliding-idxs-x (if (not-empty colliding-enemy-idxs-x)
+                                 (conj colliding-enemy-idxs-x robot-idx)
+                                 #{})
+        total-colliding-idxs-y (if (not-empty colliding-enemy-idxs-y)
+                                 (conj colliding-enemy-idxs-y robot-idx)
+                                 #{})
+        new-robots-v-x (map (fn [rob]
+                              (if (total-colliding-idxs-x rob)
+                                (assoc rob :v-x 0)
+                                rob))
+                            robots)
+        new-robots-v-y (map (fn [rob]
+                              (if (total-colliding-idxs-y rob)
+                                (assoc rob :v-y 0)
+                                rob))
+                            new-robots-v-x)]
+    (assoc world :robots new-robots-v-y)))
 
 (defn tick-robot
   "takes a robot and a world and returns the new state of the world
@@ -83,11 +107,7 @@
                          world 
                          register/read-register 
                          register/write-register)
-          shot-timer-updated-world (update-robot robot ticked-world update-shot-timer)
-          moved-robot-world (update-robot robot shot-timer-updated move-robot)]
+          shot-timer-updated-world (update-robot robot-idx ticked-world update-shot-timer)
+          collision-detected-world (collide-or-not robot-idx shot-timer-updated-world)]  
+      (update-robot robot-idx collision-detected-world move-robot))))
 
-
-
-
-
-      (update-in ticked-world [:robots robot-idx] (comp update-shot-timer move-robot)))))
