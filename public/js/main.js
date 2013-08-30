@@ -16,8 +16,8 @@
     // in a preliminary ajax call.
     var GAME_INFO = {
         robotRadius: 7,
-        robotXMax: 256.0,
-        robotYMax: 256.0,
+        robotRangeX: 256.0,
+        robotRangeY: 256.0,
         gameSecondsPerTick: 0.0333333333333333333333333
     }
 
@@ -99,8 +99,8 @@
         var width = parseInt(el.width);
         var height = parseInt(el.height);
         var roomForRobots = GAME_INFO.robotRadius * 2;
-        var arenaWidth =  GAME_INFO.robotXMax + roomForRobots;
-        var arenaHeight = GAME_INFO.robotYMax + roomForRobots;
+        var arenaWidth =  GAME_INFO.robotRangeX + roomForRobots;
+        var arenaHeight = GAME_INFO.robotRangeY + roomForRobots;
         var scaleFactorX = width / arenaWidth;
         var scaleFactorY = height / arenaHeight;
         var scaleX = function(x) {
