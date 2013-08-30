@@ -5,8 +5,6 @@
     var STARTING_FAST_FORWARD = 15;
     var FPS = 60;
     var ROBOT_COLORS = ["#fa2d0b", "#0bfaf7", "#faf20b", "#e312f0", "#4567fb"];
-    var GUN_LENGTH = 10;
-    var GUN_WIDTH = 3;
     var SHELL_RADIUS = 2;
     var SHELL_COLOR = "#ffffff";
 
@@ -124,9 +122,9 @@
         // scaleFactorY?
        
         var robotDisplayRadius = scaleX(GAME_INFO.robotRadius);
-        var shellDisplayRadius = scaleX(SHELL_RADIUS);
-        var gunDisplayLength = scaleX(GUN_LENGTH);
-        var gunDisplayWidth = scaleY(GUN_WIDTH);
+        var shellDisplayRadius = scaleX(GAME_INFO.robotRadius * 0.3);
+        var gunDisplayLength = scaleX(GAME_INFO.robotRadius * 1.4);
+        var gunDisplayWidth = scaleY(GAME_INFO.robotRadius * 0.5);
         
         var ctx = el.getContext('2d');
         ctx.lineCap = 'square';
