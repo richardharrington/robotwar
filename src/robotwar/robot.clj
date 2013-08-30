@@ -83,18 +83,16 @@
         total-colliding-idxs-y (if (not-empty colliding-enemy-idxs-y)
                                  (conj colliding-enemy-idxs-y robot-idx)
                                  #{})
-        new-robots-v-x (map (fn [rob]
-                              (if (total-colliding-idxs-x rob)
-                                (assoc rob :v-x 0)
-                                rob))
-                            robots)
-        new-robots-v-y (map (fn [rob]
-                              (if (total-colliding-idxs-y rob)
-                                (assoc rob :v-y 0)
-                                rob))
-                            new-robots-v-x)]
-    (pprint new-robots-v-y)
-    (println (count new-robots-v-y))
+        new-robots-v-x (mapv (fn [rob]
+                               (if (total-colliding-idxs-x rob)
+                                 (assoc rob :v-x 0.0)
+                                 rob))
+                             robots)
+        new-robots-v-y (mapv (fn [rob]
+                               (if (total-colliding-idxs-y rob)
+                                 (assoc rob :v-y 0.0)
+                                 rob))
+                             new-robots-v-x)]
     (assoc world :robots new-robots-v-y)))
 
 (defn tick-robot
