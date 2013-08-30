@@ -1,6 +1,7 @@
 (ns robotwar.handler
   (:use [compojure.core]
-        [clojure.string :only [split]])
+        [clojure.string :only [split]]
+        [robotwar.constants])
   (:require [compojure.handler :as handler]
             [ring.middleware.json :as middleware]
             [ring.util.response :as response]
@@ -8,6 +9,11 @@
             [robotwar.source-programs :as source-programs]
             [robotwar.world :as world]
             [robotwar.browser :as browser]))
+
+(def game-info {:ROBOT-RADIUS ROBOT-RADIUS
+                :ROBOT-RANGE-X ROBOT-RANGE-X
+                :ROBOT-RANGE-Y ROBOT-RANGE-Y
+                :*GAME-SECONDS-PER-TICK* *GAME-SECONDS-PER-TICK*})
 
 (defn parse-program-names
   "takes a string parameter from the browser and returns a seqence
@@ -53,7 +59,8 @@
                              {:names (map name (keys source-programs/programs))}))
   (GET "/init" [programs] (let [next-id (:next-id @games-store)]
                             (swap! games-store add-game programs)
-                            (response/response {:id next-id})))
+                            (response/response {:id next-id 
+                                                :game-info game-info})))
   (GET "/worlds/:id/:n" [id n] (response/response (take-drop-send
                                                     games-store 
                                                     (Integer/parseInt id) 

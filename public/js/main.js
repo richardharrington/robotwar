@@ -5,8 +5,6 @@
     var STARTING_FAST_FORWARD = 15;
     var FPS = 60;
     var ROBOT_COLORS = ["#fa2d0b", "#0bfaf7", "#faf20b", "#e312f0", "#4567fb"];
-    var GUN_LENGTH = 10;
-    var GUN_WIDTH = 3;
     var SHELL_RADIUS = 2;
     var SHELL_COLOR = "#ffffff";
 
@@ -14,15 +12,6 @@
     // TODO: Get rid of this.
     var worlds;
  
-    // TODO: This game info should probably come from the server
-    // in a preliminary ajax call.
-    var GAME_INFO = {
-        robotRadius: 7,
-        robotXMax: 256.0,
-        robotYMax: 256.0,
-        gameSecondsPerTick: 0.0333333333333333333333333
-    }
-
     var Geom = (function() {
         var degreesToRadians = function(angle) {
             return angle * Math.PI / 180;
@@ -80,11 +69,16 @@
         $.getJSON('init?programs=' + encodeURIComponent(programs))
         .done(function(data) {
             gameId = data['id'];
+            var gameInfo = data['game-info'];
             fetch(function() {
                 currentWorld = queue.peek();
-                // TODO: Pass into this callback actual game info from the server.
-                // This returning of local constants is only temporary.
-                constructorCallback(GAME_INFO);
+            console.log(gameInfo)
+                constructorCallback({
+                    robotRadius: gameInfo["ROBOT-RADIUS"],
+                    robotRangeX: gameInfo["ROBOT-RANGE-X"],
+                    robotRangeY: gameInfo["ROBOT-RANGE-Y"],
+                    gameSecondsPerTick: gameInfo["*GAME-SECONDS-PER-TICK*"]
+                });
             });
         });
 
@@ -100,9 +94,9 @@
     var Animation = function(el, sounds, gameInfo) {
         var width = parseInt(el.width);
         var height = parseInt(el.height);
-        var roomForRobots = GAME_INFO.robotRadius * 2;
-        var arenaWidth =  GAME_INFO.robotXMax + roomForRobots;
-        var arenaHeight = GAME_INFO.robotYMax + roomForRobots;
+        var roomForRobots = gameInfo.robotRadius * 2;
+        var arenaWidth =  gameInfo.robotRangeX + roomForRobots;
+        var arenaHeight = gameInfo.robotRangeY + roomForRobots;
         var scaleFactorX = width / arenaWidth;
         var scaleFactorY = height / arenaHeight;
         var scaleX = function(x) {
@@ -112,10 +106,10 @@
             return Math.round(y * scaleFactorY);
         }
         var offsetX = function(x) {
-            return scaleX(GAME_INFO.robotRadius + x);
+            return scaleX(gameInfo.robotRadius + x);
         }
         var offsetY = function(y) {
-            return scaleY(GAME_INFO.robotRadius + y);
+            return scaleY(gameInfo.robotRadius + y);
         }
         
         // TODO: regularize this here and on the server so that
@@ -123,10 +117,10 @@
         // like why are we using scaleFactorX here and don't need
         // scaleFactorY?
        
-        var robotDisplayRadius = scaleX(GAME_INFO.robotRadius);
-        var shellDisplayRadius = scaleX(SHELL_RADIUS);
-        var gunDisplayLength = scaleX(GUN_LENGTH);
-        var gunDisplayWidth = scaleY(GUN_WIDTH);
+        var robotDisplayRadius = scaleX(gameInfo.robotRadius);
+        var shellDisplayRadius = scaleX(gameInfo.robotRadius * 0.3);
+        var gunDisplayLength = scaleX(gameInfo.robotRadius * 1.4);
+        var gunDisplayWidth = scaleY(gameInfo.robotRadius * 0.5);
         
         var ctx = el.getContext('2d');
         ctx.lineCap = 'square';
@@ -298,6 +292,7 @@
                     setTimeout(function() {
                         $('#canvas').css({opacity: 1});
                         setTimeout(function() {
+                            console.log(gameInfo);
                             startGame(gameInfo);
                         }, 500);
                     }, 500);
