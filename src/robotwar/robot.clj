@@ -1,5 +1,6 @@
 (ns robotwar.robot
-  (:use [robotwar.constants])
+  (:use [robotwar.constants]
+        [clojure.pprint :only [pprint]])
   (:require [robotwar.brain :as brain]
             [robotwar.register :as register]
             [robotwar.physics :as physics]))
@@ -65,16 +66,17 @@
   for Christ's sake."
   [robot-idx {robots :robots :as world}]
   (let [robot (get-in world [:robots robot-idx])
-        other-robots (concat (take robot-idx robots)
-                             (drop (inc robot-idx) robots))
-        enemy-colliding-x? (fn [other-robot]
-                                  (< (Math/abs (- (:pos-x robot) (:pos-x other-robot))) 
-                                     (* ROBOT-RADIUS 2)))
-        enemy-colliding-y? (fn [other-robot]
-                                  (< (Math/abs (- (:pos-y robot) (:pos-y other-robot))) 
-                                     (* ROBOT-RADIUS 2)))
-        colliding-enemy-idxs-x (set (map :idx (filter enemy-colliding-x? other-robots)))
-        colliding-enemy-idxs-y (set (map :idx (filter enemy-colliding-y? other-robots)))
+        other-robot-idxs (filter #{robot-idx} (range (count robots)))
+        enemy-colliding-x? (fn [other-robot-idx]
+                             (let [other-robot (get-in world [:robots other-robot-idx])]
+                               (< (Math/abs (- (:pos-x robot) (:pos-x other-robot))) 
+                                  (* ROBOT-RADIUS 2))))
+        enemy-colliding-y? (fn [other-robot-idx]
+                             (let [other-robot (get-in world [:robots other-robot-idx])]
+                               (< (Math/abs (- (:pos-y robot) (:pos-y other-robot))) 
+                                  (* ROBOT-RADIUS 2))))
+        colliding-enemy-idxs-x (set (map :idx (filter enemy-colliding-x? other-robot-idxs)))
+        colliding-enemy-idxs-y (set (map :idx (filter enemy-colliding-y? other-robot-idxs)))
         total-colliding-idxs-x (if (not-empty colliding-enemy-idxs-x)
                                  (conj colliding-enemy-idxs-x robot-idx)
                                  #{})
@@ -91,6 +93,8 @@
                                 (assoc rob :v-y 0)
                                 rob))
                             new-robots-v-x)]
+    (pprint new-robots-v-y)
+    (println (count new-robots-v-y))
     (assoc world :robots new-robots-v-y)))
 
 (defn tick-robot
