@@ -63,18 +63,31 @@
   each other. Does not currently calculate damage to robots.
   TODO: there's got to be a better way to write this. The whole last
   two-thirds consists of code that would be a lot shorter even in JavaScript,
-  for Christ's sake."
+  for Christ's sake. And it's really inefficient -- calculates
+  a lot of x and y stuff twice."
   [robot-idx {robots :robots :as world}]
   (let [robot (get-in world [:robots robot-idx])
         other-robot-idxs (filter #(not= robot-idx %) (range (count robots)))
+        enemy-dist-x (fn [other-robot-idx]
+                       (let [other-robot (get-in world [:robots other-robot-idx])]
+                         (Math/abs (- (:pos-x robot) (:pos-x other-robot)))))
+        enemy-dist-y (fn [other-robot-idx]
+                       (let [other-robot (get-in world [:robots other-robot-idx])]
+                         (Math/abs (- (:pos-y robot) (:pos-y other-robot)))))
+        close? (fn [dist]
+                 (< dist (* ROBOT-RADIUS 2)))
+        enemy-colliding (fn [other-robot-idx]
+                          (let [dist-x (enemy-dist-x other-robot-idx)
+                                dist-y (enemy-dist-y other-robot-idx)]
+                            (and (close? dist-x) 
+                                 (close? dist-y)
+                                 (if (> dist-x dist-y)
+                                   :x
+                                   :y))))
         enemy-colliding-x? (fn [other-robot-idx]
-                             (let [other-robot (get-in world [:robots other-robot-idx])]
-                               (< (Math/abs (- (:pos-x robot) (:pos-x other-robot))) 
-                                  (* ROBOT-RADIUS 2))))
+                             (= (enemy-colliding other-robot-idx) :x))
         enemy-colliding-y? (fn [other-robot-idx]
-                             (let [other-robot (get-in world [:robots other-robot-idx])]
-                               (< (Math/abs (- (:pos-y robot) (:pos-y other-robot))) 
-                                  (* ROBOT-RADIUS 2))))
+                             (= (enemy-colliding other-robot-idx) :y))
         colliding-enemy-idxs-x (set (filter enemy-colliding-x? other-robot-idxs))
         colliding-enemy-idxs-y (set (filter enemy-colliding-y? other-robot-idxs))
         total-colliding-idxs-x (if (not-empty colliding-enemy-idxs-x)
