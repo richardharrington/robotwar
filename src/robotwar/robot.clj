@@ -66,7 +66,7 @@
   for Christ's sake."
   [robot-idx {robots :robots :as world}]
   (let [robot (get-in world [:robots robot-idx])
-        other-robot-idxs (filter #{robot-idx} (range (count robots)))
+        other-robot-idxs (filter #(not= robot-idx %) (range (count robots)))
         enemy-colliding-x? (fn [other-robot-idx]
                              (let [other-robot (get-in world [:robots other-robot-idx])]
                                (< (Math/abs (- (:pos-x robot) (:pos-x other-robot))) 
@@ -75,21 +75,21 @@
                              (let [other-robot (get-in world [:robots other-robot-idx])]
                                (< (Math/abs (- (:pos-y robot) (:pos-y other-robot))) 
                                   (* ROBOT-RADIUS 2))))
-        colliding-enemy-idxs-x (set (map :idx (filter enemy-colliding-x? other-robot-idxs)))
-        colliding-enemy-idxs-y (set (map :idx (filter enemy-colliding-y? other-robot-idxs)))
+        colliding-enemy-idxs-x (set (filter enemy-colliding-x? other-robot-idxs))
+        colliding-enemy-idxs-y (set (filter enemy-colliding-y? other-robot-idxs))
         total-colliding-idxs-x (if (not-empty colliding-enemy-idxs-x)
                                  (conj colliding-enemy-idxs-x robot-idx)
                                  #{})
         total-colliding-idxs-y (if (not-empty colliding-enemy-idxs-y)
                                  (conj colliding-enemy-idxs-y robot-idx)
                                  #{})
-        new-robots-v-x (mapv (fn [rob]
-                               (if (total-colliding-idxs-x rob)
+        new-robots-v-x (mapv (fn [{rob-idx :idx :as rob}]
+                               (if (get total-colliding-idxs-x rob-idx)
                                  (assoc rob :v-x 0.0)
                                  rob))
                              robots)
-        new-robots-v-y (mapv (fn [rob]
-                               (if (total-colliding-idxs-y rob)
+        new-robots-v-y (mapv (fn [{rob-idx :idx :as rob}]
+                               (if (get total-colliding-idxs-y rob-idx)
                                  (assoc rob :v-y 0.0)
                                  rob))
                              new-robots-v-x)]
