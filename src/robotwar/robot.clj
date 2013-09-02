@@ -82,22 +82,24 @@
         target (get robots target-idx)
         dist-x (- (:pos-x target) (:pos-x actor))
         dist-y (- (:pos-y target) (:pos-y actor))
+        abs-dist-x (Math/abs dist-x)
+        abs-dist-y (Math/abs dist-y)
         min-dist (* ROBOT-RADIUS 2)
-        colliding (and (< dist-x min-dist)
-                       (< dist-y min-dist)
-                       (if (> dist-x dist-y) :x :y))]
+        colliding (and (< abs-dist-x min-dist)
+                       (< abs-dist-y min-dist)
+                       (if (> abs-dist-x abs-dist-y) :x :y))]
     (if colliding
       (let [new-actor (case colliding
                         :x (assoc
                              actor 
                              :v-x (:v-x target)
                              :pos-x (- (:pos-x target) 
-                                       (Math/copySign min-dist (:v-x actor))))
+                                        (Math/copySign min-dist dist-x)))
                         :y (assoc 
                              actor 
                              :v-y (:v-y target)
                              :pos-y (- (:pos-y target) 
-                                       (Math/copySign min-dist (:v-y actor)))))
+                                       (Math/copySign min-dist dist-y))))
             new-target (case colliding
                          :x (assoc target :v-x (:v-x actor))
                          :y (assoc target :v-y (:v-y actor)))]
