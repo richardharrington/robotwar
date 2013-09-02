@@ -5,13 +5,22 @@
   "builds a sequence of worlds with the robots' brains
   removed, for more compact transmission by json.
   Fast-forward factor will be dynamically added by animation
-  function in browser.
-  TODO: remove some unnecessary robot fields if we need to 
-  for speed (we're going to keep them in now for diagnostic
-  purposes in the browser)"
+  function in browser."
   [worlds]
-  (map (fn [world]
-         (assoc world :robots (mapv #(dissoc % :brain) (:robots world))))
-       worlds))
-
-
+  (letfn [(necessary-fields [robot]
+            (select-keys robot [:pos-x 
+                                :pos-y 
+                                :aim
+                                :damage
+                                :shot-timer]))
+          (three-sigs [robot]
+            (zipmap (keys robot) 
+                    (map (fn [x]
+                           (double (/ (Math/round (* x 1000)) 1000)))
+                         (vals robot))))
+          (compact-robots [world]
+            (update-in 
+              world 
+              [:robots]
+              #(mapv (comp three-sigs necessary-fields) %)))]
+    (map compact-robots worlds)))
