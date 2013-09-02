@@ -25,8 +25,14 @@
    :shot-timer  0.0
    :brain       (brain/init-brain src-code (register/init-registers idx))})
 
+(defn update-robots
+  "takes a world and a function, and returns a world
+  with its robots updated by passing them through the function"
+  [world f]
+  (update-in world [:robots] f))
+
 (defn update-robot
-  "takes a robot, a world, and a function, and returns a world
+  "takes a robot index, a world, and a function, and returns a world
   with the robot updated by passing it through the function"
   [robot-idx world f]
   (update-in world [:robots robot-idx] f))
@@ -60,56 +66,67 @@
                   :v-x new-v-x
                   :v-y new-v-y})))
 
-(defn collide-or-not
-  "takes a robot and a world and returns the world, with the
-  velocities of robots altered if they have collided with
-  each other. Does not currently calculate damage to robots."
-  ; TODO: This is terrible and needs to be rewritten soon. The whole last
-  ; two-thirds consists of code that would be a lot shorter even in JavaScript,
-  ; for Christ's sake. And it's really inefficient -- calculates
-  ; a lot of x and y stuff twice.
-  [robot-idx {robots :robots :as world}]
-  (let [robot (get-in world [:robots robot-idx])
-        other-robot-idxs (filter #(not= robot-idx %) (range (count robots)))
-        enemy-dist-x (fn [other-robot-idx]
-                       (let [other-robot (get-in world [:robots other-robot-idx])]
-                         (Math/abs (- (:pos-x robot) (:pos-x other-robot)))))
-        enemy-dist-y (fn [other-robot-idx]
-                       (let [other-robot (get-in world [:robots other-robot-idx])]
-                         (Math/abs (- (:pos-y robot) (:pos-y other-robot)))))
-        close? (fn [dist]
-                 (< dist (* ROBOT-RADIUS 2)))
-        enemy-colliding (fn [other-robot-idx]
-                          (let [dist-x (enemy-dist-x other-robot-idx)
-                                dist-y (enemy-dist-y other-robot-idx)]
-                            (and (close? dist-x) 
-                                 (close? dist-y)
-                                 (if (> dist-x dist-y)
-                                   :x
-                                   :y))))
-        enemy-colliding-x? (fn [other-robot-idx]
-                             (= (enemy-colliding other-robot-idx) :x))
-        enemy-colliding-y? (fn [other-robot-idx]
-                             (= (enemy-colliding other-robot-idx) :y))
-        colliding-enemy-idxs-x (set (filter enemy-colliding-x? other-robot-idxs))
-        colliding-enemy-idxs-y (set (filter enemy-colliding-y? other-robot-idxs))
-        total-colliding-idxs-x (if (not-empty colliding-enemy-idxs-x)
-                                 (conj colliding-enemy-idxs-x robot-idx)
-                                 #{})
-        total-colliding-idxs-y (if (not-empty colliding-enemy-idxs-y)
-                                 (conj colliding-enemy-idxs-y robot-idx)
-                                 #{})
-        new-robots-v-x (mapv (fn [{rob-idx :idx :as rob}]
-                               (if (get total-colliding-idxs-x rob-idx)
-                                 (assoc rob :v-x 0.0)
-                                 rob))
-                             robots)
-        new-robots-v-y (mapv (fn [{rob-idx :idx :as rob}]
-                               (if (get total-colliding-idxs-y rob-idx)
-                                 (assoc rob :v-y 0.0)
-                                 rob))
-                             new-robots-v-x)]
-    (assoc world :robots new-robots-v-y)))
+(defn collide-two-robots
+  "takes a vector of robots, two robot-indexes (an acting robot
+  and a target robot), and returns a vector of robots with those
+  two altered if the actor has collided with the target.
+  Right now they're just behaving like square billiard balls --
+  all momentum from one is transferred to the other when they collide.
+  To account for overshoot during the tick, the position of the actor
+  is set to but up against the target.
+  Does not currently calculate damage. when it does, it will
+  need to only assign each robot half the damage, because the other
+  half will be assigned when the other robot it ticks through its own turn."
+  [robots actor-idx target-idx]
+  (let [actor (get robots actor-idx)
+        target (get robots target-idx)
+        dist-x (- (:pos-x target) (:pos-x actor))
+        dist-y (- (:pos-y target) (:pos-y actor))
+        min-dist (* ROBOT-RADIUS 2)
+        colliding (and (< dist-x min-dist)
+                       (< dist-y min-dist)
+                       (if (> dist-x dist-y) :x :y))]
+    (if colliding
+      (let [new-actor (case colliding
+                        :x (assoc
+                             actor 
+                             :v-x (:v-x target)
+                             :pos-x (- (:pos-x target) 
+                                       (Math/copySign min-dist (:v-x actor))))
+                        :y (assoc 
+                             actor 
+                             :v-y (:v-y target)
+                             :pos-y (- (:pos-y target) 
+                                       (Math/copySign min-dist (:v-y actor)))))
+            new-target (case colliding
+                         :x (assoc target :v-x (:v-x actor))
+                         :y (assoc target :v-y (:v-y actor)))]
+        {colliding (assoc robots actor-idx new-actor, target-idx new-target)})
+      {nil robots})))
+
+(defn collide-all-robots
+  "takes a vector of robots and an actor-idx,
+  and returns a vector of robots with any collisions that have occurred
+  (may be at most one x-collision and at most one y-collision)."
+  ; TODO: this is remarkably inefficient, and checks the collisions 
+  ; twice in a lot of cases. Sort this out when we sort out the whole :x and :y issue.
+  [robots actor-idx]
+  (let [target-idxs (filter #(not= actor-idx %) (range (count robots)))
+        collided-robots-x (or (some (fn [target-idx]
+                                      (:x (collide-two-robots 
+                                            robots 
+                                            actor-idx 
+                                            target-idx)))
+                                    target-idxs)
+                              robots)
+        collided-robots-y (or (some (fn [target-idx]
+                                      (:y (collide-two-robots 
+                                            collided-robots-x 
+                                            actor-idx 
+                                            target-idx)))
+                                    target-idxs)
+                              collided-robots-x)]
+    collided-robots-y))
 
 (defn tick-robot
   "takes a robot and a world and returns the new state of the world
@@ -120,12 +137,21 @@
   [{robot-idx :idx :as robot} world]
   (if (<= (:damage robot) 0)
     world
-    (let [ticked-world (brain/tick-brain 
-                         robot 
-                         world 
-                         register/read-register 
-                         register/write-register)
-          shot-timer-updated-world (update-robot robot-idx ticked-world update-shot-timer)
-          collision-detected-world (collide-or-not robot-idx shot-timer-updated-world)]  
-      (update-robot robot-idx collision-detected-world move-robot))))
+    (let [ticked-world             (brain/tick-brain 
+                                     robot 
+                                     world 
+                                     register/read-register 
+                                     register/write-register)
+          shot-timer-updated-world (update-robot 
+                                     robot-idx 
+                                     ticked-world 
+                                     update-shot-timer)
+          moved-world              (update-robot
+                                     robot-idx
+                                     shot-timer-updated-world
+                                     move-robot)
+          collision-detected-world (update-robots 
+                                     moved-world 
+                                     #(collide-all-robots % robot-idx))]  
+      collision-detected-world)))
 
