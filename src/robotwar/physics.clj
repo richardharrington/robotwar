@@ -1,5 +1,10 @@
 (ns robotwar.physics)
 
+; precision functions
+
+(defn three-sigs [x]
+  (double (/ (Math/round (* x 1000)) 1000)))
+
 ; trig functions
 
 (defn robotwar-deg->clojure-deg

@@ -1,5 +1,6 @@
 (ns robotwar.browser
-  (:use [robotwar.constants]))
+  (:use [robotwar.constants])
+  (:require [robotwar.physics :as physics]))
 
 (defn worlds-for-browser
   "builds a sequence of worlds with the robots' brains
@@ -7,20 +8,22 @@
   Fast-forward factor will be dynamically added by animation
   function in browser."
   [worlds]
-  (letfn [(necessary-fields [robot]
-            (select-keys robot [:pos-x 
+  (letfn [(select-robot-keys [robot]
+            (select-keys robot [:idx
+                                :pos-x 
                                 :pos-y 
                                 :aim
                                 :damage
                                 :shot-timer]))
-          (three-sigs [robot]
-            (zipmap (keys robot) 
-                    (map (fn [x]
-                           (double (/ (Math/round (* x 1000)) 1000)))
-                         (vals robot))))
+          (three-sigs-map [m]
+            (zipmap (keys m)
+                    (map #(if (float? %)
+                            (physics/three-sigs %)
+                            %) 
+                         (vals m))))
           (compact-robots [world]
             (update-in 
               world 
               [:robots]
-              #(mapv (comp three-sigs necessary-fields) %)))]
+              #(mapv (comp three-sigs-map select-robot-keys) %)))]
     (map compact-robots worlds)))
