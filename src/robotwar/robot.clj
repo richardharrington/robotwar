@@ -63,11 +63,11 @@
 (defn collide-or-not
   "takes a robot and a world and returns the world, with the
   velocities of robots altered if they have collided with
-  each other. Does not currently calculate damage to robots.
-  TODO: there's got to be a better way to write this. The whole last
-  two-thirds consists of code that would be a lot shorter even in JavaScript,
-  for Christ's sake. And it's really inefficient -- calculates
-  a lot of x and y stuff twice."
+  each other. Does not currently calculate damage to robots."
+  ; TODO: This is terrible and needs to be rewritten soon. The whole last
+  ; two-thirds consists of code that would be a lot shorter even in JavaScript,
+  ; for Christ's sake. And it's really inefficient -- calculates
+  ; a lot of x and y stuff twice.
   [robot-idx {robots :robots :as world}]
   (let [robot (get-in world [:robots robot-idx])
         other-robot-idxs (filter #(not= robot-idx %) (range (count robots)))
