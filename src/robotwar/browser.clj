@@ -15,6 +15,11 @@
                                 :aim
                                 :damage
                                 :shot-timer]))
+          (select-shell-keys [shell]
+            (select-keys shell [:id
+                                :pos-x
+                                :pos-y
+                                :exploded]))
           (three-sigs-map [m]
             (zipmap (keys m)
                     (map #(if (float? %)
@@ -25,5 +30,10 @@
             (update-in 
               world 
               [:robots]
-              #(mapv (comp three-sigs-map select-robot-keys) %)))]
+              #(mapv (comp three-sigs-map select-robot-keys) %)))
+          (compact-shells [world]
+            (update-in
+              world
+              [:shells]
+              #(map (comp three-sigs-map select-shell-keys) %)))]
     (map compact-robots worlds)))
