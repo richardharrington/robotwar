@@ -89,6 +89,19 @@
   IWriteRegister 
     {:write-register register-field-write-mixin})
 
+(defrecord AimRegister [robot-idx field-name multiplier])
+(extend AimRegister
+  IReadRegister
+    {:read-register robot-field-read-mixin}
+  IWriteRegister
+    ; sets the angle of the gun
+    {:write-register
+     (fn [{:keys [robot-idx field-name multiplier]} world data]
+       (assoc-in
+         world
+         (path-to-robot-field robot-idx field-name)
+         (mod (double (* data multiplier)) 360)))}) 
+
 (defrecord ShotRegister [robot-idx field-name multiplier])
 (extend ShotRegister
   IReadRegister
@@ -162,8 +175,9 @@
                      read-only-registers
                      read-write-registers
                      [{"INDEX"  (->StorageRegister robot-idx "INDEX" 0)}
-                      {"DATA"   (->DataRegister robot-idx "INDEX")}
-                      {"RANDOM" (->RandomRegister robot-idx "RANDOM" 0)}
-                      {"SHOT"   (->ShotRegister robot-idx :shot-timer *GAME-SECONDS-PER-TICK*)}
+                      {"DATA"   (->DataRegister    robot-idx "INDEX")}
+                      {"RANDOM" (->RandomRegister  robot-idx "RANDOM" 0)}
+                      {"AIM"    (->AimRegister     robot-idx :aim 1.0)}
+                      {"SHOT"   (->ShotRegister    robot-idx :shot-timer *GAME-SECONDS-PER-TICK*)}
                       ; TODO: {"RADAR"  (->RadarRegister robot-idx "RADAR")}
                       ]))))
