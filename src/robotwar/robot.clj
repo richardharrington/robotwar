@@ -13,14 +13,17 @@
   decimeters per second. Yes, you read that right. Don't ask. It fits
   best with the original specs of the game."
   [idx src-code attributes]
-  (into attributes
-        {:idx idx
-         :v-x 0.0
-         :v-y 0.0
-         :desired-v-x 0.0
-         :desired-v-y 0.0
-         :shot-timer 0.0
-         :brain (brain/init-brain src-code (register/init-registers idx))}))
+  {:idx         idx
+   :pos-x       (:pos-x attributes)
+   :pos-y       (:pos-y attributes)
+   :aim         (:aim attributes)
+   :damage      (:damage attributes)
+   :v-x         0.0
+   :v-y         0.0
+   :desired-v-x 0.0
+   :desired-v-y 0.0
+   :shot-timer  0.0
+   :brain       (brain/init-brain src-code (register/init-registers idx))})
 
 (defn update-robot
   "takes a robot, a world, and a function, and returns a world
