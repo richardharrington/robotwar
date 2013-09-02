@@ -34,6 +34,6 @@
           (compact-shells [world]
             (update-in
               world
-              [:shells]
+              [:shells :shell-map]
               #(map (comp three-sigs-map select-shell-keys) %)))]
-    (map compact-robots worlds)))
+    (map (comp compact-shells compact-robots) worlds)))

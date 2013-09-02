@@ -10,6 +10,9 @@
 (defn init-world
   "initialize all the variables for a robot world."
   [programs]
+  ; TODO: have :shells and :next-shell-id be top-level fields,
+  ; and dispense with :shell-map. Need to changes stuff throughout
+  ; the project; search for shells and shell-map in clj and js.
   {:shells {:next-id 0
             :shell-map {}}
    :robots (vec (map-indexed (fn [idx program]
