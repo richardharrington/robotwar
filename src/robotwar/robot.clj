@@ -92,17 +92,25 @@
       (let [new-actor (case colliding
                         :x (assoc
                              actor 
+                             :damage (dec (:damage actor))
                              :v-x (:v-x target)
                              :pos-x (- (:pos-x target) 
                                         (Math/copySign min-dist dist-x)))
                         :y (assoc 
                              actor 
+                             :damage (dec (:damage actor))
                              :v-y (:v-y target)
                              :pos-y (- (:pos-y target) 
                                        (Math/copySign min-dist dist-y))))
             new-target (case colliding
-                         :x (assoc target :v-x (:v-x actor))
-                         :y (assoc target :v-y (:v-y actor)))]
+                         :x (assoc 
+                              target 
+                              :damage (dec (:damage target))
+                              :v-x (:v-x actor))
+                         :y (assoc 
+                              target 
+                              :damage (dec (:damage target))
+                              :v-y (:v-y actor)))]
         {colliding (assoc robots actor-idx new-actor, target-idx new-target)})
       {nil robots})))
 
@@ -137,7 +145,9 @@
   stops when it gets there, and doesn't get damaged or bounce), 
   then support for collision with other robots." 
   [{robot-idx :idx :as robot} world]
-  (if (<= (:damage robot) 0)
+  (if false
+  ; replace this real damage line when we 
+  ; get robot death implemented correctly: (if (<= (:damage robot) 0)
     world
     (let [ticked-world             (brain/tick-brain 
                                      robot 
