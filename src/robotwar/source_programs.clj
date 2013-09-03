@@ -76,7 +76,7 @@
          ENDSUB 
   
      SHOOT
-         200 TO SHOT
+         175 TO SHOT
          GOTO MOVE 
 
      WAIT
@@ -119,7 +119,7 @@
          ENDSUB 
   
      SHOOT
-         200 TO SHOT
+         175 TO SHOT
          GOTO MOVE 
 
      WAIT
