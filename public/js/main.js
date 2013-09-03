@@ -195,15 +195,15 @@
         
         var animateWorld = function(previousWorld, currentWorld) {
             ctx.clearRect(0, 0, width, height);
-            var currentShellMap = currentWorld.shells["shell-map"];
-            var previousShellMap = previousWorld.shells["shell-map"];
-            for (key in previousShellMap) {
-                if (previousShellMap.hasOwnProperty(key)) {
-                    if (currentShellMap.hasOwnProperty(key)) {
-                        drawShell(previousShellMap[key]);
+            var currentShells = currentWorld["shells"];
+            var previousShells = previousWorld["shells"];
+            for (key in previousShells) {
+                if (previousShells.hasOwnProperty(key)) {
+                    if (currentShells.hasOwnProperty(key)) {
+                        drawShell(previousShells[key]);
                     }
                     else {
-                        explodeShell(previousShellMap[key]);
+                        explodeShell(previousShells[key]);
                     }
                 }
             }
@@ -216,7 +216,7 @@
                 }
             });
 
-            if (currentWorld.shells["next-id"] !== previousWorld.shells["next-id"]) {
+            if (currentWorld["next-shell-id"] !== previousWorld["next-shell-id"]) {
                 console.log("hoi");
                 nextSoundEl.get().play();
             }

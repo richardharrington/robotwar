@@ -10,11 +10,8 @@
 (defn init-world
   "initialize all the variables for a robot world."
   [programs]
-  ; TODO: have :shells and :next-shell-id be top-level fields,
-  ; and dispense with :shell-map. Need to changes stuff throughout
-  ; the project; search for shells and shell-map in clj and js.
-  {:shells {:next-id 0
-            :shell-map {}}
+  {:shells {} 
+   :next-shell-id 0
    :robots (vec (map-indexed (fn [idx program]
                                (robot/init-robot 
                                  idx 
@@ -27,16 +24,17 @@
 
 (defn tick-combined-world
   [starting-world]
-  (let [{shells :shells :as ticked-robots-world} (reduce (fn [{robots :robots :as world} robot-idx]
-                                                           (robot/tick-robot (robots robot-idx) world))
-                                                         starting-world
-                                                         (range (count (:robots starting-world))))
-        ticked-shells (map shell/tick-shell (:shell-map shells))
+  (let [{:keys [shells next-shell-id] :as ticked-robots-world} 
+          (reduce (fn [{robots :robots :as world} robot-idx]
+                    (robot/tick-robot (robots robot-idx) world))
+                  starting-world
+                  (range (count (:robots starting-world))))
+        ticked-shells (map shell/tick-shell shells)
         live-shells (remove :exploded ticked-shells)
         exploded-shells (filter :exploded ticked-shells)]
     ; TODO: make this a real let-binding, that determines
     ; which robots were damaged.
     (let [damaged-world ticked-robots-world]
-      (assoc-in damaged-world [:shells :shell-map] live-shells))))
+      (assoc damaged-world :shells live-shells))))
 
 (def build-combined-worlds (partial iterate tick-combined-world))

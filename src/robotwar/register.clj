@@ -111,7 +111,7 @@
     ; It's a no-op if the shot clock hasn't reached zero yet.
     {:write-register 
      (fn [{:keys [robot-idx field-name]} 
-          {{:keys [shell-map next-id] :as shells} :shells :as world} 
+          {:keys [shells next-shell-id] :as world}
           data]
        (let [{:keys [pos-x pos-y aim shot-timer] :as robot} 
              (get-in world (path-to-robot robot-idx))]
@@ -123,9 +123,8 @@
                                              GAME-SECONDS-PER-SHOT)]
              (assoc 
                world-with-new-shot-timer
-               :shells
-               {:shell-map (merge shell-map (shell/init-shell pos-x pos-y aim next-id data))
-                :next-id (inc next-id)})))))})
+               :shells (merge shells (shell/init-shell pos-x pos-y aim next-shell-id data))
+               :next-shell-id (inc next-shell-id))))))})
 
 (defn get-target-register
   "helper function for DataRegister record"
