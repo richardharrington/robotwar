@@ -21,10 +21,12 @@
      LOOP
          0 TO SPEEDX            ; STOP THE ROBOT!
          0 TO SPEEDY
+         DAMAGE TO D            ; Store damage.
          RANDOM TO A            ; Store a random X-coordinate in the arena.
          RANDOM TO B            ; Store a random Y-coordinate in the arena.
      
      MOVE
+         IF DAMAGE # D GOTO LOOP  ; If we've been damaged, pick a new spot.
          AIM + 5 TO AIM
          IF A # X GOSUB MOVEX   ; If we're moving in the X direction, recalibrate SPEEDX.
          TO N                   ; N is for no-op. (needed because there's no ELSE command).
@@ -51,8 +53,12 @@
    
          15 TO A                ; Set the coordinates for the left side.
          128 TO B
+
+     LOOP
+         DAMAGE TO D            ; Store damage.
      
      MOVE
+         IF DAMAGE # D GOTO WAIT
          IF A # X GOSUB MOVEX   ; If we're moving in the X direction, recalibrate SPEEDX.
          TO N                   ; N is for no-op. (needed because there's no ELSE command).
          IF B # Y GOSUB MOVEY   ; If we're moving in the Y direction, recalibrate SPEEDY. 
@@ -72,6 +78,14 @@
      SHOOT
          200 TO SHOT
          GOTO MOVE 
+
+     WAIT
+         300 TO N
+         
+     WAITLOOP
+         N - 1 TO N
+         IF N > 0 GOTO WAITLOOP
+         GOTO LOOP
    "
    
    :top-shooter
@@ -80,10 +94,14 @@
   
          180 TO AIM             ; Set the gun to shoot down 
    
-         128 TO A                ; Set the coordinates for the top.
+         128 TO A               ; Set the coordinates for the top.
          15 TO B
+
+     LOOP
+         DAMAGE TO D            ; Store damage.
      
      MOVE
+         IF DAMAGE # D GOTO WAIT
          IF A # X GOSUB MOVEX   ; If we're moving in the X direction, recalibrate SPEEDX.
          TO N                   ; N is for no-op. (needed because there's no ELSE command).
          IF B # Y GOSUB MOVEY   ; If we're moving in the Y direction, recalibrate SPEEDY. 
@@ -103,6 +121,14 @@
      SHOOT
          200 TO SHOT
          GOTO MOVE 
+
+     WAIT
+         300 TO N
+         
+     WAITLOOP
+         N - 1 TO N
+         IF N > 0 GOTO WAITLOOP
+         GOTO LOOP
    "
    
    :shooter
