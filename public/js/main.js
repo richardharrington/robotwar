@@ -187,19 +187,37 @@
             fillCircle(x, y, shellDisplayRadius, SHELL_COLOR);
         }
         
+        var explodeShell = function(shell) {
+            var x = scaleX(shell['pos-x']);
+            var y = scaleY(shell['pos-y']);
+            fillCircle(x, y, shellDisplayRadius * 10, SHELL_COLOR);
+        }
+        
         var animateWorld = function(previousWorld, currentWorld) {
             ctx.clearRect(0, 0, width, height);
-            var shellMap = currentWorld.shells["shell-map"];
-            for (key in shellMap) {
-                if (shellMap.hasOwnProperty(key)) {
-                    drawShell(shellMap[key]);
+            var currentShellMap = currentWorld.shells["shell-map"];
+            var previousShellMap = previousWorld.shells["shell-map"];
+            for (key in previousShellMap) {
+                if (previousShellMap.hasOwnProperty(key)) {
+                    if (currentShellMap.hasOwnProperty(key)) {
+                        drawShell(previousShellMap[key]);
+                    }
+                    else {
+                        explodeShell(previousShellMap[key]);
+                    }
                 }
             }
             currentWorld.robots.forEach(function(robot, idx) {
-                drawRobot(robot, ROBOT_COLORS[idx]);
+                if (previousWorld.robots[idx]["damage"] !== robot["damage"]) {
+                    drawRobot(robot, "#fff");
+                }
+                else {
+                    drawRobot(robot, ROBOT_COLORS[idx]);
+                }
             });
 
             if (currentWorld.shells["next-id"] !== previousWorld.shells["next-id"]) {
+                console.log("hoi");
                 nextSoundEl.get().play();
             }
         }
