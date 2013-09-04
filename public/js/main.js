@@ -8,10 +8,6 @@
     var SHELL_RADIUS = 2;
     var SHELL_COLOR = "#ffffff";
 
-    // The only real global variable.
-    // TODO: Get rid of this.
-    var worlds;
- 
     var Geom = (function() {
         var degreesToRadians = function(angle) {
             return angle * Math.PI / 180;
@@ -244,7 +240,7 @@
         })(Date.now());
     }
 
-    function startGame(gameInfo) {
+    function startGame(worlds, gameInfo) {
         var debugAnimationCounter = 0;
         var debugSimulationCounter = 0;
         var debugSecondsCounter = 0;
@@ -293,8 +289,9 @@
     }
 
     function init() {
-        // Text and keyboard event listeners for sending program names to 
-        // server
+        var worlds;
+
+        // Text and keyboard event listeners for sending program names to server
 
         $('#programsInput').bind('keydown', function(event) {
             if (event.which === 13) {
@@ -314,7 +311,7 @@
                     setTimeout(function() {
                         $('#canvas').css({opacity: 1});
                         setTimeout(function() {
-                            startGame(gameInfo);
+                            startGame(worlds, gameInfo);
                         }, 500);
                     }, 500);
                     $(this).blur();
