@@ -233,6 +233,7 @@
                 return;
             }
             callback();
+
             var nextTick = tick + interval;
             setTimeout(function() {
                 continueLoop(nextTick);
@@ -258,7 +259,7 @@
         // TODO: remove this tick loop entirely,
         // and just have the animation loop calculate which
         // simulation to pick each time.
-        
+         
         loop(worlds, tickDuration, function() {
             debugSimulationCounter++;
             worlds.advance(fastForward);
@@ -273,7 +274,7 @@
                 " " + debugAnimationCounter + 
                 " " + debugSimulationCounter);
         });
-        
+         
         // Keyboard event listener for fast-forward control
         // TODO: dispose of this if we start a new worlds object.
         // Or just have it not mutate fastForward.
