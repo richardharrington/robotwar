@@ -29,9 +29,17 @@
                     (robot/tick-robot (robots robot-idx) world))
                   starting-world
                   (range (count (:robots starting-world))))
-        ticked-shells (map shell/tick-shell shells)
-        live-shells (remove :exploded ticked-shells)
-        exploded-shells (filter :exploded ticked-shells)]
+        ticked-shells (zipmap (keys shells)
+                              (map shell/tick-shell (vals shells)))
+
+        ; TODO: Is this the most idiomatic way to map a hash-map, testing
+        ; each value in the hash-map on a predicate and then returning another hash-map? 
+        ; looks clunky.
+
+        live-shells (into {} (remove #(:exploded (val %)) 
+                                     ticked-shells))
+        exploded-shells (into {} (filter #(:exploded (val %))
+                                         ticked-shells))]
     ; TODO: make this a real let-binding, that determines
     ; which robots were damaged.
     (let [damaged-world ticked-robots-world]
