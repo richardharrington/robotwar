@@ -314,7 +314,6 @@
                     setTimeout(function() {
                         $('#canvas').css({opacity: 1});
                         setTimeout(function() {
-                            console.log(gameInfo);
                             startGame(gameInfo);
                         }, 500);
                     }, 500);
