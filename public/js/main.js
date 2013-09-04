@@ -128,7 +128,7 @@
         var robotDisplayRadius = scaleX(gameInfo.robotRadius);
         var shellDisplayRadius = scaleX(gameInfo.robotRadius * 0.3);
         var gunDisplayLength = scaleX(gameInfo.robotRadius * 1.4);
-        var gunDisplayWidth = scaleY(gameInfo.robotRadius * 0.5);
+        var gunDisplayWidth = scaleX(gameInfo.robotRadius * 0.5);
         
         var ctx = el.getContext('2d');
         ctx.lineCap = 'square';
@@ -182,22 +182,22 @@
         }
 
         var drawRobot = function(robot, color) {
-            var x = scaleX(robot['pos-x']);
-            var y = scaleY(robot['pos-y']);
+            var x = offsetX(robot['pos-x']);
+            var y = offsetY(robot['pos-y']);
             fillSquare(x, y, robotDisplayRadius * 2, color);
             strokeCircle(x, y, robotDisplayRadius * 0.6, gunDisplayWidth * 0.3);
             drawLinePolar(x, y, robot['aim'], gunDisplayLength, gunDisplayWidth, color); 
         }
 
         var drawShell = function(shell) {
-            var x = scaleX(shell['pos-x']);
-            var y = scaleY(shell['pos-y']);
+            var x = offsetX(shell['pos-x']);
+            var y = offsetY(shell['pos-y']);
             fillCircle(x, y, shellDisplayRadius, SHELL_COLOR);
         }
         
         var explodeShell = function(shell) {
-            var x = scaleX(shell['pos-x']);
-            var y = scaleY(shell['pos-y']);
+            var x = offsetX(shell['pos-x']);
+            var y = offsetY(shell['pos-y']);
             fillCircle(x, y, shellDisplayRadius * 10, SHELL_COLOR);
         }
         
