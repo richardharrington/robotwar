@@ -39,7 +39,7 @@
         var queue = new Queue();
         var gameId;
         var isFetching = false;
-        var isDisposing = false;
+        var areWeFinished = false;
         var previousWorld = null;
         var currentWorld = null;
 
@@ -52,7 +52,11 @@
         function advance(fastForward) {
             previousWorld = currentWorld;
             queue.dropMulti(fastForward);
-            currentWorld = queue.peek();
+
+            // if the queue has run out, just stall with the 
+            // existing currentWorld until we receive a new one.
+
+            currentWorld = queue.peek() || currentWorld;
             if (!isFetching && queue.getLength() < bufferLength) {
                 isFetching = true;
                 fetch(function() {
@@ -61,10 +65,10 @@
             }
         }
         function finish() {
-            isDisposing = true;
+            areWeFinished = true;
         }
         function isFinished() {
-            return isDisposing || queue.isEmpty();
+            return areWeFinished;
         }
         $.getJSON('init?programs=' + encodeURIComponent(programs))
         .done(function(data) {
