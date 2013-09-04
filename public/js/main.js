@@ -72,7 +72,7 @@
             var gameInfo = data['game-info'];
             fetch(function() {
                 currentWorld = queue.peek();
-            console.log(gameInfo)
+                console.log(gameInfo)
                 constructorCallback({
                     robotRadius: gameInfo["ROBOT-RADIUS"],
                     robotRangeX: gameInfo["ROBOT-RANGE-X"],
