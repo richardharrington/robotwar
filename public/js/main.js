@@ -217,7 +217,6 @@
             });
 
             if (currentWorld["next-shell-id"] !== previousWorld["next-shell-id"]) {
-                console.log("hoi");
                 nextSoundEl.get().play();
             }
         }
