@@ -27,13 +27,15 @@
         }
     })();
 
-    function Worlds(programs, bufferLength, constructorCallback) {
+    function Worlds(programs, bufferLength) {
         
         // The constructor first gets a game id from the server,
         // then runs the first fetch.
 
         var queue = new Queue();
         var gameId;
+        var gameInfo;
+        var onLoaded = $.Deferred();
         var isFetching = false;
         var areWeFinished = false;
         var previousWorld = null;
@@ -66,19 +68,23 @@
         function isFinished() {
             return areWeFinished;
         }
+        function getGameInfo() {
+            return gameInfo;
+        }
         $.getJSON('init?programs=' + encodeURIComponent(programs))
         .done(function(data) {
             gameId = data['id'];
-            var gameInfo = data['game-info'];
+            var gameInfoFromServer = data['game-info'];
+            gameInfo = {
+                robotRadius: gameInfoFromServer["ROBOT-RADIUS"],
+                robotRangeX: gameInfoFromServer["ROBOT-RANGE-X"],
+                robotRangeY: gameInfoFromServer["ROBOT-RANGE-Y"],
+                gameSecondsPerTick: gameInfoFromServer["*GAME-SECONDS-PER-TICK*"]
+            };
+            console.log(gameInfo);
             fetch(function() {
                 currentWorld = queue.peek();
-                console.log(gameInfo)
-                constructorCallback({
-                    robotRadius: gameInfo["ROBOT-RADIUS"],
-                    robotRangeX: gameInfo["ROBOT-RANGE-X"],
-                    robotRangeY: gameInfo["ROBOT-RANGE-Y"],
-                    gameSecondsPerTick: gameInfo["*GAME-SECONDS-PER-TICK*"]
-                });
+                onLoaded.resolve();
             });
         });
 
@@ -86,6 +92,8 @@
             advance:          advance,
             finish:           finish,
             isFinished:       isFinished,
+            getGameInfo:      getGameInfo,
+            onLoaded:         onLoaded,
             getPreviousWorld: function() {return previousWorld;},
             getCurrentWorld:  function() {return currentWorld;}
         }
@@ -240,7 +248,8 @@
         })(Date.now());
     }
 
-    function startGame(worlds, gameInfo) {
+    function startGame(worlds) {
+        var gameInfo = worlds.getGameInfo();
         var debugAnimationCounter = 0;
         var debugSimulationCounter = 0;
         var debugSecondsCounter = 0;
@@ -300,22 +309,33 @@
                 if (worlds) {
                     worlds.finish();
                 }
+
+                // css animation and blurring of input box
+                // (takes 1000 milliseconds total)
+
+                $('.instruction-box').css({ height: 0 });
+                setTimeout(function() {
+                    $('#canvas').css({ opacity: 1 });
+                    console.log("finished hiding instruction box");
+                    console.log(Date.now());
+                }, 500);
+                $(this).blur();
+
                 var programs = this.value;
-                worlds = new Worlds(programs, BUFFER_LENGTH, function(gameInfo) {
-                    // TODO: instead of these hacky setTimeouts, set up
-                    // some jQuery promise objects such that we make
-                    // sure the css animation happens WHILE the initial
-                    // info and the first 1000 worlds are
-                    // being downloaded, not after.
-                    $('.instruction-box').css({height: 0});
-                    setTimeout(function() {
-                        $('#canvas').css({opacity: 1});
-                        setTimeout(function() {
-                            startGame(worlds, gameInfo);
-                        }, 500);
-                    }, 500);
-                    $(this).blur();
-                }.bind(this));
+                worlds = new Worlds(programs, BUFFER_LENGTH);
+                
+                // wait till at least the animation is done (1000 milliseconds) 
+                // before we start the battle
+
+                setTimeout(function() {
+                    worlds.onLoaded.done(function() {
+                        startGame(worlds);
+                        console.log("finished loading first worlds");
+                        console.log(Date.now());
+                    });
+                    console.log("finished showing arena");
+                    console.log(Date.now());
+                }, 1000);
             }
         });
         
