@@ -238,7 +238,6 @@
                     drawRobot(robot, ROBOT_COLORS[idx]);
                 }
             });
-
             if (currentWorld["next-shell-id"] !== previousWorld["next-shell-id"]) {
                 soundPlayers.shellRelease.play();
             }

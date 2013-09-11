@@ -123,7 +123,9 @@
                                              GAME-SECONDS-PER-SHOT)]
              (assoc 
                world-with-new-shot-timer
-               :shells (merge shells (shell/init-shell pos-x pos-y aim next-shell-id data))
+               :shells (merge 
+                         shells 
+                         {next-shell-id (shell/init-shell pos-x pos-y aim data)})
                :next-shell-id (inc next-shell-id))))))})
 
 (defn get-target-register

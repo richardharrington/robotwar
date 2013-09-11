@@ -16,10 +16,8 @@
                                 :damage
                                 :shot-timer]))
           (select-shell-keys [shell]
-            (select-keys shell [:id
-                                :pos-x
-                                :pos-y
-                                :exploded]))
+            (select-keys shell [:pos-x
+                                :pos-y]))
           (three-sigs-map [m]
             (zipmap (keys m)
                     (map #(if (float? %)
