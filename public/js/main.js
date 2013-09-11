@@ -36,7 +36,7 @@
         var gameInfo;
         var onLoaded = $.Deferred();
         var isFetching = false;
-        var areWeFinished = false;
+        var isFinished = false;
         var previousWorld = null;
         var currentWorld = null;
 
@@ -62,13 +62,7 @@
             }
         }
         function finish() {
-            areWeFinished = true;
-        }
-        function isFinished() {
-            return areWeFinished;
-        }
-        function getGameInfo() {
-            return gameInfo;
+            isFinished = true;
         }
         $.getJSON('init?programs=' + encodeURIComponent(programs))
         .done(function(data) {
@@ -90,11 +84,11 @@
         return {
             advance:          advance,
             finish:           finish,
-            isFinished:       isFinished,
-            getGameInfo:      getGameInfo,
             onLoaded:         onLoaded,
-            getPreviousWorld: function() {return previousWorld;},
-            getCurrentWorld:  function() {return currentWorld;}
+            isFinished:       function() { return isFinished },
+            getGameInfo:      function() { return gameInfo },
+            getPreviousWorld: function() { return previousWorld;},
+            getCurrentWorld:  function() { return currentWorld;}
         }
     }
 
