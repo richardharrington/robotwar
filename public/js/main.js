@@ -5,7 +5,6 @@
     var STARTING_FAST_FORWARD = 15;
     var FPS = 60;
     var ROBOT_COLORS = ["#fa2d0b", "#0bfaf7", "#faf20b", "#e312f0", "#4567fb"];
-    var SHELL_RADIUS = 2;
     var SHELL_COLOR = "#ffffff";
 
     var Geom = (function() {
