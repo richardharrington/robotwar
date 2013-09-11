@@ -6,6 +6,13 @@
     var FPS = 60;
     var ROBOT_COLORS = ["#fa2d0b", "#0bfaf7", "#faf20b", "#e312f0", "#4567fb"];
     var SHELL_COLOR = "#ffffff";
+    var SOUNDS = {
+        shellRelease: {
+            oggSrc: "audio/trprsht1.ogg", 
+            mp3Src: "audio/trprsht1.mp3",
+            numInstances: 40
+        }
+    };
 
     var Geom = (function() {
         var degreesToRadians = function(angle) {
@@ -92,7 +99,33 @@
         }
     }
 
-    var Animation = function(el, sounds, gameInfo) {
+    function SoundPlayer(attributes) {
+        var oggSrc = attributes.oggSrc;
+        var mp3Src = attributes.mp3Src;
+        var numInstances = attributes.numInstances;
+
+        var soundIdx = 0;
+        var src = (new Audio().canPlayType("audio/ogg")) ? oggSrc : mp3Src;
+        var els = [];
+        for (var i = 0; i < numInstances; i++) {
+            els.push(new Audio(src));
+        }
+        
+        return {
+            play: function() {
+                els[soundIdx].play();
+                soundIdx = (soundIdx + 1) % numInstances;
+            }
+        };
+    }
+
+    function Animation(el, sounds, gameInfo) {
+        var soundPlayers = {};
+        for (var k in sounds) {
+            if (sounds.hasOwnProperty(k)) {
+                soundPlayers[k] = new SoundPlayer(sounds[k]);
+            }
+        }
         var width = parseInt(el.width);
         var height = parseInt(el.height);
         var roomForRobots = gameInfo.robotRadius * 2;
@@ -125,17 +158,6 @@
         
         var ctx = el.getContext('2d');
         ctx.lineCap = 'square';
-
-        var nextSoundEl = (function() {
-            var i = 0;
-            return {
-                get: function() {
-                    var el = sounds[i];
-                    i = (i + 1) % 5;
-                    return el;
-                }
-            }
-        })();
 
         // TODO: this whole drawing section is kind of hacky. reorganize
         // the behaviors of these functions to be less redundant,
@@ -218,7 +240,7 @@
             });
 
             if (currentWorld["next-shell-id"] !== previousWorld["next-shell-id"]) {
-                nextSoundEl.get().play();
+                soundPlayers.shellRelease.play();
             }
         }
 
@@ -253,9 +275,8 @@
         var frameDuration = parseInt (1000 / FPS);
 
         var canvasEl = $('#canvas')[0];
-        var sounds = $('audio');
 
-        var animation = new Animation(canvasEl, sounds, gameInfo);
+        var animation = new Animation(canvasEl, SOUNDS, gameInfo);
 
         // TODO: remove this tick loop entirely,
         // and just have the animation loop calculate which
