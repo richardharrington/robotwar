@@ -1,11 +1,10 @@
 (ns robotwar.handler
-  (:use [compojure.core]
-        [clojure.string :only [split]]
+  (:use [clojure.string :only [split]]
         [robotwar.constants])
-  (:require [compojure.handler :as handler]
-            [ring.middleware.json :as middleware]
-            [ring.util.response :as response]
-            [compojure.route :as route]
+  (:require [ring.middleware.json :refer [wrap-json-response wrap-json-body]]
+            [ring.middleware.file :refer [wrap-file]]
+            [ring.middleware.params :refer [wrap-params]]
+            [ring.util.response :refer [response not-found]]
             [robotwar.source-programs :as source-programs]
             [robotwar.world :as world]
             [robotwar.browser :as browser]))
@@ -54,21 +53,32 @@
 (def games-store (atom {:next-id 0
                         :games {}}))
 
-(defroutes app-routes
-  (GET "/program-names" [] (response/response
-                             {:names (map name (keys source-programs/programs))}))
-  (GET "/init" [programs] (let [next-id (:next-id @games-store)]
-                            (swap! games-store add-game programs)
-                            (response/response {:id next-id 
-                                                :game-info game-info})))
-  (GET "/worlds/:id/:n" [id n] (response/response (take-drop-send
-                                                    games-store 
-                                                    (Integer/parseInt id) 
-                                                    (Integer/parseInt n))))
-  (route/files "/")
-  (route/not-found "Not Found"))
+
+(defn handler [request]
+  
+  (let [match (re-matches #"\/worlds\/(\d+)\/(\d+)" (request :uri))]
+    (if match
+      (let [[_ id n] match]
+        (response (take-drop-send
+          games-store 
+          (Integer/parseInt id) 
+          (Integer/parseInt n))))
+    
+      (case (request :uri)
+        "/program-names" (response
+                           {:names (map name (keys source-programs/programs))})
+        
+        "/init" (let [programs ((request :query-params) "programs")
+                      next-id (:next-id @games-store)]
+                  (swap! games-store add-game programs)
+                  (response {:id next-id 
+                                      :game-info game-info}))
+        
+        (not-found "Not Found")))))
 
 (def app
-  (-> (handler/site app-routes)
-      (middleware/wrap-json-response)
-      (middleware/wrap-json-body)))
+  (-> handler
+      (wrap-file "public")
+      (wrap-json-response)
+      (wrap-json-body)
+      (wrap-params)))
