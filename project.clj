@@ -6,7 +6,7 @@
   :dependencies [[org.clojure/clojure "1.5.1"]
                  [org.clojure/core.match "0.2.0-rc5"]
                  [clj-time "0.5.1"]
-                 [ring/ring-json "0.2.0"]
+                 [ring/ring-json "0.3.1"]
                  [ring/ring-core "1.3.1"]]
   :plugins [[lein-ring "0.8.5"]]
   :ring {:handler robotwar.handler/app}
