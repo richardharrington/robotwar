@@ -14,6 +14,10 @@
     (let [response (app (mock/request :get "/invalid"))]
       (is (= (:status response) 404))))
 
+  (testing "unsupported http request method"
+    (let [response (app (mock/request :put "/program-names"))]
+      (is (= (:status response) 404))))
+
   (testing "files"
     (let [response (app (mock/request :get "/index.html"))]
       (is (= (:status response) 200))

@@ -29,7 +29,7 @@
        (take 5)))
 
 (defn add-game
-  "a function to update the games-store atom state. 
+  "a function to update the games-store atom state.
   It keeps a running store of games, which is added
   to upon request from a browser, who is then
   assigned an id number"
@@ -54,28 +54,34 @@
 (def games-store (atom {:next-id 0
                         :games {}}))
 
+(defn consistently-typed-re-matches [re s]
+  (when-let [match (re-matches re s)]
+    (if (string? match) [match] match)))
 
-(defn handler [request]
-  
-  (let [match (re-matches #"\/worlds\/(\d+)\/(\d+)" (request :uri))]
-    (if match
-      (let [[_ id n] match]
-        (response (take-drop-send
-          games-store 
-          (Integer/parseInt id) 
-          (Integer/parseInt n))))
-    
-      (case (request :uri)
-        "/program-names" (response
-                           {:names (map name (keys source-programs/programs))})
-        
-        "/init" (let [programs ((request :query-params) "programs")
-                      next-id (:next-id @games-store)]
-                  (swap! games-store add-game programs)
-                  (response {:id next-id 
-                                      :game-info game-info}))
-        
-        (not-found "Not Found")))))
+(defn handler [{:keys [uri query-params request-method] :as request}]
+  (let [route (fn [acceptable-request-method re action]
+                (when (= request-method acceptable-request-method)
+                  (when-let [[_ & url-params] (consistently-typed-re-matches re uri)]
+                    (apply action url-params))))]
+    (or
+     (route :get #"\/worlds\/(\d+)\/(\d+)"
+            (fn [id n]
+              (response (take-drop-send
+                         games-store
+                         (Integer/parseInt id)
+                         (Integer/parseInt n)))))
+     (route :get #"\/program-names"
+            (fn []
+              (response
+               {:names (map name (keys source-programs/programs))})))
+     (route :get #"\/init"
+            (fn []
+              (let [programs (query-params "programs")
+                    next-id (:next-id @games-store)]
+                (swap! games-store add-game programs)
+                (response {:id next-id
+                           :game-info game-info}))))
+     (not-found "Not Found"))))
 
 (def app
   (-> handler
