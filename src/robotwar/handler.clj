@@ -15,15 +15,13 @@
                 :*GAME-SECONDS-PER-TICK* *GAME-SECONDS-PER-TICK*})
 
 (defn parse-program-names
-  "takes a string parameter from the browser and returns a seqence
+  "takes a string parameter from the browser and returns a sequence
   of program keys"
   [programs-str]
   (map keyword (split programs-str #"[,\s]\s*")))
 
-(defn get-programs 
-  "gets a sequence of programs from the source-code 
-  repository. some may be repeats. discards failed matches.
-  cuts off after five."
+(defn get-programs
+  "gets a sequence of five programs from the source-code repository."
   [program-keys]
   (take 5 (filter identity (map #(% source-programs/programs) program-keys))))
 
@@ -37,15 +35,15 @@
         programs (get-programs program-names)
         world (world/init-world programs)
         combined-worlds (world/build-combined-worlds world)
-        worlds-for-browser (browser/worlds-for-browser combined-worlds)] 
+        worlds-for-browser (browser/worlds-for-browser combined-worlds)]
     {:games (merge games {next-id worlds-for-browser})
-     :next-id (inc next-id)})) 
+     :next-id (inc next-id)}))
 
-(defn take-drop-send 
-  "takes the games-store atom, a game id, and a number n, 
+(defn take-drop-send
+  "takes the games-store atom, a game id, and a number n,
   and returns a collection of the first n items from that game,
   then drops those items from the game in the atom's state."
-  [games-store id n] 
+  [games-store id n]
   (let [coll (get-in @games-store [:games id])]
     (swap! games-store #(assoc-in % [:games id] (drop n coll)))
     (take n coll)))
