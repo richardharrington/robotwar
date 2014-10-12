@@ -23,7 +23,10 @@
 (defn get-programs
   "gets a sequence of five programs from the source-code repository."
   [program-keys]
-  (take 5 (filter identity (map #(% source-programs/programs) program-keys))))
+  (->> program-keys
+       (map source-programs/programs)
+       (remove nil?)
+       (take 5)))
 
 (defn add-game
   "a function to update the games-store atom state. 
