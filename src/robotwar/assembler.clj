@@ -1,6 +1,5 @@
 (ns robotwar.assembler
-  (:use (clojure [string :only [split join]])
-        [clojure.core.match :only [match]]))
+  (:use (clojure [string :only [split join]])))
 
 (def op-commands    [ "-" "+" "*" "/" "=" "#" "<" ">" ])
 (def word-commands  [ "TO" "IF" "GOTO" "GOSUB" "ENDSUB" ])
@@ -138,13 +137,15 @@
          result []]
     (if (empty? tokens)
       result
-      (match [token]
-        [{:type (:or :number :register)}]
-          (recur tail (conj result [(into token {:val ",", :type :command}) token]))
-        [(:or {:type :label} {:type :command, :val "ENDSUB"})]
-          (recur tail (conj result [token nil]))
-        [{:type :command}]
-          (recur (rest tail) (conj result [token (first tail)]))))))
+      (let [{:keys [type val]} token]
+        (cond
+          (or (= type :number) (= type :register))
+            (recur tail (conj result [(into token {:val ",", :type :command}) token]))
+          (or (= type :label) (and (= type :command) (= val "ENDSUB")))
+            (recur tail (conj result [token nil]))
+          (= type :command)
+            (recur (rest tail) (conj result [token (first tail)])))))))
+
 
 ; TODO: preserve :line and :pos metadata with labels,
 ; when labels are transferred from the instruction list to the label map
