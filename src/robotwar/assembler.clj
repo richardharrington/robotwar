@@ -24,7 +24,7 @@
   [lines]
   (map #(re-find #"[^;]*" %) lines))
 
-(def lex-re 
+(def lex-re
   (let [op-string (join op-commands)]
     (re-pattern (str "[" op-string "]|[^" op-string "\\s]+"))))
 
@@ -33,8 +33,8 @@
   are intended to be human-readable for error-reporting
   purposes, so they're indexed from 1."
   [line-num line]
-  (map (fn [[s n]] 
-         ^{:line (inc line-num), :pos (inc n)} {:token-str s}) 
+  (map (fn [[s n]]
+         ^{:line (inc line-num), :pos (inc n)} {:token-str s})
        (re-seq-with-pos lex-re line)))
 
 (defn lex
@@ -62,7 +62,7 @@
   (rather than building a new one) because it contains line and column
   number metadata."
   [{token-str :token-str :as token}]
-  (let [parser-priority 
+  (let [parser-priority
         [[(set commands)   :command]
          [str->int         :number]
          [valid-word       :identifier]
@@ -93,11 +93,11 @@
                              (#{"GOTO" "GOSUB"} (:val (last parsed-tokens))))
                        (recur tail (conj parsed-tokens (assoc parsed-token :type :label)))
                        (recur tail (conj parsed-tokens (assoc parsed-token :type :register)))))))))
-       
+
 (defn parse
   "take the lines of tokens and converts them to :val and :type format.
   After this point, tokens are no longer separated into sequences of sequences
-  according to the linebreaks in the original source code -- 
+  according to the linebreaks in the original source code --
   if we need that information later for error reporting, it's in the metadata.
   if there's an error, this function just returns the token,
   outside of any sequence."
@@ -116,21 +116,21 @@
   (loop [tokens initial-tokens
          results []]
     (let [{prev-type :type} (last results)
-          [{current-val :val :as current-token} 
+          [{current-val :val :as current-token}
            & [{next-val :val, next-type :type :as next-token} :as tail]] tokens]
       (cond
         (empty? tokens) results
-        (and (= current-val "-") 
-             (= next-type :number) 
+        (and (= current-val "-")
+             (= next-type :number)
              (not (#{:number :register} prev-type)))
-        (recur (rest tail) 
-               (conj results (into current-token {:val (- next-val), :type :number}))) 
+        (recur (rest tail)
+               (conj results (into current-token {:val (- next-val), :type :number})))
         :otherwise (recur tail (conj results current-token))))))
 
 (defn make-instr-pairs
   "Compiles the tokens into token-pairs. Commands consume the next token.
-  When values are encountered that are not arguments to commands, 
-  a special token-pair is created that is a comma followed by the value 
+  When values are encountered that are not arguments to commands,
+  a special token-pair is created that is a comma followed by the value
   (meaning push the value into the accumulator). The comma command re-uses
   the same :line and :pos metadata from the token containing the value that is being pushed."
   [initial-tokens]
@@ -139,11 +139,11 @@
     (if (empty? tokens)
       result
       (match [token]
-        [{:type (:or :number :register)}] 
+        [{:type (:or :number :register)}]
           (recur tail (conj result [(into token {:val ",", :type :command}) token]))
         [(:or {:type :label} {:type :command, :val "ENDSUB"})]
           (recur tail (conj result [token nil]))
-        [{:type :command}] 
+        [{:type :command}]
           (recur (rest tail) (conj result [token (first tail)]))))))
 
 ; TODO: preserve :line and :pos metadata with labels,
@@ -154,21 +154,21 @@
   and remove the labels from the instruction list itself (except as targets)"
   [initial-instrs]
   (loop [[instr & tail :as instrs] initial-instrs
-         result {:labels {} 
+         result {:labels {}
                  :instrs []}]
     (if (empty? instrs)
       result
       (let [command (first instr)
             next-instr-num (count (result :instrs))]
-        (if (= (command :type) :label) 
+        (if (= (command :type) :label)
           (recur tail (assoc-in result [:labels (command :val)] next-instr-num))
           (recur tail (assoc-in result [:instrs next-instr-num] instr)))))))
 
 (defn assemble [src-code]
   "compiles robotwar code, with error-checking beginning after the lexing
-  step. All functions that return errors will return a map with the keyword 
-  :error, and then a token with a :val field containing the error string, 
-  and metadata containing :pos and :line fields containing the location. 
+  step. All functions that return errors will return a map with the keyword
+  :error, and then a token with a :val field containing the error string,
+  and metadata containing :pos and :line fields containing the location.
   So far only parse implements error-checking."
   (let [lexed (-> src-code split-lines strip-comments lex)]
     (reduce (fn [result step]
