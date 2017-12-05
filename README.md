@@ -7,7 +7,7 @@ In RobotWar, players write programs in a Forth-like language created specificall
 
 Here are some resources that describe the game pretty well:
 
-* [The original manual](http://corewar.co.uk/robotwar/robotwar.txt)
+* [The original manual](ftp://ftp.apple.asimov.net/pub/apple_II/documentation/games/misc/Robotwar.pdf)
 * [A blog post](http://www.filfre.net/2012/01/robot-war/) explaining the game in some detail
 
 ### To see it in action:
