@@ -7,7 +7,8 @@
   :dependencies [[org.clojure/clojure "1.5.1"]
                  [clj-time "0.5.1"]
                  [ring/ring-json "0.3.1"]
-                 [ring/ring-core "1.9.5"]]
+                 [ring/ring-core "1.9.5"]
+                 [compojure "1.7.0"]]
   :plugins [[lein-ring "0.12.5"]]
   :ring {:handler robotwar.handler/app}
   :profiles {:dev {:dependencies [[midje "1.5.1"]
