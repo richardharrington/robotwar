@@ -138,45 +138,43 @@
      SHOOT
          S TO SHOT
          GOTO SHOOT 
-   "
-}) 
+   "})
+
 
 (def dev-programs
   (merge 
     programs 
     {
-   :multi-use
-   " 
-     START 
-         0 TO A
-     TEST 
-         IF A > 2 GOTO START 
-         GOSUB INCREMENT
-         GOTO TEST 
-         100 TO A 
-     INCREMENT 
-         A + 1 TO A 
-         ENDSUB 
-         200 TO A 
-   "
+      :multi-use
+      "
+        START
+            0 TO A
+        TEST
+            IF A > 2 GOTO START
+            GOSUB INCREMENT
+            GOTO TEST
+            100 TO A
+        INCREMENT
+            A + 1 TO A
+            ENDSUB
+            200 TO A
+      "
    
-   :index-data
-   ; to test the INDEX/DATA pair of registers
-   " 
-     300 TO A
-     1 TO INDEX
-     DATA TO B
-   "
+      :index-data
+      ; to test the INDEX/DATA pair of registers
+      "
+        300 TO A
+        1 TO INDEX
+        DATA TO B
+      "
    
-   :random
-   ; to test the RANDOM register
-   " 
-     1000 TO RANDOM
-     RANDOM TO A
-     RANDOM TO A
-     RANDOM TO A
-     RANDOM TO A
-     RANDOM TO A 
-   "
-
-})) 
+      :random
+      ; to test the RANDOM register
+      "
+        1000 TO RANDOM
+        RANDOM TO A
+        RANDOM TO A
+        RANDOM TO A
+        RANDOM TO A
+        RANDOM TO A
+      "}))
