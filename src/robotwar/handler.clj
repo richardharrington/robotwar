@@ -7,7 +7,9 @@
             [ring.util.response :refer [response not-found]]
             [robotwar.source-programs :as source-programs]
             [robotwar.world :as world]
-            [robotwar.browser :as browser]))
+            [robotwar.browser :as browser]
+            [compojure.core :refer :all]
+            [compojure.route :as route]))
 
 (def game-info {:ROBOT-RADIUS ROBOT-RADIUS
                 :ROBOT-RANGE-X ROBOT-RANGE-X
@@ -54,37 +56,54 @@
 (def games-store (atom {:next-id 0
                         :games {}}))
 
-(defn consistently-typed-re-matches [re s]
-  (when-let [match (re-matches re s)]
-    (if (string? match) [match] match)))
+(defroutes my-routes
+           (GET "/worlds/:id/:n" [id n]
+                (response
+                  (take-drop-send
+                    games-store
+                    (Integer/parseInt id)
+                    (Integer/parseInt n))))
 
-(defn handler [{:keys [uri query-params request-method] :as request}]
-  (let [route (fn [acceptable-request-method re action]
-                (when (= request-method acceptable-request-method)
-                  (when-let [[_ & url-params] (consistently-typed-re-matches re uri)]
-                    (apply action url-params))))]
-    (or
-     (route :get #"\/worlds\/(\d+)\/(\d+)"
-            (fn [id n]
-              (response (take-drop-send
-                         games-store
-                         (Integer/parseInt id)
-                         (Integer/parseInt n)))))
-     (route :get #"\/program-names"
-            (fn []
-              (response
-               {:names (map name (keys source-programs/programs))})))
-     (route :get #"\/init"
-            (fn []
-              (let [programs (query-params "programs")
-                    next-id (:next-id @games-store)]
+           (GET "/program-names" []
+                (response
+                  {:names (map name (keys source-programs/programs))}))
+
+           (GET "/init" [& programs]
+                (println "in init")
+                (println (str programs))
                 (swap! games-store add-game programs)
-                (response {:id next-id
-                           :game-info game-info}))))
-     (not-found "Not Found"))))
+                (response {:id (:next-id @games-store)
+                           :game-info game-info})))
+
+
+;
+;(defn handler [{:keys [uri query-params request-method] :as request}]
+;  (let [route (fn [acceptable-request-method re action]
+;                (when (= request-method acceptable-request-method)
+;                  (when-let [[_ & url-params] (consistently-typed-re-matches re uri)]
+;                    (apply action url-params))))]
+;    (or
+;     (route :get #"\/worlds\/(\d+)\/(\d+)"
+;            (fn [id n]
+;              (response (take-drop-send
+;                         games-store
+;                         (Integer/parseInt id)
+;                         (Integer/parseInt n)))))
+;     (route :get #"\/program-names"
+;            (fn []
+;              (response
+;               {:names (map name (keys source-programs/programs))})))
+;     (route :get #"\/init"
+;            (fn []
+;              (let [programs (query-params "programs")
+;                    next-id (:next-id @games-store)]
+;                (swap! games-store add-game programs)
+;                (response {:id next-id
+;                           :game-info game-info}))))
+;     (not-found "Not Found"))))
 
 (def app
-  (-> handler
+  (-> my-routes
       (wrap-file "public")
       (wrap-json-response)
       (wrap-json-body)
