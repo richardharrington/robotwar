@@ -20,7 +20,7 @@
   "takes a string parameter from the browser and returns a sequence
   of program keys"
   [programs-str]
-  (map keyword (split programs-str #"[,\s]\s*")))
+  (map keyword (split programs-str #"[,\s]+")))
 
 (defn get-programs
   "gets a sequence of five programs from the source-code repository."
@@ -68,7 +68,7 @@
                 (response
                   {:names (map name (keys source-programs/programs))}))
 
-           (GET "/init" [& programs]
+           (GET "/init" {{programs "programs"} :params}
                 (println "in init")
                 (println (str programs))
                 (swap! games-store add-game programs)
