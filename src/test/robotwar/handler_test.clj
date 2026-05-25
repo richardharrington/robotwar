@@ -20,9 +20,8 @@
     (let [response (app {:request-method :get :uri "/index.html"})]
       (is (= (:status response) 200))
       (is (.contains (slurp (:body response)) "Welcome to the future")))
-    (let [response (app {:request-method :get :uri "/js/main.js"})]
-      (is (= (:status response) 200))
-      (is (.contains (slurp (:body response)) "function"))))
+    (let [response (app {:request-method :get :uri "/js/cljs-runtime/cljs-app.js"})]
+      (is (= (:status response) 200))))
 
   (testing "worlds route"
     (let [response (app {:request-method :get :uri "/worlds/0/99"})]

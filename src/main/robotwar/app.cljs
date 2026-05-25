@@ -9,6 +9,7 @@
 (def max-elapsed-ms 250)
 (def max-fast-forward 40)
 (def starting-fast-forward 15)
+(def max-program-count 5)
 
 (defonce state
   (atom {:manifest nil
@@ -99,6 +100,28 @@
         (play-shell-release!))
       (swap! state assoc :raf-id (js/requestAnimationFrame loop-step)))))
 
+(defn parse-program-names [value]
+  (->> (str/split (or value "") #"[\s,]+")
+       (remove str/blank?)
+       vec))
+
+(defn valid-program-names [program-names]
+  (let [available (set (get-in @state [:manifest :programs]))]
+    (->> program-names
+         (filter #(contains? available %))
+         (take max-program-count)
+         vec)))
+
+(defn start-transition! [input-el]
+  (when-let [instruction-box (.querySelector js/document ".instruction-box")]
+    (set! (.. instruction-box -style -height) "0"))
+  (js/setTimeout
+   (fn []
+     (when-let [canvas-el (.getElementById js/document "canvas")]
+       (set! (.. canvas-el -style -opacity) "1")))
+   500)
+  (.blur input-el))
+
 (defn ^:export start-game [program-names]
   (let [selected-names (->> program-names (remove str/blank?) vec)]
     (stop-game)
@@ -124,10 +147,29 @@
         (.catch (fn [err]
                   (.error js/console "Failed to start CLJS game:" err))))))
 
+(defn on-program-input-keydown [event]
+  (when (= 13 (.-which event))
+    (.stopPropagation event)
+    (.preventDefault event)
+    (let [raw-names (parse-program-names (.. event -target -value))
+          program-names (if (:manifest @state) (valid-program-names raw-names) raw-names)]
+      (start-transition! (.-target event))
+      (start-game program-names))))
+
+(defn wire-input! []
+  (when-let [input-el (.getElementById js/document "programsInput")]
+    (.addEventListener input-el "keydown" on-program-input-keydown)))
+
+(defn render-program-names! [manifest]
+  (when-let [names-el (.getElementById js/document "programNames")]
+    (set! (.-textContent names-el) (str/join ", " (:programs manifest))))
+  (set! (.. js/document -body -style -display) "block"))
+
 (defn load-manifest! []
   (-> (fetch-json manifest-url)
       (.then (fn [manifest]
                (swap! state assoc :manifest manifest)
+               (render-program-names! manifest)
                (.log js/console "Loaded program manifest:" (clj->js (:programs manifest)))))
       (.catch (fn [err]
                 (.error js/console "Failed to load manifest:" err)))))
@@ -136,4 +178,5 @@
   (.log js/console "RobotWar CLJS booted.")
   (init-sounds!)
   (.addEventListener js/document "keydown" on-keydown)
+  (wire-input!)
   (load-manifest!))
