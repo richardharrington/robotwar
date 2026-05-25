@@ -460,3 +460,48 @@ When all slices are done, the project should:
 - Have no implementation differences from the original game behavior — the
   engine semantics must be identical pre- and post-port. Bug-for-bug
   compatibility, including the unimplemented features listed in §3.
+
+---
+
+## 8. Amendments after executing slices 1–3
+
+These clarifications update the plan for Slice 2 onward and should be treated
+as normative.
+
+### 8.1 Slice 2 (Midje → clojure.test)
+- Keep one canonical JVM test command: `clj -M:test`.
+- Any tests that previously depended on code-only fixtures should be migrated
+  in a way that remains compatible with the Slice 3 file-based program source.
+
+### 8.2 Slice 3 (robot programs to `.rw` files)
+- Migrate **all eight** programs to files, including prior `dev-programs`
+  fixtures (`multi-use`, `index-data`, `random`).
+- `public/programs/programs.json` is required and remains the source-of-truth
+  manifest shape:
+  `{ "programs": ["speedy", "mover", "left-shooter", "top-shooter", "shooter", "multi-use", "index-data", "random"] }`
+- During transition (while backend exists), JVM code that serves/uses program
+  names must read from `.rw` files, not in-memory maps.
+- Program-name enumeration must be deterministic (sort lexicographically before
+  returning JSON) to avoid filesystem-order nondeterminism.
+
+### 8.3 Slices 4–10 (engine `.cljc` + tests)
+- No behavioral changes beyond portability/mechanical conversion.
+- Preserve compatibility with file-based program loading introduced in Slice 3.
+
+### 8.4 Slices 11–14 (CLJS app migration)
+- CLJS should use `public/programs/programs.json` as canonical discovery data.
+- Avoid introducing new dependencies for DOM/canvas/audio unless required.
+- Any temporary JS↔CLJS bridge should be explicitly deleted in the slice that
+  obsoletes it.
+
+### 8.5 Slice 15 (backend strip)
+- Before deleting backend routes, ensure any route-backed data still used by UI
+  has a static-file equivalent already wired (notably program discovery via
+  `programs.json`).
+- If transitional server routes remain briefly for local dev convenience,
+  behavior should mirror the static assets exactly.
+
+### 8.6 Slice 16 (deploy + README)
+- README must document the manifest/program-file model explicitly, including
+  where programs live and how names are discovered.
+- Document deterministic ordering expectations for displayed program lists.
