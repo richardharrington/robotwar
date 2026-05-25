@@ -159,8 +159,11 @@ function through slice 11.
    framework, single test command (`clj -M:test`).
 2. As engine namespaces become `.cljc`, the existing JVM tests keep running.
    Add CLJS test runs at slice 10 (shadow-cljs `:target :node-test`).
-3. End state: engine has both JVM and CLJS test suites; JVM remains the
-   primary test command but a green CLJS run is required before merge.
+3. End state: engine has both JVM and CLJS test suites targeting the same
+   `.cljc` engine namespaces; JVM remains the primary test command but a green
+   CLJS run is required before merge.
+4. CLJS test namespaces should use `cljs.test` and can be parallel JVM/CLJS
+   suites with equivalent assertions (not necessarily shared source files).
 
 ### 4.10 Robot programs: static `.rw` files + manifest
 - Each robot lives as a plain text file: `public/programs/mover.rw`,
@@ -320,12 +323,18 @@ Formatting hygiene: for touched files, ensure no trailing whitespace remains.
 
 ### Slice 10 — CLJS test runner
 - Configure shadow-cljs `:test` build to run engine tests on Node.
-- Verify: same test suite passes on both JVM and Node.
+- Add CLJS test namespaces for engine behavior parity (`cljs.test`) and a
+  dedicated runner ns (e.g. `robotwar.test-runner`) for deterministic Node runs.
+- Verify: equivalent engine assertions pass on both JVM and Node.
+
+Canonical commands:
+- JVM: `clj -M:test`
+- CLJS/Node: `npx shadow-cljs compile test && node target/test/node-tests.js`
+- Unified: `./scripts/test-all.sh` (or equivalent one-command wrapper)
 
 **TACTICAL:**
-- Exact shadow-cljs test runner config.
-- How to run both in one command (recommendation: a `make test` or a small
-  shell script, since cross-runtime test invocation is awkward otherwise).
+- Exact shadow-cljs test runner config (including whether to use `:runner-ns`).
+- Scope/depth of CLJS parity tests vs JVM suite breadth.
 
 ### Slice 11 — CLJS engine driver
 - New CLJS namespace (e.g. `robotwar.app`) that:
@@ -430,8 +439,8 @@ For convenience, every **TACTICAL** flag from above in one place:
 7. **Whether to commit `package-lock.json`** (slice 1) — recommendation: yes.
 8. **Whether `dev-programs` (test fixtures) become `.rw` files** (slice 3) — or
    inline test data, or `resources/test/programs/`.
-9. **Test runner invocation** (slice 10) — how to run JVM + CLJS tests
-   with one command; recommendation: small shell script or Makefile target.
+9. **Test runner invocation** (slice 10) — resolved as a small shell script
+   (`scripts/test-all.sh`) that runs JVM then CLJS Node tests.
 10. **State atom shape** (slice 11) — recommendation: single atom holding
     game + UI state.
 11. **Whether to expose functions on `js/window` for manual REPL/devtools
@@ -496,6 +505,11 @@ as normative.
 - In `brain`, lock division semantics to the pre-port behavior (round-then-int).
 - In `register`, JVM↔CLJS protocol extension changes may cause rename detection
   to appear as delete/create in Git; this is acceptable if behavior/tests are unchanged.
+- CLJS compilation may require cleanup of legacy ns forms (`:use` → `:require`)
+  and other host-interop compatibility fixes in `.cljc`; these are acceptable
+  portability edits if tests remain green and behavior is unchanged.
+- Slice 10 may use CLJS parity test namespaces plus a dedicated Node runner ns
+  to execute tests reliably in `:node-test` builds.
 
 ### 8.4 Slices 11–14 (CLJS app migration)
 - CLJS should use `public/programs/programs.json` as canonical discovery data.
