@@ -2,6 +2,10 @@
   (:use [robotwar.constants])
   (:require [robotwar.physics :as physics]))
 
+(defn rw-abs [x]
+  #?(:clj (Math/abs x)
+     :cljs (js/Math.abs x)))
+
 (defn init-shell
   [pos-x pos-y aim id distance]
   ; TODO: make the starting point dependent upon the robot radius,
@@ -25,8 +29,8 @@
           remaining-x (- dest-x pos-x)
           remaining-y (- dest-y pos-y)]
       ; only need to check one dimension
-      (if (and (<= (Math/abs remaining-x) (Math/abs delta-x))
-               (<= (Math/abs remaining-y) (Math/abs delta-y)))
+      (if (and (<= (rw-abs remaining-x) (rw-abs delta-x))
+               (<= (rw-abs remaining-y) (rw-abs delta-y)))
         (merge shell {:pos-x dest-x
                       :pos-y dest-y
                       :exploded true})

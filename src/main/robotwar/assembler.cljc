@@ -9,7 +9,7 @@
 (defn re-seq-with-pos
   "Returns a lazy sequence of successive matches of pattern in string with position.
   Largely stolen from re-seq source."
-  [^java.util.regex.Pattern re s]
+  [re s]
   (let [m (re-matcher re s)]
     ((fn step []
        (when (.find m)
@@ -43,10 +43,12 @@
   (map-indexed lex-line lines))
 
 (defn str->int
-  "Integer/parseInt, but returns nil on failure"
+  "parseInt, but returns nil on failure"
   [s-raw]
-  (try (Integer/parseInt s-raw)
-       (catch Exception e nil)))
+  #?(:clj (try (Integer/parseInt s-raw)
+               (catch Exception e nil))
+     :cljs (let [n (js/parseInt s-raw)]
+             (if (js/isNaN n) nil n))))
 
 (defn valid-word
   "Capital letters and numbers, starting with a capital letter"

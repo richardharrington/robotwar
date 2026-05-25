@@ -1,10 +1,6 @@
 (ns robotwar.world
-  (:use [clojure.string :only [join]]
-        [robotwar.constants]
-        [clojure.pprint :as pprint])
-  (:require [clj-time.core :as time]
-            [clj-time.periodic :as periodic]
-            [robotwar.robot :as robot]
+  (:use [robotwar.constants])
+  (:require [robotwar.robot :as robot]
             [robotwar.shell :as shell]))
 
 (defn init-world

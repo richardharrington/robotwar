@@ -5,6 +5,14 @@
             [robotwar.register :as register]
             [robotwar.physics :as physics]))
 
+(defn rw-abs [x]
+  #?(:clj (Math/abs x)
+     :cljs (js/Math.abs x)))
+
+(defn rw-copy-sign [magnitude sign]
+  #?(:clj (Math/copySign magnitude sign)
+     :cljs (* (rw-abs magnitude) (if (neg? sign) -1 1))))
+
 ; TODO: deal with bumping into walls.
 
 (defn init-robot
@@ -47,8 +55,8 @@
   "takes a robot and returns it, moved through space.
   helper function for tick-robot."
   [{:keys [pos-x pos-y v-x v-y desired-v-x desired-v-y] :as robot}]
-  (let [max-accel-x (Math/copySign MAX-ACCEL desired-v-x)
-        max-accel-y (Math/copySign MAX-ACCEL desired-v-y)
+  (let [max-accel-x (rw-copy-sign MAX-ACCEL desired-v-x)
+        max-accel-y (rw-copy-sign MAX-ACCEL desired-v-y)
         {new-pos-x :d, new-v-x :v} (physics/d-and-v-given-desired-v 
                                      pos-x 
                                      v-x 
@@ -82,8 +90,8 @@
         target (get robots target-idx)
         dist-x (- (:pos-x target) (:pos-x actor))
         dist-y (- (:pos-y target) (:pos-y actor))
-        abs-dist-x (Math/abs dist-x)
-        abs-dist-y (Math/abs dist-y)
+        abs-dist-x (rw-abs dist-x)
+        abs-dist-y (rw-abs dist-y)
         min-dist (* ROBOT-RADIUS 2)
         colliding (and (< abs-dist-x min-dist)
                        (< abs-dist-y min-dist)
@@ -95,13 +103,13 @@
                              :damage (dec (:damage actor))
                              :v-x (:v-x target)
                              :pos-x (- (:pos-x target) 
-                                        (Math/copySign min-dist dist-x)))
+                                        (rw-copy-sign min-dist dist-x)))
                         :y (assoc 
                              actor 
                              :damage (dec (:damage actor))
                              :v-y (:v-y target)
                              :pos-y (- (:pos-y target) 
-                                       (Math/copySign min-dist dist-y))))
+                                       (rw-copy-sign min-dist dist-y))))
             new-target (case colliding
                          :x (assoc 
                               target 

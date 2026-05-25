@@ -2,11 +2,19 @@
   (:use [clojure.pprint :only [pprint]])
   (:require [robotwar.assembler :as assembler]))
 
-(def op-map (into {} (for [op assembler/op-commands]
-                       [op (case op
-                             "/" #(int (Math/round (double (/ %1 %2))))
-                             "#" not=
-                             (-> op read-string eval))])))
+(defn rw-round [x]
+  #?(:clj (Math/round x)
+     :cljs (js/Math.round x)))
+
+(def op-map
+  {"-" -
+   "+" +
+   "*" *
+   "/" #(int (rw-round (double (/ %1 %2))))
+   "=" =
+   "#" not=
+   "<" <
+   ">" >})
 
 (defn init-brain
   "initialize the brain, meaning all the internal state variables that go along

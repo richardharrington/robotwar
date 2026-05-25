@@ -1,9 +1,29 @@
 (ns robotwar.physics)
 
+(defn rw-round [x]
+  #?(:clj (Math/round x)
+     :cljs (js/Math.round x)))
+
+(defn rw-to-radians [x]
+  #?(:clj (Math/toRadians x)
+     :cljs (* x (/ js/Math.PI 180))))
+
+(defn rw-cos [x]
+  #?(:clj (Math/cos x)
+     :cljs (js/Math.cos x)))
+
+(defn rw-sin [x]
+  #?(:clj (Math/sin x)
+     :cljs (js/Math.sin x)))
+
+(defn rw-pow [x y]
+  #?(:clj (Math/pow x y)
+     :cljs (js/Math.pow x y)))
+
 ; precision functions
 
 (defn three-sigs [x]
-  (double (/ (Math/round (* x 1000)) 1000)))
+  (double (/ (rw-round (* x 1000)) 1000)))
 
 ; trig functions
 
@@ -13,9 +33,9 @@
 
 (defn decompose-angle
   [angle-in-degrees]
-  (let [angle (Math/toRadians (robotwar-deg->clojure-deg angle-in-degrees))]
-    {:x (Math/cos angle)
-     :y (Math/sin angle)})) 
+  (let [angle (rw-to-radians (robotwar-deg->clojure-deg angle-in-degrees))]
+    {:x (rw-cos angle)
+     :y (rw-sin angle)})) 
 
 ; classical mechanics functions
 
@@ -28,7 +48,7 @@
 
 (defn d-with-constant-a
   [d vi a t]
-  (+ d (* vi t) (/ (* a (Math/pow t 2)) 2)))
+  (+ d (* vi t) (/ (* a (rw-pow t 2)) 2)))
 
 (defn v-with-constant-a
   [vi a t]
