@@ -219,6 +219,9 @@ If something we expected to delete turns out to still be load-bearing,
 preserve it rather than scrambling — surface the surprise.
 
 ### 4.14 Dev workflow
+- **Prerequisite:** Clojure CLI (`clojure`/`clj`) must be installed and on
+  `PATH`. `shadow-cljs` shells out to `clojure`; without it,
+  `npx shadow-cljs ...` will fail.
 - `npx shadow-cljs watch app` for browser hot reload.
 - Editor-integrated CLJS REPL connected to the browser tab (Calva, CIDER,
   or Cursive — depends on user's editor; setup is a prereq for slice 1).
@@ -253,7 +256,16 @@ slices in a way that breaks the "app works at every commit" property.
 - Delete `project.clj`.
 - Add a minimal CLJS entry point that prints to `js/console.log` and is
   loaded by the existing `index.html` (alongside the still-running `main.js`).
-- Verify: page still works as before, plus a console message from CLJS.
+- Add a JVM dev-server entrypoint run via `clj` (replacing `lein ring server`
+  as the startup command while backend code still exists).
+- Verify with explicit commands:
+  1. `npm install`
+  2. `npx shadow-cljs watch app` (leave running)
+  3. `clj -M:dev` (in a second terminal)
+  4. Open `http://localhost:3000`
+  5. Confirm existing gameplay still works
+  6. Confirm CLJS boot log appears in browser console
+  7. If startup output is ambiguous, verify server via `curl -i http://localhost:3000/index.html`.
 
 **TACTICAL:**
 - Dependency versions in `deps.edn` and `shadow-cljs.edn`.
@@ -409,24 +421,26 @@ For convenience, every **TACTICAL** flag from above in one place:
 5. **.gitignore content** (slice 1) — at minimum:
    `.shadow-cljs/`, `node_modules/`, `public/js/cljs-runtime/`,
    compiled output paths.
-6. **Whether to commit `package-lock.json`** (slice 1) — recommendation: yes.
-7. **Whether `dev-programs` (test fixtures) become `.rw` files** (slice 3) — or
+6. **Dev-server command during transition** (slice 1) — define and document a
+   `clj`-based startup path (e.g. `clj -M:dev`) since `lein ring server` is removed.
+7. **Whether to commit `package-lock.json`** (slice 1) — recommendation: yes.
+8. **Whether `dev-programs` (test fixtures) become `.rw` files** (slice 3) — or
    inline test data, or `resources/test/programs/`.
-8. **Test runner invocation** (slice 10) — how to run JVM + CLJS tests
+9. **Test runner invocation** (slice 10) — how to run JVM + CLJS tests
    with one command; recommendation: small shell script or Makefile target.
-9. **State atom shape** (slice 11) — recommendation: single atom holding
-   game + UI state.
-10. **Whether to expose functions on `js/window` for manual REPL/devtools
+10. **State atom shape** (slice 11) — recommendation: single atom holding
+    game + UI state.
+11. **Whether to expose functions on `js/window` for manual REPL/devtools
     testing** (slice 11).
-11. **Canvas interop style** (slice 12) — direct interop vs. helper
+12. **Canvas interop style** (slice 12) — direct interop vs. helper
     wrappers; recommendation: helpers.
-12. **CLJS-JS bridge during slice 12** — recommendation: expose a CLJS
+13. **CLJS-JS bridge during slice 12** — recommendation: expose a CLJS
     function on `js/window.robotwar`, deleted by slice 13.
-13. **DOM library choice** (slice 13) — `goog.dom`/`goog.events` vs. plain
+14. **DOM library choice** (slice 13) — `goog.dom`/`goog.events` vs. plain
     `js/document` interop; recommendation: plain interop.
-14. **Build helper / Makefile / bb.edn** (slice 16) — recommendation: at
+15. **Build helper / Makefile / bb.edn** (slice 16) — recommendation: at
     least a `bb.edn` or `Makefile` with common targets.
-15. **README depth** (slice 16) — minimum: install, dev, test, deploy.
+16. **README depth** (slice 16) — minimum: install, dev, test, deploy.
 
 ---
 
