@@ -1,4 +1,0 @@
-issues:
-
-1) Better assembler/compiler error reporting for invalid instruction forms.
-2) Disallow recursion by preventing duplicate return-pointer pushes in call stack.

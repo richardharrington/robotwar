@@ -5,7 +5,7 @@ A reverse-engineered version (in Clojure/ClojureScript) of Silas Warner's 1981 A
 In RobotWar, players write programs in a Forth-like language created specifically for the game. Those programs are compiled to virtual-machine code and used as AI brains for robots battling in an arena.
 
 Resources:
-- Original manual: ftp://ftp.apple.asimov.net/pub/apple_II/documentation/games/misc/Robotwar.pdf
+- Original manual: ftp://ftp.apple.asimov.net/pub/apple_II/documentation/games/misc/Robotwar.pdf (also in this repo at [resources/manual.txt](resources/manual.txt))
 - Overview article: http://www.filfre.net/2012/01/robot-war/
 
 ## Current project layout
@@ -150,5 +150,3 @@ MOVEY
     B - Y TO SPEEDY        ; Distance to target sets Y velocity.
     ENDSUB
 ```
-
-Note: There are known gameplay gaps from the original implementation (for example, incomplete damage/radar behavior).
