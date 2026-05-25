@@ -1,7 +1,6 @@
 (ns robotwar.robot
-  (:use [robotwar.constants]
-        [clojure.pprint :only [pprint]])
-  (:require [robotwar.brain :as brain]
+  (:require [robotwar.constants :refer [*GAME-SECONDS-PER-TICK* MAX-ACCEL ROBOT-RADIUS]]
+            [robotwar.brain :as brain]
             [robotwar.register :as register]
             [robotwar.physics :as physics]))
 

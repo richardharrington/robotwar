@@ -1,6 +1,6 @@
 (ns robotwar.world
-  (:use [robotwar.constants])
-  (:require [robotwar.robot :as robot]
+  (:require [robotwar.constants :refer [ROBOT-RANGE-X ROBOT-RANGE-Y]]
+            [robotwar.robot :as robot]
             [robotwar.shell :as shell]))
 
 (defn init-world

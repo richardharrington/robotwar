@@ -1,6 +1,6 @@
 (ns robotwar.shell
-  (:use [robotwar.constants])
-  (:require [robotwar.physics :as physics]))
+  (:require [robotwar.constants :refer [*GAME-SECONDS-PER-TICK* SHELL-SPEED]]
+            [robotwar.physics :as physics]))
 
 (defn rw-abs [x]
   #?(:clj (Math/abs x)

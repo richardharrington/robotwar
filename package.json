@@ -8,6 +8,7 @@
   "scripts": {
     "watch": "shadow-cljs watch app",
     "release": "shadow-cljs release app",
-    "test:cljs": "shadow-cljs compile test"
+    "test": "./scripts/test-all.sh",
+    "test:cljs": "shadow-cljs compile test && node target/test/node-tests.js"
   }
 }

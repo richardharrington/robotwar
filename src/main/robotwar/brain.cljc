@@ -1,5 +1,4 @@
 (ns robotwar.brain
-  (:use [clojure.pprint :only [pprint]])
   (:require [robotwar.assembler :as assembler]))
 
 (defn rw-round [x]

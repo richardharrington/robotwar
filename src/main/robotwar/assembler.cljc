@@ -1,5 +1,5 @@
 (ns robotwar.assembler
-  (:use (clojure [string :only [split join]])))
+  (:require [clojure.string :refer [join split]]))
 
 (def op-commands    [ "-" "+" "*" "/" "=" "#" "<" ">" ])
 (def word-commands  [ "TO" "IF" "GOTO" "GOSUB" "ENDSUB" ])
@@ -7,13 +7,21 @@
 (def commands (concat op-commands word-commands))
 
 (defn re-seq-with-pos
-  "Returns a lazy sequence of successive matches of pattern in string with position.
-  Largely stolen from re-seq source."
+  "Returns a lazy sequence of successive matches of pattern in string with position."
   [re s]
-  (let [m (re-matcher re s)]
-    ((fn step []
-       (when (.find m)
-         (cons [(re-groups m) (.start m)] (lazy-seq (step))))))))
+  #?(:clj
+     (let [m (re-matcher re s)]
+       ((fn step []
+          (when (.find m)
+            (cons [(re-groups m) (.start m)] (lazy-seq (step)))))))
+     :cljs
+     (let [flags (str "g"
+                      (when (.-ignoreCase re) "i")
+                      (when (.-multiline re) "m"))
+           m (js/RegExp. (.-source re) flags)]
+       ((fn step []
+          (when-let [match (.exec m s)]
+            (cons [(aget match 0) (.-index match)] (lazy-seq (step)))))))))
 
 (defn split-lines
   [raw-lines]

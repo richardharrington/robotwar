@@ -1,6 +1,6 @@
 (ns robotwar.register
-  (:use [robotwar.constants])
-  (:require [robotwar.shell :as shell]))
+  (:require [robotwar.constants :refer [*GAME-SECONDS-PER-TICK* GAME-SECONDS-PER-SHOT]]
+            [robotwar.shell :as shell]))
 
 (def reg-names [ "DATA"
                  "A" "B" "C" "D" "E" "F" "G" "H" "I" "J" "K" "L" "M"
