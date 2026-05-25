@@ -1,18 +1,22 @@
 (ns robotwar.app
   (:require [clojure.string :as str]
+            [robotwar.canvas :as canvas]
             [robotwar.constants :refer [*GAME-SECONDS-PER-TICK*]]
             [robotwar.world :as world]))
 
 (def manifest-url "/programs/programs.json")
 (def programs-base-url "/programs")
 (def max-elapsed-ms 250)
+(def max-fast-forward 40)
+(def starting-fast-forward 15)
 
 (defonce state
   (atom {:manifest nil
          :running? false
          :world nil
+         :previous-world nil
          :tick-count 0
-         :fast-forward 1
+         :fast-forward starting-fast-forward
          :tick-duration-ms (* *GAME-SECONDS-PER-TICK* 1000)
          :accumulator-ms 0
          :last-frame-time nil
@@ -41,14 +45,35 @@
           :shell-count (count shells)
           :next-shell-id next-shell-id})))
 
+(defonce sound-state (atom {:shell-release nil :idx 0}))
+
+(defn init-sounds! []
+  (let [supports-ogg? (not= "" (.canPlayType (js/Audio.) "audio/ogg"))
+        src (if supports-ogg? "audio/trprsht1.ogg" "audio/trprsht1.mp3")
+        els (vec (repeatedly 40 #(js/Audio. src)))]
+    (swap! sound-state assoc :shell-release els :idx 0)))
+
+(defn play-shell-release! []
+  (let [{:keys [shell-release idx]} @sound-state]
+    (when (seq shell-release)
+      (.play (nth shell-release idx))
+      (swap! sound-state assoc :idx (mod (inc idx) (count shell-release))))))
+
+(defn on-keydown [event]
+  (let [k (.-which event)]
+    (cond
+      (= k 37) (swap! state update :fast-forward #(max 1 (dec %)))
+      (= k 39) (swap! state update :fast-forward #(min max-fast-forward (inc %)))
+      :else nil)))
+
 (defn stop-game []
   (when-let [raf-id (:raf-id @state)]
     (js/cancelAnimationFrame raf-id))
-  (swap! state assoc :running? false :raf-id nil :last-frame-time nil :accumulator-ms 0))
+  (swap! state assoc :running? false :raf-id nil :last-frame-time nil :accumulator-ms 0 :previous-world nil))
 
 (defn loop-step [timestamp]
   (when (:running? @state)
-    (let [{:keys [world tick-count tick-duration-ms accumulator-ms last-frame-time fast-forward]} @state
+    (let [{:keys [world tick-count tick-duration-ms accumulator-ms last-frame-time fast-forward previous-world]} @state
           elapsed-ms (if last-frame-time (- timestamp last-frame-time) 0)
           capped-elapsed-ms (min elapsed-ms max-elapsed-ms)
           game-elapsed-ms (* capped-elapsed-ms fast-forward)
@@ -64,10 +89,14 @@
                 (recur w' (- a tick-duration-ms) n'))
               [w a n]))]
       (swap! state assoc
+             :previous-world (or world previous-world)
              :world next-world
              :tick-count next-tick-count
              :accumulator-ms next-accumulator-ms
              :last-frame-time timestamp)
+      (canvas/animate-world! (or previous-world world) next-world)
+      (when (not= (:next-shell-id (or previous-world world)) (:next-shell-id next-world))
+        (play-shell-release!))
       (swap! state assoc :raf-id (js/requestAnimationFrame loop-step)))))
 
 (defn ^:export start-game [program-names]
@@ -84,10 +113,12 @@
                        initial-world (world/init-world programs-clj)]
                    (swap! state assoc
                           :world initial-world
+                          :previous-world initial-world
                           :tick-count 0
                           :accumulator-ms 0
                           :last-frame-time nil
                           :running? true)
+                   (canvas/animate-world! initial-world initial-world)
                    (swap! state assoc :raf-id (js/requestAnimationFrame loop-step))
                    (.log js/console "CLJS game loop started."))))
         (.catch (fn [err]
@@ -103,4 +134,6 @@
 
 (defn ^:export init []
   (.log js/console "RobotWar CLJS booted.")
+  (init-sounds!)
+  (.addEventListener js/document "keydown" on-keydown)
   (load-manifest!))
