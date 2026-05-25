@@ -74,7 +74,7 @@
                 (let [id (:next-id @games-store)]
                   (swap! games-store add-game programs)
                   (response {:id id
-                             :game-info game-info})))
+                             :game-info game-info}))))
 
 
 ;

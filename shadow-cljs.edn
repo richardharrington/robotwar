@@ -1,0 +1,9 @@
+{:deps true
+ :builds {:app {:target :browser
+                :output-dir "public/js/cljs-runtime"
+                :asset-path "/js/cljs-runtime"
+                :modules {:cljs-app {:init-fn robotwar.app/init
+                                     :entries [robotwar.app]}}}
+          :test {:target :node-test
+                 :output-to "target/test/node-tests.js"
+                 :ns-regexp "-test$"}}}

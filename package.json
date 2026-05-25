@@ -1,0 +1,13 @@
+{
+  "name": "robotwar",
+  "private": true,
+  "version": "0.1.0",
+  "devDependencies": {
+    "shadow-cljs": "2.28.20"
+  },
+  "scripts": {
+    "watch": "shadow-cljs watch app",
+    "release": "shadow-cljs release app",
+    "test:cljs": "shadow-cljs compile test"
+  }
+}
