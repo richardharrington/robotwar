@@ -57,7 +57,8 @@
 (defn play-shell-release! []
   (let [{:keys [shell-release idx]} @sound-state]
     (when (seq shell-release)
-      (.play (nth shell-release idx))
+      (-> (.play (nth shell-release idx))
+          (.catch (fn [_] nil)))
       (swap! sound-state assoc :idx (mod (inc idx) (count shell-release))))))
 
 (defn on-keydown [event]
