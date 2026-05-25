@@ -71,9 +71,10 @@
            (GET "/init" {{programs "programs"} :params}
                 (println "in init")
                 (println (str programs))
-                (swap! games-store add-game programs)
-                (response {:id (:next-id @games-store)
-                           :game-info game-info})))
+                (let [id (:next-id @games-store)]
+                  (swap! games-store add-game programs)
+                  (response {:id id
+                             :game-info game-info})))
 
 
 ;
