@@ -300,11 +300,13 @@ problems surface early):
 - **Slice 4** — `constants.clj` → `constants.cljc` (zero interop) and
   `physics.clj` → `physics.cljc` (`Math/*` conditionals, ~3 sites).
 - **Slice 5** — `assembler.clj` → `assembler.cljc` (almost no interop;
-  watch for any `Integer/parseInt` that needs a reader conditional).
-- **Slice 6** — `shell.clj` → `shell.cljc` (uses constants + physics, no
-  other interop).
+  watch for any `Integer/parseInt` that needs a reader conditional. In CLJS,
+  prefer `js/parseInt` + explicit `js/isNaN` handling rather than exception-based flow).
+- **Slice 6** — `shell.clj` → `shell.cljc` (uses constants + physics; includes
+  `Math/abs` interop conversion).
 - **Slice 7** — `brain.clj` → `brain.cljc` (replace `read-string`/`eval` with
-  a static op map; otherwise pure).
+  a static op map; otherwise pure. Preserve existing division behavior:
+  round result to nearest int, then cast to int).
 - **Slice 8** — `register.clj` → `register.cljc` (`extend` → `extend-type`
   via reader conditionals).
 - **Slice 9** — `robot.clj` → `robot.cljc` and `world.clj` → `world.cljc`
@@ -313,6 +315,8 @@ problems surface early):
 
 Verify after each slice: `clj -M:test` still green. **Do not modify the
 behavior of any engine code during the port — translate only.**
+
+Formatting hygiene: for touched files, ensure no trailing whitespace remains.
 
 ### Slice 10 — CLJS test runner
 - Configure shadow-cljs `:test` build to run engine tests on Node.
@@ -487,6 +491,11 @@ as normative.
 ### 8.3 Slices 4–10 (engine `.cljc` + tests)
 - No behavioral changes beyond portability/mechanical conversion.
 - Preserve compatibility with file-based program loading introduced in Slice 3.
+- `shell` may require `Math/abs` portability handling despite being low-complexity.
+- In `assembler`, CLJS integer parsing should use explicit NaN checks.
+- In `brain`, lock division semantics to the pre-port behavior (round-then-int).
+- In `register`, JVM↔CLJS protocol extension changes may cause rename detection
+  to appear as delete/create in Git; this is acceptable if behavior/tests are unchanged.
 
 ### 8.4 Slices 11–14 (CLJS app migration)
 - CLJS should use `public/programs/programs.json` as canonical discovery data.
