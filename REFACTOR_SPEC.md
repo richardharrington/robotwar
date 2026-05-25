@@ -143,10 +143,11 @@ Order of work:
    platforms.
 4. **Slice 11** — CLJS-side engine driver: load programs from `.rw` files,
    run engine, dump state to console. No rendering yet.
-5. **Slice 12** — port canvas drawing to CLJS. Replace JS canvas. Stop
-   fetching from server.
+5. **Slice 12** — port canvas drawing to CLJS, stop JS fetch/queue flow, and
+   port shell-fire audio playback to CLJS (pooled `Audio` pattern).
 6. **Slice 13** — port input chrome to CLJS.
-7. **Slice 14** — port audio to CLJS.
+7. **Slice 14** — remove transitional JS audio remnants if any remain, and
+   delete `public/js/main.js` only when input is also fully migrated.
 8. **Slice 15** — delete obsoleted backend code and JS files (see §4.13).
 9. **Slice 16** — Netlify deployment + README rewrite.
 
@@ -240,6 +241,10 @@ because the project has no downstream consumers.
 The existing approach (preload 40 `Audio` instances per sound, cycle through
 them for rapid-fire playback) is ~15 lines of CLJS. No new dependencies, no
 Web Audio API, no Howler.js. Future improvement is a follow-up.
+
+Status update: this pool-pattern audio migration was pulled into Slice 12
+(alongside CLJS canvas migration) to preserve parity after the JS queue/sim
+path was removed.
 
 ---
 
@@ -357,7 +362,7 @@ Canonical commands:
   ... :running? ... :fast-forward ...}` — simple is fine.
 - Whether to expose start/stop functions on `js/window` for manual testing.
 
-### Slice 12 — CLJS canvas drawing
+### Slice 12 — CLJS canvas drawing (+ audio parity)
 - Port the canvas drawing functions from `main.js` (`drawRobot`,
   `drawShell`, `explodeShell`, `animateWorld`, the geometry helpers) to
   CLJS.
@@ -366,6 +371,10 @@ Canonical commands:
 - Stop the JS fetch/queue loop. The page now runs the engine and draws
   entirely in CLJS, but the JS still handles startup and input.
 - Delete `public/js/lib/Queue.js` and the fetch/queue portions of `main.js`.
+- Port shell-fire audio to CLJS now (same pooled `Audio` element pattern),
+  triggering playback from world diffs (`next-shell-id` change).
+- Preserve legacy pacing and controls: default fast-forward `15`, left/right
+  arrows adjust fast-forward in CLJS loop.
 
 **TACTICAL:**
 - Canvas interop style: direct `js/` interop (`(.beginPath ctx)`) vs.
@@ -380,8 +389,7 @@ Canonical commands:
   the program-names list fetch from `main.js` to CLJS.
 - Remove the jQuery dependency (use native DOM APIs from CLJS — `document.querySelector`, `addEventListener`, etc.).
 - Delete `public/js/lib/jquery-2.0.3.min.js`.
-- After this slice, the only JS code remaining is the audio player in
-  `main.js`.
+- After this slice, `public/js/main.js` should be removable entirely.
 
 **TACTICAL:**
 - Whether to use `goog.dom`/`goog.events` (Closure utilities, no extra
@@ -391,11 +399,12 @@ Canonical commands:
   via class changes). Preserve the existing CSS; just trigger the same
   class changes from CLJS.
 
-### Slice 14 — CLJS audio
-- Port the audio pool pattern to CLJS (~15 lines).
-- Hook into the world-diff logic that detects new shells (the existing JS
-  checks `currentWorld["next-shell-id"] !== previousWorld["next-shell-id"]`).
-- Delete the remaining `main.js` (now empty).
+### Slice 14 — CLJS audio (amended)
+- Primary audio migration was completed in Slice 12 for transition safety.
+- Use this slice only for cleanup/hardening if needed (e.g. lifecycle polish,
+  preload timing, or removing dead transitional hooks).
+- If `public/js/main.js` still exists at this point, delete it only if slice 13
+  input migration is complete.
 
 ### Slice 15 — backend strip
 - Delete `src/main/robotwar/handler.clj`,
@@ -454,11 +463,16 @@ For convenience, every **TACTICAL** flag from above in one place:
     wrappers; recommendation: helpers.
 13. **CLJS-JS bridge during slice 12** — recommendation: expose a CLJS
     function on `js/window.robotwar`, deleted by slice 13.
-14. **DOM library choice** (slice 13) — `goog.dom`/`goog.events` vs. plain
+14. **Audio migration timing** (slices 12/14) — moved earlier into slice 12 to
+    avoid regressions when JS simulation path is removed; keep pooled `Audio`
+    strategy unchanged.
+15. **Default runtime pacing parity** (slice 12) — preserve legacy default
+    fast-forward (`15`) and arrow-key adjustment behavior in CLJS loop.
+16. **DOM library choice** (slice 13) — `goog.dom`/`goog.events` vs. plain
     `js/document` interop; recommendation: plain interop.
-15. **Build helper / Makefile / bb.edn** (slice 16) — recommendation: at
+17. **Build helper / Makefile / bb.edn** (slice 16) — recommendation: at
     least a `bb.edn` or `Makefile` with common targets.
-16. **README depth** (slice 16) — minimum: install, dev, test, deploy.
+18. **README depth** (slice 16) — minimum: install, dev, test, deploy.
 
 ---
 
@@ -524,6 +538,14 @@ as normative.
 - For Slice 11 verification logging, prefer compact per-tick summaries over
   printing the full world (especially full register/brain structures), while
   still logging every tick.
+- Amendment from Slice 12 execution: audio may be ported in Slice 12 (instead
+  of waiting for Slice 14) when removing JS queue/simulation flow would
+  otherwise regress sound.
+- Preserve runtime feel during migration: CLJS loop defaults and controls should
+  match legacy JS pacing unless intentionally changed in a later slice.
+- During transition, explicitly validate that served JS is fresh (cache-busted
+  or hard-refreshed) after deleting `Queue.js`, since stale `main.js` assets can
+  mask successful migration work.
 
 ### 8.5 Slice 15 (backend strip)
 - Before deleting backend routes, ensure any route-backed data still used by UI
