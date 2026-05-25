@@ -4,7 +4,7 @@
             [robotwar.constants :refer [*GAME-SECONDS-PER-TICK*]]
             [robotwar.world :as world]))
 
-(def manifest-url "/programs/programs.json")
+(def manifest-url "/programs/programs-live.json")
 (def programs-base-url "/programs")
 (def max-elapsed-ms 250)
 (def max-fast-forward 40)

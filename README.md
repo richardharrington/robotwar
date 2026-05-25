@@ -10,6 +10,15 @@ Here are some resources that describe the game pretty well:
 * The original manual: ftp://ftp.apple.asimov.net/pub/apple_II/documentation/games/misc/Robotwar.pdf (markdown won't render this ftp site as a link, but if you copy and paste it into Chrome you should get the pdf you're looking for)
 * [A blog post](http://www.filfre.net/2012/01/robot-war/) explaining the game in some detail
 
+### Program manifests
+
+Robot source files are plain text files under `public/programs/*.rw`.
+
+Program discovery is manifest-driven:
+- `public/programs/programs-live.json` — robots shown in the browser UI.
+- `public/programs/programs-test.json` — test/dev-only robot names.
+- `public/programs/programs.json` — compatibility manifest (currently mirrors live).
+
 ### To see it in action:
 
 Install [leiningen](http://leiningen.org), then:
