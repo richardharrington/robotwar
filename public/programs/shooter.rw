@@ -1,0 +1,6 @@
+
+      90 TO AIM
+      200 - Y TO S
+  SHOOT
+      S TO SHOT
+      GOTO SHOOT 

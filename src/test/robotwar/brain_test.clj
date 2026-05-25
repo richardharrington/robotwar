@@ -2,11 +2,10 @@
   (:require [clojure.test :refer :all]
             [robotwar.brain :refer :all]
             [robotwar.world :as world]
-            [robotwar.register :as register]
-            [robotwar.source-programs :as source-programs]))
+            [robotwar.register :as register]))
 
 (def initial-world 
-  (world/init-world [(:multi-use source-programs/dev-programs)]))
+  (world/init-world [(slurp "public/programs/multi-use.rw")]))
 
 (def combined-worlds (world/build-combined-worlds initial-world))
 

@@ -1,0 +1,34 @@
+
+                             ; Note: # means !=
+
+  360 TO RANDOM              
+  RANDOM TO AIM              ; Set a random direction to aim the gun
+
+  256 TO RANDOM              ; All random numbers will now have as their maximum
+                             ; the width and height of the arena (in meters).
+ 
+  LOOP
+      0 TO SPEEDX            ; STOP THE ROBOT!
+      0 TO SPEEDY
+      DAMAGE TO D            ; Store damage.
+      RANDOM TO A            ; Store a random X-coordinate in the arena.
+      RANDOM TO B            ; Store a random Y-coordinate in the arena.
+  
+  MOVE
+      IF DAMAGE # D GOTO LOOP  ; If we've been damaged, pick a new spot.
+      AIM + 5 TO AIM
+      IF A # X GOSUB MOVEX   ; If we're moving in the X direction, recalibrate SPEEDX.
+      TO N                   ; N is for no-op. (needed because there's no ELSE command).
+      IF B # Y GOSUB MOVEY   ; If we're moving in the Y direction, recalibrate SPEEDY. 
+      IF A = X GOTO LOOP     ; A = X and B = Y, so we've stopped moving, so start over. 
+      GOTO MOVE              ; Continue to move.
+       
+  MOVEX 
+      A - X TO SPEEDX        ; Take distance from destination in meters and use
+                             ; it to set SPEEDX, which is measured in decimeters/second.
+      ENDSUB
+  
+  MOVEY
+      B - Y TO SPEEDY        ; Take distance from destination in meters and use
+                             ; it to set SPEEDY, which is measured in decimeters/second.
+      ENDSUB

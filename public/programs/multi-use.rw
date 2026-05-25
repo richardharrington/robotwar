@@ -1,0 +1,12 @@
+
+  START
+      0 TO A
+  TEST
+      IF A > 2 GOTO START
+      GOSUB INCREMENT
+      GOTO TEST
+      100 TO A
+  INCREMENT
+      A + 1 TO A
+      ENDSUB
+      200 TO A

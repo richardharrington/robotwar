@@ -1,7 +1,6 @@
 (ns robotwar.core
   (:use [clojure.pprint :only [pprint]])
-  (:require [robotwar.source-programs :as source-programs]
-            [robotwar.world :as world]
+  (:require [robotwar.world :as world]
             [robotwar.register :as register]
             [robotwar.robot :as robot]
             [robotwar.terminal :as terminal]
@@ -12,7 +11,7 @@
 
 
 (def progs 
-  (repeat 3 (:mover source-programs/dev-programs)))
+  (repeat 3 (slurp "public/programs/mover.rw")))
 (def world
   (world/init-world progs)) 
 (defn combined-worlds [] 

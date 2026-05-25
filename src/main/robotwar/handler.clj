@@ -1,11 +1,11 @@
 (ns robotwar.handler
-  (:use [clojure.string :only [split]]
-        [robotwar.constants])
-  (:require [ring.middleware.json :refer [wrap-json-response wrap-json-body]]
+  (:use [robotwar.constants])
+  (:require [clojure.java.io :as io]
+            [clojure.string :as str]
+            [ring.middleware.json :refer [wrap-json-response wrap-json-body]]
             [ring.middleware.file :refer [wrap-file]]
             [ring.middleware.params :refer [wrap-params]]
             [ring.util.response :refer [response not-found]]
-            [robotwar.source-programs :as source-programs]
             [robotwar.world :as world]
             [robotwar.browser :as browser]
             [compojure.core :refer :all]
@@ -16,19 +16,38 @@
                 :ROBOT-RANGE-Y ROBOT-RANGE-Y
                 :*GAME-SECONDS-PER-TICK* *GAME-SECONDS-PER-TICK*})
 
+(def programs-dir "public/programs")
+
 (defn parse-program-names
   "takes a string parameter from the browser and returns a sequence
-  of program keys"
+  of program names"
   [programs-str]
-  (map keyword (split programs-str #"[,\s]+")))
+  (remove str/blank? (str/split (or programs-str "") #"[,\s]+")))
+
+(defn program-path [program-name]
+  (str programs-dir "/" program-name ".rw"))
+
+(defn get-program [program-name]
+  (let [f (io/file (program-path program-name))]
+    (when (.exists f)
+      (slurp f))))
 
 (defn get-programs
-  "gets a sequence of five programs from the source-code repository."
-  [program-keys]
-  (->> program-keys
-       (map source-programs/programs)
+  "gets a sequence of five programs from the public programs directory."
+  [program-names]
+  (->> program-names
+       (map get-program)
        (remove nil?)
        (take 5)))
+
+(defn get-program-names []
+  (->> (io/file programs-dir)
+       .listFiles
+       (keep (fn [f]
+               (let [name (.getName f)]
+                 (when (and (.isFile f) (str/ends-with? name ".rw"))
+                   (subs name 0 (- (count name) 3))))))
+       sort))
 
 (defn add-game
   "a function to update the games-store atom state.
@@ -66,7 +85,7 @@
 
            (GET "/program-names" []
                 (response
-                  {:names (map name (keys source-programs/programs))}))
+                  {:names (get-program-names)}))
 
            (GET "/init" {{programs "programs"} :params}
                 (println "in init")
