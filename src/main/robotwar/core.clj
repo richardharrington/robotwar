@@ -3,8 +3,7 @@
   (:require [robotwar.world :as world]
             [robotwar.register :as register]
             [robotwar.robot :as robot]
-            [robotwar.terminal :as terminal]
-            [robotwar.browser :as browser]))
+            [robotwar.terminal :as terminal]))
 
 ; this is a hacky place for messing with stuff. 
 
@@ -22,7 +21,7 @@
   (terminal/animate (worlds-for-terminal-display fast-forward) 25 25 fps))
 
 (defn worlds-for-browser-display []
-  (browser/worlds-for-browser (combined-worlds)))
+  (combined-worlds))
 
 (def rr register/read-register)
 (def wr register/write-register)
