@@ -1,0 +1,3 @@
+[build]
+  command = "npx shadow-cljs release app"
+  publish = "public"

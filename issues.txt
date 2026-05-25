@@ -1,5 +1,4 @@
 issues:
 
-1) better error-reporting. Start with pattern-matching on the instruction list to make sure everything is valid (i.e. that comparison operators have values after them, that 'if' statements are followed by comparisons, etc.
-
-4) disallow recursion (if the stack already contains a pointer, do not allow it to be pushed again).
+1) Better assembler/compiler error reporting for invalid instruction forms.
+2) Disallow recursion by preventing duplicate return-pointer pushes in call stack.
