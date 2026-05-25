@@ -1,8 +1,7 @@
 (ns robotwar.assembler-test
-  (:use [clojure.string :only [join]]
-        [clojure.test]
-        [midje.sweet]
-        [robotwar.assembler]))
+  (:require [clojure.string :refer [join]]
+            [clojure.test :refer :all]
+            [robotwar.assembler :refer :all]))
 
 (def line1 "IF DAMAGE # D GOTO MOVE    ; comment or something")
 (def line2 "AIM-17 TO AIM              ; other comment")

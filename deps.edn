@@ -8,6 +8,7 @@
         ring/ring-jetty-adapter {:mvn/version "1.9.5"}
         compojure/compojure {:mvn/version "1.7.0"}}
  :aliases {:test {:extra-paths ["src/test"]
-                  :extra-deps {midje/midje {:mvn/version "1.10.5"}
-                               ring-mock/ring-mock {:mvn/version "0.1.5"}}}
+                  :extra-deps {io.github.cognitect-labs/test-runner
+                               {:git/tag "v0.5.1" :git/sha "dfb30dd"}}
+                  :main-opts ["-m" "cognitect.test-runner" "-d" "src/test"]}
            :dev {:main-opts ["-m" "robotwar.dev-server"]}}}

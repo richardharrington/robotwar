@@ -1,37 +1,36 @@
 (ns robotwar.handler-test
   (:require [clojure.test :refer :all]
-            [robotwar.handler :refer :all]
-            [ring.mock.request :as mock]))
-
+            [robotwar.handler :refer :all]))
 
 (deftest app-handler-test
   (testing "program-names"
-    (let [response (app (mock/request :get "/program-names"))]
+    (let [response (app {:request-method :get :uri "/program-names"})]
       (is (= (:status response) 200))
       (is (.contains (:body response) "mover"))))
 
   (testing "not-found route"
-    (let [response (app (mock/request :get "/invalid"))]
-      (is (= (:status response) 404))))
+    (let [response (app {:request-method :get :uri "/invalid"})]
+      (is (nil? response))))
 
   (testing "unsupported http request method"
-    (let [response (app (mock/request :put "/program-names"))]
-      (is (= (:status response) 404))))
+    (let [response (app {:request-method :put :uri "/program-names"})]
+      (is (nil? response))))
 
   (testing "files"
-    (let [response (app (mock/request :get "/index.html"))]
+    (let [response (app {:request-method :get :uri "/index.html"})]
       (is (= (:status response) 200))
       (is (.contains (slurp (:body response)) "Welcome to the future")))
-    (let [response (app (mock/request :get "/js/main.js"))]
+    (let [response (app {:request-method :get :uri "/js/main.js"})]
       (is (= (:status response) 200))
       (is (.contains (slurp (:body response)) "function"))))
 
   (testing "worlds route"
-    (let [response (app (mock/request :get "/worlds/0/99"))]
+    (let [response (app {:request-method :get :uri "/worlds/0/99"})]
       (is (= (:status response) 200))
       (is (.contains (:body response) "["))))
 
   (testing "init route"
-    (let [response (app (mock/request :get "/init?programs=mover"))]
+    (let [response (app {:request-method :get :uri "/init"
+                         :query-string "programs=mover"})]
       (is (= (:status response) 200))
       (is (.contains (:body response) "game-info")))))

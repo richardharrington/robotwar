@@ -1,4 +1,3 @@
 (ns robotwar.core-test
-  (:use [clojure.test]
-        [midje.sweet]
-        [robotwar.core]))
+  (:require [clojure.test :refer :all]
+            [robotwar.core :as core]))
