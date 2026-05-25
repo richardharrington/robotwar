@@ -166,17 +166,20 @@ function through slice 11.
 4. CLJS test namespaces should use `cljs.test` and can be parallel JVM/CLJS
    suites with equivalent assertions (not necessarily shared source files).
 
-### 4.10 Robot programs: static `.rw` files + manifest
+### 4.10 Robot programs: static `.rw` files + manifest(s)
 - Each robot lives as a plain text file: `public/programs/mover.rw`,
   `public/programs/shooter.rw`, etc.
-- A manifest file lists what's available: `public/programs/programs.json`.
-- The CLJS client fetches the manifest at startup, then fetches individual
+- Program discovery is manifest-driven:
+  - `public/programs/programs-live.json` for UI-visible robots.
+  - `public/programs/programs-test.json` for test/dev-only fixtures.
+  - `public/programs/programs.json` as a compatibility alias (mirrors live).
+- The CLJS client fetches the live manifest at startup, then fetches individual
   programs on demand when a battle is initiated.
 - This shape is forward-compatible with a future dynamic backend: the manifest
   endpoint becomes `/api/programs`, the program endpoints become
   `/api/programs/:name`, and the client code is unchanged.
 
-**TACTICAL:** Manifest format. Simplest viable form is just a name list:
+**TACTICAL:** Manifest format. Simplest viable form is a name list:
 ```json
 { "programs": ["mover", "shooter", "left-shooter", "top-shooter", "speedy"] }
 ```
@@ -203,7 +206,7 @@ being validation against the manifest. UX redesign is a follow-up project.
 - `public/js/lib/jquery-2.0.3.min.js` (slice 13)
 - `public/js/lib/Queue.js` (slice 12)
 - `public/js/lib/template.js` (slice 15)
-- `Procfile` (slice 16)
+- `Procfile` (slice 15)
 - `project.clj` (slice 1, replaced by `deps.edn`)
 
 **Keep** as JVM-side tooling:
@@ -558,3 +561,13 @@ as normative.
 - README must document the manifest/program-file model explicitly, including
   where programs live and how names are discovered.
 - Document deterministic ordering expectations for displayed program lists.
+
+### 8.7 Amendments after executing slices 13–15
+- Slice 13 removed runtime jQuery and deleted `public/js/main.js`; CLJS now owns
+  input handling, instruction-box/canvas transition behavior, and program-list wiring.
+- Program discovery now distinguishes live vs test manifests:
+  - `programs-live.json` for UI/runtime selection
+  - `programs-test.json` for test/dev fixtures
+  - `programs.json` retained as a compatibility alias for live names
+- Slice 15 removed backend-era Ring/Compojure handler code and associated tests,
+  and removed the `:dev` alias that booted Jetty.
