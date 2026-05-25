@@ -347,6 +347,11 @@ Canonical commands:
 - Verify: load page, open console, manually invoke
   `robotwar.app.start_game(["mover", "shooter"])`, see ticks logged.
 
+**TACTICAL (resolved in execution):**
+- Tick logs should be **compact summaries** (tick number, per-robot pose/damage,
+  shell count, next-shell-id), not full nested brain/register dumps, to keep
+  browser console usable during runtime verification.
+
 **TACTICAL:**
 - State atom shape. Recommendation: one atom holding `{:world ... :game-info
   ... :running? ... :fast-forward ...}` — simple is fine.
@@ -516,6 +521,9 @@ as normative.
 - Avoid introducing new dependencies for DOM/canvas/audio unless required.
 - Any temporary JS↔CLJS bridge should be explicitly deleted in the slice that
   obsoletes it.
+- For Slice 11 verification logging, prefer compact per-tick summaries over
+  printing the full world (especially full register/brain structures), while
+  still logging every tick.
 
 ### 8.5 Slice 15 (backend strip)
 - Before deleting backend routes, ensure any route-backed data still used by UI
