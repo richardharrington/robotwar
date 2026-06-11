@@ -5,7 +5,7 @@
             [robotwar.robot :refer [tick-robot]]
             [robotwar.world :as world]))
 
-(def world (world/init-world [""]))
+(def world (world/init-world ["" ""]))
 
 (defn acceleration-seq [pos speed pos-key v-key desired-v-key reg]
   (let [w0 (assoc-in world [:robots 0 pos-key] pos)

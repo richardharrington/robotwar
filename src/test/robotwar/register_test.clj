@@ -3,7 +3,7 @@
             [robotwar.register :refer :all]
             [robotwar.world :as world]))
 
-(def world (world/init-world [""]))
+(def world (world/init-world ["" ""]))
 (def robot-path [:robots 0])
 (def reg-path [:robots 0 :brain :registers])
 (def registers (get-in world reg-path))

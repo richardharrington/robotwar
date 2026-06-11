@@ -5,7 +5,7 @@
 (def multi-use-program
   "\n  START\n      0 TO A\n  TEST\n      IF A > 2 GOTO START\n      GOSUB INCREMENT\n      GOTO TEST\n      100 TO A\n  INCREMENT\n      A + 1 TO A\n      ENDSUB\n      200 TO A\n")
 
-(def initial-world (world/init-world [multi-use-program]))
+(def initial-world (world/init-world [multi-use-program multi-use-program]))
 (def combined-worlds (world/build-combined-worlds initial-world))
 
 (deftest brain-flow-test

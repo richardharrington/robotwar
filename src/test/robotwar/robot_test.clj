@@ -5,7 +5,7 @@
             [robotwar.register :as register]
             [robotwar.world :as world]))
 
-(def world (world/init-world [""]))
+(def world (world/init-world ["", ""]))
 
 (def x
   {:pos-key :pos-x

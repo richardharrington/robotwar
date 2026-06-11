@@ -333,3 +333,35 @@ The slice is complete when, with a fresh browser load:
 - Trying to start a battle with more than 5 valid programs is impossible from the UI (already gated), and the engine throws cleanly if called directly.
 
 All existing tests still pass; new tests cover the new gameplay rules.
+
+---
+
+## Addendum — Lessons from Step 1 execution
+
+### A.1 Existing tests break on the new `< 2` invariant (hidden prerequisite)
+
+The spec says Step 1 should "add a test asserting `init-world` throws on bad input." What it does *not* say is that **five existing test files** were already calling `init-world` with a single program, which became illegal once the `(< program-count 2)` check was added (it was already in the code, but the tests predated it or had never been run with it).
+
+Files that had to be updated:
+- `src/test/robotwar/brain_test.clj`
+- `src/test/robotwar/register_test.clj`
+- `src/main/robotwar/brain_test.cljs`
+- `src/main/robotwar/register_test.cljs`
+- `src/main/robotwar/robot_test.cljs`
+
+In each case, the fix was to pass a second (dummy) program string to `init-world` so the count was ≥ 2. The `brain_test` files additionally had to duplicate the same program source so robot-0's tick sequence remained unchanged (the assertions only inspect robot 0).
+
+**Recommendation for future agents:** Before running `npm test` after Step 1, search for all `init-world` calls in test files and verify they pass at least 2 programs. This is a prerequisite, not optional new-test coverage.
+
+### A.2 Several "add" directives in Step 1 were already implemented
+
+The Step 1 spec says to "add" three things that were in fact already present in the codebase at the time of execution:
+- `:alive? true` in `robot/init-robot`
+- `init-world` invariants for `< 2` and `> 5`
+- Constants (`MAX-BLAST-DAMAGE`, `BLAST-RADIUS`, `MAX-WALL-DAMAGE`, `MAX-COLLISION-DAMAGE`, `V-MAX`)
+
+This means the *actual* work of Step 1 was entirely test-related: fixing broken existing tests (§A.1) and writing new tests for the already-present invariants and alive-skipping logic. Future agents should not assume they need to write those code changes again; verify the file contents first.
+
+### A.3 `tick-combined-world` alive-skipping was already present
+
+The `alive-indices` filter in `tick-combined-world` was already implemented. The new test coverage for it (`world_test.clj` / `world_test.cljs`) should assert that a dead robot's state does not change across a tick while an alive robot's state does. Be careful with exact-value assertions on brain fields like `:instr-ptr` — they are integers, not floats, so an assertion like `(= 0.0 0)` will fail even though the values are semantically equal.

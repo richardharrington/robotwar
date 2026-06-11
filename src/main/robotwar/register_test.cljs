@@ -3,7 +3,7 @@
             [robotwar.register :refer [read-register write-register]]
             [robotwar.world :as world]))
 
-(def world (world/init-world [""]))
+(def world (world/init-world ["" ""]))
 (def reg-path [:robots 0 :brain :registers])
 (def registers (get-in world reg-path))
 (def get-registers #(get-in % reg-path))

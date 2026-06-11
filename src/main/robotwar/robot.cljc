@@ -25,6 +25,7 @@
    :pos-y       (:pos-y attributes)
    :aim         (:aim attributes)
    :damage      (:damage attributes)
+   :alive?      true
    :v-x         0.0
    :v-y         0.0
    :desired-v-x 0.0

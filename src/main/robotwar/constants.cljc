@@ -15,3 +15,10 @@
 
 ; Robot-radius is in meters.
 (def ROBOT-RADIUS 7.0)
+
+; Damage and collision constants (absolute meters, not dependent on ROBOT-RADIUS)
+(def MAX-BLAST-DAMAGE 30.0)
+(def BLAST-RADIUS 21.0)
+(def MAX-WALL-DAMAGE 15.0)
+(def MAX-COLLISION-DAMAGE 25.0)
+(def V-MAX 25.5)

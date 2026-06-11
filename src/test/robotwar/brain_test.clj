@@ -5,7 +5,8 @@
             [robotwar.register :as register]))
 
 (def initial-world 
-  (world/init-world [(slurp "public/programs/multi-use.rw")]))
+  (world/init-world [(slurp "public/programs/multi-use.rw")
+                     (slurp "public/programs/multi-use.rw")]))
 
 (def combined-worlds (world/build-combined-worlds initial-world))
 
