@@ -1,7 +1,9 @@
 (ns robotwar.world
-  (:require [robotwar.constants :refer [ROBOT-RANGE-X ROBOT-RANGE-Y]]
+  (:require [robotwar.constants :refer [ROBOT-RANGE-X ROBOT-RANGE-Y
+                                         MAX-BLAST-DAMAGE BLAST-RADIUS]]
             [robotwar.robot :as robot]
-            [robotwar.shell :as shell]))
+            [robotwar.shell :as shell]
+            [robotwar.physics :as physics]))
 
 (defn init-world
   "initialize all the variables for a robot world."
@@ -25,6 +27,14 @@
                                     :damage 100.0}))
                                programs))}))
 
+(defn- shell-damage
+  [shell robot]
+  (let [dx (- (:pos-x robot) (:pos-x shell))
+        dy (- (:pos-y robot) (:pos-y shell))
+        distance (physics/rw-sqrt (+ (* dx dx) (* dy dy)))
+        factor (max 0.0 (- 1.0 (/ distance BLAST-RADIUS)))]
+    (* MAX-BLAST-DAMAGE factor factor)))
+
 (defn tick-combined-world
   [starting-world]
   (let [alive-indices (vec (keep-indexed (fn [idx robot] 
@@ -37,10 +47,30 @@
                   alive-indices)
         ticked-shells (map shell/tick-shell shells)
         live-shells (remove :exploded ticked-shells)
-        exploded-shells (filter :exploded ticked-shells)]
-    ; TODO: make this a real let-binding, that determines
-    ; which robots were damaged.
-    (let [damaged-world ticked-robots-world]
-      (assoc damaged-world :shells live-shells))))
+        exploded-shells (filter :exploded ticked-shells)
+        damage-per-robot
+        (reduce (fn [acc shell]
+                  (reduce (fn [acc robot]
+                            (if (:alive? robot)
+                              (let [damage (shell-damage shell robot)]
+                                (if (> damage 0.0)
+                                  (update acc (:idx robot) (fnil + 0.0) damage)
+                                  acc))
+                              acc))
+                          acc
+                          (:robots ticked-robots-world)))
+                {}
+                exploded-shells)
+        damaged-world
+        (if (seq damage-per-robot)
+          (update ticked-robots-world :robots
+                  (fn [robots]
+                    (mapv (fn [robot]
+                            (if-let [damage (get damage-per-robot (:idx robot))]
+                              (update robot :damage - damage)
+                              robot))
+                          robots)))
+          ticked-robots-world)]
+    (assoc damaged-world :shells live-shells)))
 
 (def build-combined-worlds (partial iterate tick-combined-world))

@@ -20,6 +20,10 @@
   #?(:clj (Math/pow x y)
      :cljs (js/Math.pow x y)))
 
+(defn rw-sqrt [x]
+  #?(:clj (Math/sqrt x)
+     :cljs (js/Math.sqrt x)))
+
 ; precision functions
 
 (defn three-sigs [x]

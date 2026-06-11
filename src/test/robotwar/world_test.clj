@@ -1,6 +1,16 @@
 (ns robotwar.world-test
   (:require [clojure.test :refer :all]
-            [robotwar.world :refer :all]))
+            [robotwar.world :refer :all]
+            [robotwar.robot :as robot]
+            [robotwar.constants :refer [MAX-BLAST-DAMAGE BLAST-RADIUS]]))
+
+(defn- make-test-robot
+  [idx pos-x pos-y damage]
+  (robot/init-robot idx "" {:pos-x pos-x :pos-y pos-y :aim 0.0 :damage damage}))
+
+(defn- make-test-shell
+  [id pos-x pos-y]
+  {:id id :pos-x pos-x :pos-y pos-y :v-x 0.0 :v-y 0.0 :dest-x pos-x :dest-y pos-y :exploded false})
 
 (deftest init-world-valid-counts-test
   (testing "init-world succeeds with 2 to 5 programs"
@@ -40,3 +50,58 @@
       (is (= true (get-in next-world [:robots 1 :alive?])))
       (is (= 0 (get-in next-world [:robots 0 :brain :instr-ptr])))
       (is (= 1 (get-in next-world [:robots 1 :brain :instr-ptr]))))))
+
+(deftest shell-damage-direct-hit-test
+  (testing "a shell exploding directly on a robot deals MAX-BLAST-DAMAGE"
+    (let [world {:shells [(make-test-shell 0 100.0 100.0)]
+                 :robots [(make-test-robot 0 100.0 100.0 100.0)]
+                 :next-shell-id 1}
+          next-world (tick-combined-world world)]
+      (is (= 70.0 (get-in next-world [:robots 0 :damage]))))))
+
+(defn- approx= [a b epsilon]
+  (< (Math/abs (- a b)) epsilon))
+
+(deftest shell-damage-at-distance-test
+  (testing "shell damage follows quadratic falloff curve"
+    (let [shell (make-test-shell 0 100.0 100.0)
+          test-case (fn [distance expected-damage]
+                      (let [robot (make-test-robot 0 (+ 100.0 distance) 100.0 100.0)
+                            world {:shells [shell] :robots [robot] :next-shell-id 1}
+                            next-world (tick-combined-world world)]
+                        (is (approx= (- 100.0 expected-damage)
+                                     (get-in next-world [:robots 0 :damage])
+                                     1e-10)
+                            (str "distance=" distance))))]
+      (test-case 0.0 MAX-BLAST-DAMAGE)
+      (test-case 7.0 (* MAX-BLAST-DAMAGE (/ 4.0 9.0)))
+      (test-case 14.0 (* MAX-BLAST-DAMAGE (/ 1.0 9.0)))
+      (test-case 21.0 0.0)
+      (test-case 25.0 0.0))))
+
+(deftest shell-damage-stacking-test
+  (testing "multiple shells exploding in the same tick stack damage additively"
+    (let [world {:shells [(make-test-shell 0 100.0 100.0)
+                         (make-test-shell 1 100.0 100.0)]
+                 :robots [(make-test-robot 0 100.0 100.0 100.0)]
+                 :next-shell-id 2}
+          next-world (tick-combined-world world)]
+      (is (= 40.0 (get-in next-world [:robots 0 :damage]))))))
+
+(deftest shell-damage-self-damage-test
+  (testing "a robot can be damaged by its own shell"
+    (let [world {:shells [(make-test-shell 0 100.0 100.0)]
+                 :robots [(make-test-robot 0 100.0 100.0 100.0)]
+                 :next-shell-id 1}
+          next-world (tick-combined-world world)]
+      (is (= 70.0 (get-in next-world [:robots 0 :damage]))))))
+
+(deftest shell-damage-skips-dead-robots-test
+  (testing "dead robots are not damaged by shell explosions"
+    (let [world {:shells [(make-test-shell 0 100.0 100.0)]
+                 :robots [(assoc (make-test-robot 0 200.0 200.0 100.0) :alive? false)
+                          (make-test-robot 1 100.0 100.0 100.0)]
+                 :next-shell-id 1}
+          next-world (tick-combined-world world)]
+      (is (= 100.0 (get-in next-world [:robots 0 :damage])))
+      (is (= 70.0 (get-in next-world [:robots 1 :damage]))))))

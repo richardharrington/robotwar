@@ -365,3 +365,42 @@ This means the *actual* work of Step 1 was entirely test-related: fixing broken 
 ### A.3 `tick-combined-world` alive-skipping was already present
 
 The `alive-indices` filter in `tick-combined-world` was already implemented. The new test coverage for it (`world_test.clj` / `world_test.cljs`) should assert that a dead robot's state does not change across a tick while an alive robot's state does. Be careful with exact-value assertions on brain fields like `:instr-ptr` — they are integers, not floats, so an assertion like `(= 0.0 0)` will fail even though the values are semantically equal.
+
+---
+
+## Addendum — Lessons from Step 2 execution
+
+### A.4 `physics.cljc` did not have `rw-sqrt`
+
+The `tick-combined-world` damage formula needs Euclidean distance (`sqrt(dx² + dy²)`), but `physics.cljc` only had `rw-pow`. A cross-platform `rw-sqrt` had to be added (using `Math/sqrt` / `js/Math.sqrt`). Step 5 (circle-circle collision) will also need it for distance checks.
+
+**Recommendation for future agents:** Check `physics.cljc` before assuming a math helper exists. Add any missing cross-platform wrappers there rather than inlining JVM-only or JS-only math.
+
+### A.5 Float damage tests need an `approx=` helper
+
+The quadratic falloff `30 * max(0, 1 - d/21)²` produces float values that can differ in the last bit between the test's expected calculation and the engine's actual calculation. Example: at `d = 7.0`, the expected value `100 - 30*(14/21)²` computed in the test produced `86.66666666666667`, but the engine's result was `86.66666666666666`. The difference is `~1e-14`, but `(= ...)` fails.
+
+**Recommendation for future agents:** Define an `approx=` helper (e.g., `(< (Math/abs (- a b)) epsilon)`) and use it for all damage-curve assertions in Steps 4 and 5 as well. This applies to wall-damage and collision-damage formulas, which are also quadratic.
+
+### A.6 Exploded shells already have their final coordinates in `pos-x` / `pos-y`
+
+When `tick-shell` marks a shell as `:exploded true`, it simultaneously snaps `pos-x` and `pos-y` to `dest-x` and `dest-y`. This means the Step 2 damage computation can read `(:pos-x shell)` directly — there is no need to look at `dest-x`. The spec §5.6 mentions this, but it is easy to miss because the shell map still contains both keys.
+
+**Recommendation for future agents:** If you refactor `tick-shell`, preserve this invariant. If you need the explosion point for any other feature (e.g., canvas particle origin), `(:pos-x shell)` is sufficient once `:exploded` is true.
+
+### A.7 Shell damage must be accumulated per-robot before applying
+
+Multiple shells can explode in the same tick and hit the same robot. The natural nested-loop approach (reduce over shells, then over robots) would repeatedly update a single robot's damage if applied inside the inner loop. The clean pattern is:
+
+1. Build a `damage-per-robot` accumulator map (`idx -> total-damage`).
+2. Apply the map to all robots in one pass after the loops finish.
+
+This keeps the tick atomic (all damage from the same tick is applied simultaneously) and avoids ordering-dependent results.
+
+**Recommendation for future agents:** Use the same accumulator pattern for Step 4 (wall damage) and Step 5 (collision damage), even though those are applied per-pair rather than per-shell. The principle is: compute all deltas first, then apply them in one pass.
+
+### A.8 No `shell_test.clj` / `shell_test.cljs` existed — shell behavior is tested at the `world` level
+
+There were no shell-specific test files before Step 2. Shell behavior is best tested in `world_test.clj` / `world_test.cljs` because it requires both shells and robots to interact in a single `tick-combined-world` call. The spec §4.3 mentions creating `shell_test.clj` if needed, but in practice the world-level tests cover the behavior more directly.
+
+**Recommendation for future agents:** Add wall-damage tests to `robot_test.clj` / `robot_test.cljs` and collision-damage tests to `world_test.clj` / `world_test.cljs`, matching the existing pattern where the test file corresponds to the namespace that orchestrates the interaction.
