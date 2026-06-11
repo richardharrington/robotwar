@@ -99,7 +99,9 @@
       (canvas/animate-world! (or previous-world world) next-world)
       (when (not= (:next-shell-id (or previous-world world)) (:next-shell-id next-world))
         (play-shell-release!))
-      (swap! state assoc :raf-id (js/requestAnimationFrame loop-step)))))
+      (if (:result next-world)
+        (swap! state assoc :running? false)
+        (swap! state assoc :raf-id (js/requestAnimationFrame loop-step)))))
 
 (defn parse-program-names [value]
   (->> (str/split (or value "") #"[\s,]+")
@@ -134,15 +136,16 @@
                selected-names)))
         (.then (fn [programs]
                  (let [programs-clj (js->clj programs)
-                       initial-world (world/init-world programs-clj)]
+                       initial-world (world/init-world programs-clj)
+                       world-with-names (assoc initial-world :program-names (vec selected-names))]
                    (swap! state assoc
-                          :world initial-world
-                          :previous-world initial-world
+                          :world world-with-names
+                          :previous-world world-with-names
                           :tick-count 0
                           :accumulator-ms 0
                           :last-frame-time nil
                           :running? true)
-                   (canvas/animate-world! initial-world initial-world)
+                   (canvas/animate-world! world-with-names world-with-names)
                    (swap! state assoc :raf-id (js/requestAnimationFrame loop-step))
                    (.log js/console "CLJS game loop started."))))
         (.catch (fn [err]

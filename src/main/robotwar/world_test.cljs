@@ -20,3 +20,24 @@
           world {:shells {0 shell} :robots [robot] :next-shell-id 1}
           next-world (tick-combined-world world)]
       (is (= 70.0 (get-in next-world [:robots 0 :damage]))))))
+
+(deftest world-death-victory-smoke-test
+  (testing "death and victory detection in CLJS"
+    (let [robot0 (robot/init-robot 0 "" {:pos-x 100.0 :pos-y 100.0 :aim 0.0 :damage 0.0})
+          robot1 (robot/init-robot 1 "" {:pos-x 200.0 :pos-y 200.0 :aim 0.0 :damage 100.0})
+          world {:shells {} :robots [robot0 robot1] :next-shell-id 0}
+          next-world (tick-combined-world world)]
+      (is (= false (get-in next-world [:robots 0 :alive?])))
+      (is (= true (get-in next-world [:robots 1 :alive?])))
+      (is (= {:winner 1} (:result next-world))))))
+
+(deftest world-tie-smoke-test
+  (testing "tie detection with just-died indices in CLJS"
+    (let [robot0 (robot/init-robot 0 "" {:pos-x 100.0 :pos-y 100.0 :aim 0.0 :damage 0.0})
+          robot1 (robot/init-robot 1 "" {:pos-x 200.0 :pos-y 200.0 :aim 0.0 :damage 0.0})
+          world {:shells {} :robots [robot0 robot1] :next-shell-id 0}
+          next-world (tick-combined-world world)
+          result (:result next-world)]
+      (is (nil? (:winner result)))
+      (is (= {:game-over? true} result))
+      (is (= #{0 1} (set (:just-died next-world)))))))

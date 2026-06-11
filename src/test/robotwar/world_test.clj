@@ -105,3 +105,53 @@
           next-world (tick-combined-world world)]
       (is (= 100.0 (get-in next-world [:robots 0 :damage])))
       (is (= 70.0 (get-in next-world [:robots 1 :damage]))))))
+
+(deftest robot-death-threshold-test
+  (testing "robot with damage exactly 0 is marked dead after tick"
+    (let [world {:shells {} :robots [(make-test-robot 0 100.0 100.0 0.0)
+                                     (make-test-robot 1 200.0 200.0 100.0)]
+                 :next-shell-id 0}
+          next-world (tick-combined-world world)]
+      (is (= false (get-in next-world [:robots 0 :alive?])))
+      (is (= true (get-in next-world [:robots 1 :alive?])))))
+
+  (testing "robot with negative damage is marked dead after tick"
+    (let [world {:shells {} :robots [(make-test-robot 0 100.0 100.0 -5.0)
+                                     (make-test-robot 1 200.0 200.0 100.0)]
+                 :next-shell-id 0}
+          next-world (tick-combined-world world)]
+      (is (= false (get-in next-world [:robots 0 :alive?])))
+      (is (= true (get-in next-world [:robots 1 :alive?])))))
+
+  (testing "robot with positive damage stays alive after tick"
+    (let [world {:shells {} :robots [(make-test-robot 0 100.0 100.0 1.0)
+                                     (make-test-robot 1 200.0 200.0 100.0)]
+                 :next-shell-id 0}
+          next-world (tick-combined-world world)]
+      (is (= true (get-in next-world [:robots 0 :alive?])))
+      (is (= true (get-in next-world [:robots 1 :alive?]))))))
+
+(deftest victory-result-test
+  (testing "one alive robot produces winner result"
+    (let [world {:shells {} :robots [(make-test-robot 0 100.0 100.0 0.0)
+                                     (make-test-robot 1 200.0 200.0 100.0)]
+                 :next-shell-id 0}
+          next-world (tick-combined-world world)]
+      (is (= {:winner 1} (:result next-world)))))
+
+  (testing "zero alive robots produces tie result with just-died indices"
+    (let [world {:shells {} :robots [(make-test-robot 0 100.0 100.0 0.0)
+                                     (make-test-robot 1 200.0 200.0 0.0)]
+                 :next-shell-id 0}
+          next-world (tick-combined-world world)
+          result (:result next-world)]
+      (is (nil? (:winner result)))
+      (is (= {:game-over? true} result))
+      (is (= #{0 1} (set (:just-died next-world))))))
+
+  (testing "multiple alive robots produces nil result"
+    (let [world {:shells {} :robots [(make-test-robot 0 100.0 100.0 100.0)
+                                     (make-test-robot 1 200.0 200.0 100.0)]
+                 :next-shell-id 0}
+          next-world (tick-combined-world world)]
+      (is (nil? (:result next-world))))))

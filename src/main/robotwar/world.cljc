@@ -73,7 +73,25 @@
                               (update robot :damage - damage)
                               robot))
                           robots)))
-          ticked-robots-world)]
-    (assoc damaged-world :shells live-shells)))
+          ticked-robots-world)
+        pre-death-alive-idxs (set (keep-indexed (fn [idx robot] (when (:alive? robot) idx))
+                                                (:robots damaged-world)))
+        dead-marked-world
+        (let [robots (:robots damaged-world)
+              new-robots (mapv (fn [robot]
+                                 (if (<= (:damage robot) 0.0)
+                                   (assoc robot :alive? false)
+                                   robot))
+                               robots)]
+          (assoc damaged-world :robots new-robots))
+        post-death-alive-idxs (set (keep-indexed (fn [idx robot] (when (:alive? robot) idx))
+                                                 (:robots dead-marked-world)))
+        just-died-idxs (filterv #(not (post-death-alive-idxs %)) pre-death-alive-idxs)
+        alive-robots (filterv :alive? (:robots dead-marked-world))
+        result (cond
+                 (= 1 (count alive-robots)) {:winner (:idx (first alive-robots))}
+                 (zero? (count alive-robots)) {:game-over? true}
+                 :else nil)]
+    (assoc dead-marked-world :result result :just-died just-died-idxs :shells live-shells)))
 
 (def build-combined-worlds (partial iterate tick-combined-world))

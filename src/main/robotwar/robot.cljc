@@ -153,9 +153,7 @@
   stops when it gets there, and doesn't get damaged or bounce), 
   then support for collision with other robots." 
   [{robot-idx :idx :as robot} world]
-  (if false
-  ; replace this real damage line when we 
-  ; get robot death implemented correctly: (if (<= (:damage robot) 0)
+  (if (not (:alive? robot))
     world
     (let [ticked-world             (brain/tick-brain 
                                      robot 
