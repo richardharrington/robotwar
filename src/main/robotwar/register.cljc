@@ -102,7 +102,7 @@
                                                             (path-to-robot-field robot-idx :shot-timer)
                                                             GAME-SECONDS-PER-SHOT)]
                                               (assoc world-with-new-shot-timer
-                                                     :shells (merge shells (shell/init-shell pos-x pos-y aim next-shell-id data))
+                                                     :shells (assoc shells next-shell-id (shell/init-shell pos-x pos-y aim next-shell-id data))
                                                      :next-shell-id (inc next-shell-id))))))}))
    :cljs
    (do
@@ -136,7 +136,7 @@
                                            (path-to-robot-field (:robot-idx this) :shot-timer)
                                            GAME-SECONDS-PER-SHOT)]
                              (assoc world-with-new-shot-timer
-                                    :shells (merge shells (shell/init-shell pos-x pos-y aim next-shell-id data))
+                                    :shells (assoc shells next-shell-id (shell/init-shell pos-x pos-y aim next-shell-id data))
                                     :next-shell-id (inc next-shell-id)))))))))
 
 (defn get-target-register

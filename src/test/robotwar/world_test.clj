@@ -53,7 +53,7 @@
 
 (deftest shell-damage-direct-hit-test
   (testing "a shell exploding directly on a robot deals MAX-BLAST-DAMAGE"
-    (let [world {:shells [(make-test-shell 0 100.0 100.0)]
+    (let [world {:shells {0 (make-test-shell 0 100.0 100.0)}
                  :robots [(make-test-robot 0 100.0 100.0 100.0)]
                  :next-shell-id 1}
           next-world (tick-combined-world world)]
@@ -67,7 +67,7 @@
     (let [shell (make-test-shell 0 100.0 100.0)
           test-case (fn [distance expected-damage]
                       (let [robot (make-test-robot 0 (+ 100.0 distance) 100.0 100.0)
-                            world {:shells [shell] :robots [robot] :next-shell-id 1}
+                            world {:shells {0 shell} :robots [robot] :next-shell-id 1}
                             next-world (tick-combined-world world)]
                         (is (approx= (- 100.0 expected-damage)
                                      (get-in next-world [:robots 0 :damage])
@@ -81,8 +81,8 @@
 
 (deftest shell-damage-stacking-test
   (testing "multiple shells exploding in the same tick stack damage additively"
-    (let [world {:shells [(make-test-shell 0 100.0 100.0)
-                         (make-test-shell 1 100.0 100.0)]
+    (let [world {:shells {0 (make-test-shell 0 100.0 100.0)
+                          1 (make-test-shell 1 100.0 100.0)}
                  :robots [(make-test-robot 0 100.0 100.0 100.0)]
                  :next-shell-id 2}
           next-world (tick-combined-world world)]
@@ -90,7 +90,7 @@
 
 (deftest shell-damage-self-damage-test
   (testing "a robot can be damaged by its own shell"
-    (let [world {:shells [(make-test-shell 0 100.0 100.0)]
+    (let [world {:shells {0 (make-test-shell 0 100.0 100.0)}
                  :robots [(make-test-robot 0 100.0 100.0 100.0)]
                  :next-shell-id 1}
           next-world (tick-combined-world world)]
@@ -98,7 +98,7 @@
 
 (deftest shell-damage-skips-dead-robots-test
   (testing "dead robots are not damaged by shell explosions"
-    (let [world {:shells [(make-test-shell 0 100.0 100.0)]
+    (let [world {:shells {0 (make-test-shell 0 100.0 100.0)}
                  :robots [(assoc (make-test-robot 0 200.0 200.0 100.0) :alive? false)
                           (make-test-robot 1 100.0 100.0 100.0)]
                  :next-shell-id 1}

@@ -45,9 +45,12 @@
                     (robot/tick-robot (robots robot-idx) world))
                   starting-world
                   alive-indices)
-        ticked-shells (map shell/tick-shell shells)
-        live-shells (remove :exploded ticked-shells)
-        exploded-shells (filter :exploded ticked-shells)
+        ticked-shells (into {} (for [[id shell] shells
+                                   :let [ticked (shell/tick-shell shell)]
+                                   :when ticked]
+                               [id ticked]))
+        live-shells (into {} (remove (fn [[_ s]] (:exploded s)) ticked-shells))
+        exploded-shells (vals (filter (fn [[_ s]] (:exploded s)) ticked-shells))
         damage-per-robot
         (reduce (fn [acc shell]
                   (reduce (fn [acc robot]

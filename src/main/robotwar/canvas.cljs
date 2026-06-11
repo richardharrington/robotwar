@@ -73,16 +73,11 @@
                            (offset-y (:pos-y shell))
                            (* shell-display-radius 10)
                            shell-color))
-            (shell-map [shells]
-              (cond
-                (map? shells) shells
-                (sequential? shells) (into {} (keep (fn [s] (when (and (map? s) (contains? s :id)) [(:id s) s])) shells))
-                :else {}))]
       {:animate-world
        (fn [previous-world current-world]
          (.clearRect ctx 0 0 width height)
-         (let [current-shells (shell-map (:shells current-world))
-               previous-shells (shell-map (:shells previous-world))]
+         (let [current-shells (:shells current-world)
+               previous-shells (:shells previous-world)]
            (doseq [[id shell] previous-shells]
              (if (contains? current-shells id)
                (draw-shell shell)

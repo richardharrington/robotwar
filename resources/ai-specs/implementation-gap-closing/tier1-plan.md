@@ -404,3 +404,18 @@ This keeps the tick atomic (all damage from the same tick is applied simultaneou
 There were no shell-specific test files before Step 2. Shell behavior is best tested in `world_test.clj` / `world_test.cljs` because it requires both shells and robots to interact in a single `tick-combined-world` call. The spec §4.3 mentions creating `shell_test.clj` if needed, but in practice the world-level tests cover the behavior more directly.
 
 **Recommendation for future agents:** Add wall-damage tests to `robot_test.clj` / `robot_test.cljs` and collision-damage tests to `world_test.clj` / `world_test.cljs`, matching the existing pattern where the test file corresponds to the namespace that orchestrates the interaction.
+
+### A.9 Shells were stored as a heterogeneous sequence, not a map — refactored to `{id shell}`
+
+Before Step 2, `shells` was `{}` at init, then became a `()` or `({:id 0 ...})` sequence after the first tick. When a shot fired, `register.cljc` used `(merge shells (shell/init-shell ...))` — which in ClojureScript prepends a map onto a list via `conj`, an implementation detail that happens to work but is non-idiomatic and fragile.
+
+Worse, there was a **latent tick-0 bug**: if a shell fired on the very first tick (when `shells` was still `{}`), `merge` on two maps would flatten the shell into the top-level map, breaking `tick-shell`'s destructuring. No existing program hit this, but it was a real crash waiting to happen.
+
+The canvas had a `shell-map` helper that defensively converted this runtime type (`map?` → `sequential?` → `:else {}`) back into a map for rendering. This was a code smell.
+
+**What was changed:**
+1. `register.cljc` (both `:clj` and `:cljs` branches): `(merge shells (shell/init-shell ...))` → `(assoc shells next-shell-id (shell/init-shell ...))`
+2. `world.cljc`: shell iteration changed from `map`/`filter`/`remove` on a sequence to `for`/`into`/`vals` on a map
+3. `canvas.cljs`: deleted the `shell-map` helper; canvas reads `(:shells world)` directly
+
+**Recommendation for future agents:** `shells` is now a proper map throughout the entire lifecycle. Use `assoc` to add, `for`/`into` to iterate/filter, and `vals` to extract a collection. Do not reintroduce sequence-based storage or `merge` for shell insertion. If you touch shell code in later steps, verify the type stays a map in all code paths.
