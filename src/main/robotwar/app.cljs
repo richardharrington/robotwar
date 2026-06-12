@@ -2,6 +2,7 @@
   (:require [clojure.string :as str]
             [robotwar.canvas :as canvas]
             [robotwar.constants :refer [*GAME-SECONDS-PER-TICK*]]
+            [robotwar.legend :as legend]
             [robotwar.world :as world]))
 
 (def manifest-url "/programs/programs-live.json")
@@ -97,6 +98,7 @@
              :accumulator-ms next-accumulator-ms
              :last-frame-time timestamp)
       (canvas/animate-world! (or previous-world world) next-world)
+      (legend/update-legend! next-world)
       (when (not= (:next-shell-id (or previous-world world)) (:next-shell-id next-world))
         (play-shell-release!))
       (if (:result next-world)
@@ -121,7 +123,9 @@
   (js/setTimeout
    (fn []
      (when-let [canvas-el (.getElementById js/document "canvas")]
-       (set! (.. canvas-el -style -opacity) "1")))
+       (set! (.. canvas-el -style -opacity) "1"))
+     (when-let [legend-el (.getElementById js/document "legend")]
+       (set! (.. legend-el -style -opacity) "1")))
    500)
   (.blur input-el))
 
@@ -138,6 +142,7 @@
                  (let [programs-clj (js->clj programs)
                        initial-world (world/init-world programs-clj)
                        world-with-names (assoc initial-world :program-names (vec selected-names))]
+                   (legend/build-legend! (vec selected-names))
                    (swap! state assoc
                           :world world-with-names
                           :previous-world world-with-names

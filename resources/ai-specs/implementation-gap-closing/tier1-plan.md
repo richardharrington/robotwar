@@ -250,7 +250,7 @@ This step replaces `collide-two-robots`, `collide-all-robots`, and the `(dec dam
   - Centered text. Winner case: program name in winner's color. Tie case: "TIE" in white.
 - **Restart UX** in `app.cljs`:
   - On canvas click (or Enter keypress) while a victory overlay is showing: reverse the start-transition. Set canvas opacity to 0, restore the instruction-box height (to whatever its original CSS value was — store it before collapsing, or use CSS class toggling instead).
-  - Also fade out the robot-status legend (Step 3.5) along with the canvas and clear its rows; the next `start-game` rebuilds it for the new lineup.
+  - Also fade out the robot-status legend (Step 3.5) along with the canvas. **Note (from Step 3.5 execution):** the legend's fade-in is an *inline* style — `start-transition!`'s 500ms `setTimeout` sets `#legend`'s `style.opacity = "1"` alongside the canvas — so the restart must reset the same inline property to `"0"` (a CSS class toggle alone won't override it). Rows do not need to be cleared on restart: `legend/build-legend!` clears the container as its first act, so the next `start-game` rebuilds the roster from scratch regardless.
   - Clear `:world`, `:tick-count`, etc. in the app state.
   - User can now type a new lineup and press Enter as usual.
 - **Input validation** in `app.cljs:on-program-input-keydown`:
@@ -448,3 +448,20 @@ The canvas had a `shell-map` helper that defensively converted this runtime type
 3. `canvas.cljs`: deleted the `shell-map` helper; canvas reads `(:shells world)` directly
 
 **Recommendation for future agents:** `shells` is now a proper map throughout the entire lifecycle. Use `assoc` to add, `for`/`into` to iterate/filter, and `vals` to extract a collection. Do not reintroduce sequence-based storage or `merge` for shell insertion. If you touch shell code in later steps, verify the type stays a map in all code paths.
+
+---
+
+## Addendum — Lessons from Step 3.5 execution
+
+### A.10 TACTICAL choices made
+
+- **Fade-in:** reused the existing `setTimeout` in `start-transition!` (option A from the spec's TACTICAL note). The same 500ms callback that sets the canvas's inline `opacity` to `"1"` now does the same for `#legend`; the CSS transition on `#legend` handles the animation. **Consequence for Step 7:** because this is an inline style, restart must reset `#legend`'s inline `opacity` to `"0"` — see the note added to Step 7.
+- **Styling:** no border on the legend (the canvas keeps its green border as the only frame). 18px Data 70 in the standard green (`#3ef74e`), 18px color swatches, 12px row spacing, health column fixed at 60px right-aligned. Dead rows get `.legend-row.dead { opacity: 0.35 }`. Layout is `.arena-row` (flex, 20px gap) with `.centerer` widened to 850px.
+
+### A.11 Row-element refs live in a `defonce` atom
+
+`legend.cljs` stores `{:row el :health el}` refs per robot in a `defonce rows` atom, populated by `build-legend!` and consumed by `update-legend!` (which `map`s `(:robots world)` against it positionally — robot `:idx` order and row order are both lineup order, so no lookup is needed). `build-legend!` clears the container (`innerHTML = ""`) and resets the atom as its first act, so repeated `start-game` calls cannot leak stale rows. If Step 7's restart wants to visually empty the legend before the next battle, it can simply not bother — the rebuild handles it — or call `build-legend!` with an empty vector.
+
+### A.12 Verification approach (no test code)
+
+As specified, no engine code was touched and no automated tests were added. Manual verification per §4.4 was done with a headless browser driving the real page: duplicate-name lineup (`shooter, shooter, mover`) confirmed distinct swatch colors matching the arena; health counted down per frame; the dead robot's row dimmed to 0.35 opacity at `0%` and never went negative (the `max 0` clamp held against overkill); a second `start-game` with a different lineup rebuilt the legend with no stale rows. One observation for later steps: two `shooter` robots stalemate indefinitely until radar (Step 6) exists, so end-of-battle legend freezing under the victory overlay could not be observed yet — re-check it during Step 7 verification.

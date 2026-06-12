@@ -23,7 +23,49 @@ p  {
 }
 .centerer {
     margin: auto;
-    width: 650px;
+    width: 850px;
+}
+.arena-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
+}
+#legend {
+    flex: 1;
+    min-width: 0;
+    padding-top: 10px;
+    color: #3ef74e;
+    font-size: 18px;
+    opacity: 0;
+    -moz-transition: opacity 0.5s ease;
+    -webkit-transition: opacity 0.5s ease;
+    transition: opacity 0.5s ease;
+}
+.legend-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+.legend-row.dead {
+    opacity: 0.35;
+}
+.legend-swatch {
+    flex: none;
+    width: 18px;
+    height: 18px;
+}
+.legend-name {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.legend-health {
+    flex: none;
+    width: 60px;
+    text-align: right;
 }
 .instruction-box {
     height: 95px;
