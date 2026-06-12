@@ -73,7 +73,7 @@
               (fill-circle (offset-x (:pos-x shell))
                            (offset-y (:pos-y shell))
                            (* shell-display-radius 10)
-                           shell-color))
+                           shell-color))]
       {:animate-world
        (fn [previous-world current-world]
          (.clearRect ctx 0 0 width height)

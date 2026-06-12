@@ -101,7 +101,7 @@
         (play-shell-release!))
       (if (:result next-world)
         (swap! state assoc :running? false)
-        (swap! state assoc :raf-id (js/requestAnimationFrame loop-step)))))
+        (swap! state assoc :raf-id (js/requestAnimationFrame loop-step))))))
 
 (defn parse-program-names [value]
   (->> (str/split (or value "") #"[\s,]+")
