@@ -22,6 +22,7 @@ Design decisions captured here are the outcome of a deliberate grilling-style de
 - **Battle termination and winner detection** (README Category 1 #6)
 - **5-robot upper / 2-robot lower invariant** in the engine boundary
 - **Canvas-text victory overlay** and **restart UX** (reverse the start-transition to restore the input form)
+- **Robot-status legend** — DOM sidebar to the right of the arena listing each robot's color square, program name, and health percentage (pulled forward from later polish because it aids development; added as Step 3.5)
 
 ### 1.2 Out of scope (deferred to Tier 2)
 
@@ -159,6 +160,32 @@ The TODO at `world.cljc:31` becomes real code. After shells tick:
 
 **Tests:** test the death threshold (damage exactly 0 → dead; damage > 0 → alive). Test victory result computation for various alive counts.
 
+### Step 3.5 — Robot-status legend (DOM sidebar)
+
+**Files:** `public/index.html`, `public/css/main.css`, `src/main/robotwar/legend.cljs` (new), `app.cljs`
+
+A development aid pulled forward from later polish: a DOM sidebar to the right of the battle arena listing every robot in the lineup with a color square, its program name, and its current health percentage. Design decisions below are the outcome of a grilling-style design conversation (2026-06-11) and are locked like everything else in §2.
+
+**Design decisions:**
+
+- **Substrate: DOM, not canvas.** An HTML sidebar updated from CLJS. Real text rendering, CSS styling (Data 70 font for free), and a natural foundation for Tier 2's DOM-overlay work. The §1.2 deferral of the "DOM-overlay victory display" to Tier 2 still stands — that item is specifically about the victory display.
+- **Colors: no assignment changes.** Robot color is already deterministic and unique per robot: `(nth canvas/robot-colors idx)` over a fixed 5-distinct-color palette (`canvas.cljs:5`), and the engine now enforces 2–5 robots. Robots with duplicate names therefore already have different colors. The legend reuses the same `idx → color` mapping and is guaranteed to match the arena. Do not relocate the palette; `legend.cljs` requires `robotwar.canvas` and reads `robot-colors` directly.
+- **Row content + order.** One row per robot, in lineup (idx) order — same order the colors are assigned in. Each row: a small square filled with the robot's color, the program name (from the world's `:program-names` vector, which `app.cljs:start-game` already stores idx-aligned), and the health percentage **right-aligned in a fixed column** so the numbers line up vertically as they change. Duplicate names appear twice; the color square disambiguates.
+- **Health number.** `(max 0 (Math.round damage))` rendered as e.g. `87%`. The rounding intentionally matches the DAMAGE register read semantics (`rw-round`, `register.cljc:42-44`) so the legend shows what the robot's own brain sees; the clamp at 0 exists only because an overkilled robot's internal damage can go negative (e.g. `-13`), and a dead row should read `0%`.
+- **Dead robots: row stays, dimmed, at 0%.** Toggle a CSS class (e.g. reduced opacity) when `:alive?` is false. The roster stays stable for the whole battle; rows are never removed or reordered.
+- **No hit-flash.** The arena flashes a robot white on damage frames; the legend deliberately does not mirror this. The number dropping is the feedback.
+- **Update cadence: every frame, no diffing.** Wherever `loop-step` calls `canvas/animate-world!`, also call `legend/update-legend!` with the new world. It overwrites ≤5 rows' text content and dead-class state per animation frame — trivially cheap, no bookkeeping, can't drift.
+- **Lifecycle.** The sidebar container is empty and invisible (opacity 0) at page load. `start-game` builds the rows from the selected program names (`legend/build-legend!`) and the container fades in alongside the canvas's existing 0.5s opacity transition. Every `start-game` rebuilds the rows from scratch. When the game ends, the legend simply freezes at its final values (last frame's update) and stays visible under the victory overlay until restart (see Step 7).
+- **Layout: flex row, widened centerer.** Wrap the canvas and the legend in a flex container and widen `.centerer` (≈850px) so the pair is centered as a unit. The header/instructions span the new width.
+
+**Implementation sketch:** new `robotwar.legend` namespace with two functions — `build-legend!` (clear the container, create one row per program name with the color square inline-styled from `canvas/robot-colors`) and `update-legend!` (per robot: set the health text, toggle the dead class). `app.cljs` calls `build-legend!` in `start-game` after constructing `world-with-names`, and `update-legend!` in `loop-step` next to `animate-world!`.
+
+**TACTICAL:** exact sidebar styling — width, font size, row spacing, whether it gets a green border like the canvas — is the implementer's call; stay within the existing Data 70 / green-on-black scheme.
+
+**TACTICAL:** whether the fade-in reuses the `setTimeout` in `start-transition!` or gets its own CSS transition triggered the same way — implementer's call.
+
+**Tests:** frontend-only; no engine code is touched. Verify manually per §4.4: legend appears with the battle; row colors/names match the arena robots (test with a duplicate-name lineup, e.g. `sniper, sniper, mover`); health counts down as robots take damage; a dead robot's row dims and reads 0%; a second battle rebuilds the legend with the new lineup.
+
 ### Step 4 — Wall blocking + damage
 
 **Files:** `robot.cljc`, `constants.cljc`
@@ -223,6 +250,7 @@ This step replaces `collide-two-robots`, `collide-all-robots`, and the `(dec dam
   - Centered text. Winner case: program name in winner's color. Tie case: "TIE" in white.
 - **Restart UX** in `app.cljs`:
   - On canvas click (or Enter keypress) while a victory overlay is showing: reverse the start-transition. Set canvas opacity to 0, restore the instruction-box height (to whatever its original CSS value was — store it before collapsing, or use CSS class toggling instead).
+  - Also fade out the robot-status legend (Step 3.5) along with the canvas and clear its rows; the next `start-game` rebuilds it for the new lineup.
   - Clear `:world`, `:tick-count`, etc. in the app state.
   - User can now type a new lineup and press Enter as usual.
 - **Input validation** in `app.cljs:on-program-input-keydown`:
@@ -324,6 +352,7 @@ The slice is complete when, with a fresh browser load:
 - A user types `random, mover, shooter` (or any other valid 2-5-robot lineup) and presses Enter.
 - The game runs. Robots use radar to find each other (visible from their AIM rotations + shooting behavior).
 - Shells explode. Robots within blast radius take damage.
+- A legend to the right of the arena lists each robot with a color square and name matching the arena (duplicate names get distinct colors), and a health percentage that counts down as the robot takes damage. Dead robots' rows dim to 0% but stay listed.
 - Robots that take enough damage stop rendering and stop acting.
 - Robots that run into walls stop at the wall and take damage proportional to impact speed.
 - Robots that run into each other take angle-scaled damage.
