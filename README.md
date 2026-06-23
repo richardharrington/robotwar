@@ -151,88 +151,58 @@ MOVEY
     ENDSUB
 ```
 
-## Gaps in this implementation
+## Implementation gaps
 
-This project is a partial reimplementation of the original Apple IIc game from 1982.
+This project is a partial reimplementation of the original Apple IIc game from 1982. The [original manual](resources/manual.txt) is comprehensive but leaves some constants and behaviors unspecified. Gaps fall into two categories:
 
-The [original manual](resources/manual.txt) is pretty exhaustive and _almost_ comprises a technical description of how to reimplement the game so complete that you could run robot programs written for the original and they'd have the same behavior, but there are some maddening exceptions (one example: after the cannons fire, they undergo a "cooldown period" whose duration is unspecified). So the gaps between the original and this one fall into two categories:
+1. **Features clearly defined in the manual but not yet implemented**
+2. **Features the manual leaves vague** — requiring arbitrary decisions about constants and behavior
 
-1. Features well-specified in the original manual that we just haven't implemented yet in this version
+### Already implemented
 
-2. Features not well-specified in the original manual, that we'd  have to just make a guess or a decision about.
+- 256×256 arena, robot physics (position/aim/velocity), shell trajectories with timed fuses
+- Assembler/VM: full instruction set, label resolution, call stack, accumulator semantics
+- Registers: A–W/Z storage, X/Y read-only, AIM/SPEEDX/SPEEDY/DAMAGE, SHOT with cooldown, INDEX/DATA, RANDOM
+- Combat: shell explosions with quadratic damage falloff (`30 * max(0, 1 - d/21)²` within 21m), self-damage allowed, robot death (`:alive?` flag), victory/tie detection
+- Frontend: canvas renderer, animation loop with fast-forward, program loading, victory overlay, robot-status legend
 
-Here's a list of what's already implemented from the original manual, along with two lists of things not yet implemented, from categories 1 and 2:
+### Category 1 — Defined in manual, not yet implemented
 
-### What's already implemented
+These have explicit manual descriptions and TODO comments in code:
 
-**Engine core**
-- 256×256 arena, robots with position/aim/velocity/damage, shells with timed-fuse trajectories
-- 40 dm/s² acceleration cap (`MAX-ACCEL 4.0` m/s² × 0.1 multiplier on SPEEDX/SPEEDY)
-- Smooth acceleration physics with desired-vs-current velocity (`physics.cljc`)
-- Robot-on-robot collisions with momentum transfer (billiard-ball style)
+1. **RADAR register** — Manual: directional beam, negative return on robot hit, positive on wall/miss. Stub exists in `register.cljc`.
+2. **Wall collisions** — Manual states walls prevent passage and cause damage. TODOs in `robot.cljc`. Constants defined: `MAX-WALL-DAMAGE 15.0`, `V-MAX 25.5`.
+3. **Collision damage by angle** — Current: flat 1-point damage. Manual: head-on = 25% damage scaled by angle. Constant defined: `MAX-COLLISION-DAMAGE 25.0`.
+4. **Scoring system** — Manual: 1 point per destroyed opponent per survivor, cumulative across battles. Not implemented.
+5. **Multi-battle matches** — Manual options 7 and 8 (schedule/resume matches). Not implemented.
+6. **Assembler errors** — Manual lists 8 specific errors. Current: generic "Invalid word or symbol".
+7. **Number range validation** — Manual specifies –1024..+1024 as valid range (LARGE NUMBER error). No validation in assembler.
+8. **Program length cap** — Manual: 256 instruction maximum. Not enforced.
+9. **Recursion prevention** — Call-stack model implies no recursion; not explicitly prevented.
+10. **Test bench / simulator** — Manual chapter: step-through, register tracer, fake radar/damage keys. No UI exists.
+11. **Sound on/off toggle** — Manual "option 4". Audio wired but no UI control.
+12. **AIM-aligned shell origin** — `shell.cljc` TODO: start shells at robot radius offset. Currently starts at center.
 
-**Assembler and VM**
-- Full lex/parse/instruction-pair pipeline with `,`, `IF`, `TO`, `GOTO`, `GOSUB`, `ENDSUB`
-- Math (`+ - * /`), comparisons (`= # < >`), label resolution
-- Skip-next-instruction semantics on failed conditions
-- Call stack, accumulator, instruction pointer
+### Category 2a — Decisions made (constants in `constants.cljc`)
 
-**Registers**
-- A–W, Z storage; X, Y (read-only); AIM, SPEEDX, SPEEDY; DAMAGE (read-only)
-- SHOT (writes fire a shell, read returns cooldown timer)
-- INDEX/DATA indirection pair, RANDOM with stored limit
-- AIM mod-360 enforcement
+Arbitrary values chosen where the manual is silent. Revisit if play-testing suggests:
 
-**Frontend**
-- Browser canvas renderer, animation loop with fast-forward, manifest-driven program loading, sound on shell fire
-- Five-robot battle cap (matches the manual)
+- **Cannon reload**: `GAME-SECONDS-PER-SHOT 20.0` (manual: "cooling period")
+- **Shell speed**: `SHELL-SPEED 25.0` m/s (manual silent on velocity)
+- **Damage falloff**: Quadratic, `MAX-BLAST-DAMAGE 30.0`, `BLAST-RADIUS 21.0`
+- **Collision formula**: `MAX-COLLISION-DAMAGE 25.0`, `V-MAX 25.5`, scales as `(approach_speed/51)²`
+- **Wall damage**: `MAX-WALL-DAMAGE 15.0`, scales as `(v_perp/25.5)²`
+- **Robot size**: `ROBOT-RADIUS 7.0` m (manual claims 1.5m square — discrepancy unresolved)
+- **VM speed**: 1 instruction per world tick (manual gives no CPU/world-time ratio)
+- **Tick rate**: `*GAME-SECONDS-PER-TICK* 0.033` (~30 Hz)
+- **RANDOM range**: `[0, limit)` — limit itself unreachable per `rand-int` semantics
+- **SPEEDX/SPEEDY bounds**: Manual says –255..+255; current code accepts any value
+- **Starting positions**: Pure `rand`; manual silent on placement method
 
-### Category 1 gaps — Clearly defined in the manual but not yet implemented
+### Category 2b — Decisions pending (blocked on Category 1 implementation)
 
-These all have specific text in the manual and are mostly tagged as TODOs in the code:
+These require choices when implementing remaining features:
 
-1. **Shells doing damage to robots.** `world.cljc` removes exploded shells without applying damage; a comment in the file says "TODO: make this a real let-binding, that determines which robots were damaged." Manual: "A shell exploding directly on top of a robot can do 30% damage."
-2. **RADAR register.** Stub TODOs in `register.cljc`. Manual specifies a directional beam, negative return on robot hit, positive on wall/miss.
-3. **Wall collisions for robots.** TODO comments in `robot.cljc` ("deal with bumping into walls", "add support for collision with walls first"). Manual: walls are strong enough robots can't crash through; damage from wall hits is explicitly mentioned in the test-bench section.
-4. **Robot death.** `robot.cljc` has an `(if false ...)` guard with a comment saying "replace this real damage line when we get robot death implemented correctly: `(if (<= (:damage robot) 0)`". Dead robots currently keep ticking.
-5. **Collision damage scaled by angle.** Robot-on-robot collision currently just calls `(dec damage)` — a flat 1 point regardless of impact. Manual: head-on collision = 25% to both robots, scaled by angle.
-6. **Battle termination and winner detection.** No "last robot standing" logic anywhere.
-7. **Scoring system.** Manual: each survivor earns 1 point per destroyed opponent, cumulative across battles, reset on program change. None of this exists.
-8. **Multi-battle matches.** Manual's main-menu options 7 and 8 (schedule a match, resume an interrupted match) — not present.
-9. **Assembler error catalogue.** Manual specifies 8 distinct errors (NO DATA FIELD, UNKNOWN ITEM, LARGE NUMBER, PROGRAM TOO LONG, FATAL JUNK, STORE IN NUMBER, RESERVED LABEL, NO PROGRAM CODE). `assembler.cljc` only emits one generic "Invalid word or symbol". Already noted in `issues.txt`.
-10. **Number range validation (–1024..+1024).** Manual specifies this as the LARGE NUMBER error; no check in the assembler.
-11. **Program length cap of 256 instructions.** Not enforced.
-12. **Recursion prevention.** Already noted in `issues.txt`. The manual is silent on the mechanism but the call-stack model implies no recursion (single return pointer per GOSUB site, in the spirit of the era).
-13. **Test bench / simulator.** A whole chapter of the manual: step-through, register tracer, R-key to fake a radar hit, G-key to fake damage. None of this UI exists.
-14. **Sound on/off control.** Audio files are wired up in `app.cljs` but the manual's "option 4" toggle is missing from the UI.
-15. **AIM-aligned shell origin.** `shell.cljc` notes: "TODO: make the starting point dependent upon the robot radius". The manual implies shells emerge from the gun.
-
-### Category 2 gaps — Things the manual doesn't pin down (estimates required)
-
-The manual is vague on several constants. Some of these we've chosen values for; others haven't been implemented yet.
-
-#### Category 2a — Decisions already made
-
-Values currently baked into the code. They're reasonable picks, but not derivable from the spec, and worth revisiting if play-testing suggests otherwise.
-
-1. **Cannon reload time.** `constants.cljc` sets `GAME-SECONDS-PER-SHOT 20.0`. Manual only says "cooling period".
-2. **Shell speed.** `SHELL-SPEED 25.0` m/s. Manual says nothing about velocity — only that shells are time-fused by distance.
-3. **Robot-on-robot collision physics.** Manual specifies a damage rule (25% head-on, scaled by angle) but says nothing about how velocities change after impact. The current billiard-ball "swap momentum" choice is a guess. (The damage half of this rule is still unimplemented — see Category 1.)
-4. **Robot physical size.** Manual: "1.5 meter square chassis." `constants.cljc` has `ROBOT-RADIUS 7.0` m — almost 10× larger. Either the radius is wrong, or the field units don't mean meters the way the manual claims. Worth deciding deliberately, since most other constants depend on it.
-5. **Instructions per game-tick.** `brain.cljc` executes exactly one obj-code instruction per world tick. Manual gives no CPU-speed-to-world-time ratio. This single number dominates strategy balance.
-6. **Tick rate.** `*GAME-SECONDS-PER-TICK* 0.033` (≈30 Hz). Pure presentation choice.
-7. **RANDOM range inclusivity.** Manual says "between 0 and the random number limit". `rand-int val` gives `[0, val)`, so the limit itself is not reachable.
-8. **Out-of-range SPEEDX/SPEEDY writes.** Manual says –255..+255. The current code accepts whatever's written, with no clamp or wrap.
-9. **Starting positions.** `world.cljc` uses pure `rand`. Manual is silent on whether positions are randomized, on a grid, or chosen by the player.
-
-#### Category 2b — Decisions still to make
-
-These tie to Category 1 features that haven't been built yet, so the corresponding constants and policies will need to be chosen along with the implementation.
-
-1. **Shell explosion radius / damage falloff curve.** Manual gives only the maximum (30% direct hit) and the qualitative rule ("depends on proximity"). The shape of the curve and the outer radius are unspecified.
-2. **Wall-collision damage formula.** Mentioned in passing ("DAMAGE register will also indicate damage if the simulated robot crashes into a wall") but no number or angle dependence given.
-3. **Radar beam geometry.** Manual: "emits a beam in any desired direction" with distance returned. Doesn't say whether the beam is a single ray or a wedge with width — affects how easy it is to find robots.
-4. **What RADAR returns when it hits a wall** (vs. nothing). Manual implies a positive number = distance to wall, but never says so explicitly.
-5. **What "head-on" means quantitatively** for collision damage scaling.
-6. **Whether a robot's own shells can damage it.** Manual doesn't address this case.
-7. **Robot-shell physical overlap rules.** Does a shell fired by robot A explode on robot A's body at t=0 if A is moving? Edge cases unspecified.
+1. **Radar beam geometry** — Single ray vs. wedge width? Affects detection difficulty.
+2. **Radar wall return** — Manual implies positive number = wall distance, never explicit.
+3. **Robot-shell overlap** — Does a shell explode at t=0 if fired into own body while moving?
