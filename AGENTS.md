@@ -56,7 +56,7 @@ public/                   — static site served by Netlify
 |-----------|----------------|
 | `assembler` | Lex/parse/assemble RobotWar source → VM object-code (command/argument pairs) |
 | `brain` | Execute one VM instruction per world tick; op dispatch, accumulator, IP, call stack |
-| `register` | Register behavior (A–W, Z, X, Y, AIM, SPEEDX, SPEEDY, DAMAGE, SHOT, INDEX, DATA, RANDOM, RADAR) |
+| `register` | Register behavior (A–W, Z, X, Y, AIM, SPEEDX, SPEEDY, DAMAGE, SHOT, INDEX, DATA, RANDOM). **RADAR is stubbed but not yet implemented.** |
 | `robot` | Per-robot state & ticking: brain tick, movement, collisions, wall interaction |
 | `world` | Ticks robots, then shells, advances combined state, enforces 2–5 robot count |
 | `shell` | Shell flight & timed-fuse explosion trajectory |
@@ -69,9 +69,9 @@ Key design rules:
 
 ## Browser app architecture
 
-- `app.cljs` — state atom, `requestAnimationFrame` loop (time-accumulator pattern), program loading, input wiring, audio trigger hooks
-- `canvas.cljs` — all Canvas 2D drawing: robots, shells, explosions, arena scaling
-- `audio.cljs` (newer) — Web Audio API pipeline: `AudioContext`, `AudioBuffer` cache, `play!`
+- `app.cljs` — state atom, `requestAnimationFrame` loop (time-accumulator pattern), program loading, input wiring, audio trigger hooks (pooled `<audio>` elements, Web Audio API migration pending)
+- `canvas.cljs` — all Canvas 2D drawing: robots, shells, explosions, arena scaling, victory text overlay
+- `legend.cljs` — DOM-based robot health legend (color swatches, names, damage percentages)
 
 Game loop (time-accumulator):
 1. Compute `elapsed = now - last-frame`, cap at 250ms
@@ -127,6 +127,14 @@ The polish spec riding on top of Tier 1. Covers:
 
 Locked decisions and ~19 open "TO DECIDE" questions with recommendations. Key cross-cutting rule: no new dependencies.
 
+**Implementation status:** Tier 2 features are specified but **not yet implemented** in the codebase:
+- Slice A (Web Audio API): Audio still uses pooled `<audio>` elements in `app.cljs`
+- Slice B (Sound effects): No explosion/collision/death sounds hooked up
+- Slice C (Visual damage): No desaturation or crack marks
+- Slice D (Shape variety): All robots rendered as squares
+- Slice E (Particle death animation): Not implemented
+- Slice F (DOM-overlay victory): Victory rendered on canvas, not DOM
+
 ## What is NOT in these specs (already implemented or out of scope)
 
 - **Handoff documents**: `resources/ai-specs/refactor_to_cljs/handoffs/` — these are per-slice execution logs and are *not* considered authoritative specs. They are preserved for history but should not be used as design references.
@@ -150,4 +158,6 @@ Locked decisions and ~19 open "TO DECIDE" questions with recommendations. Key cr
 - The brain runs **1 VM instruction per world tick** at ~30 Hz. This dominates AI strategy balance (a full radar sweep takes ~12 seconds wall time). Do not change this ratio without deliberate play-testing.
 - `SPEEDX`/`SPEEDY` max is ±255 in the manual, but the code uses a 0.1 multiplier to get ±25.5 m/s. Be careful about units when adding damage formulas.
 - The `:damage` register read rounds to nearest int; internal storage is float. Do not round prematurely in tests or engine code.
+- **Collision damage is NOT yet using the Tier 1 formula.** Current implementation in `robot.cljc` applies flat 1-point damage (`(dec damage)`) regardless of approach speed. The Tier 1 spec formula `25 * (approach_speed/51)²` is specified but not yet implemented.
 - The `world/tick-combined-world` order of operations is load-bearing: robot tick → collision → wall → shell tick → damage apply → death check → victory check. Changing the order changes gameplay.
+- **Wall collisions are NOT fully implemented.** Robots currently stop at walls without taking damage or bouncing. The Tier 1 spec (slide behavior, perpendicular velocity zeroed, first-contact damage `15 * (v_perp/25.5)²`) is specified but not yet implemented.
