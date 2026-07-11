@@ -62,17 +62,45 @@
           (.catch (fn [_] nil)))
       (swap! sound-state assoc :idx (mod (inc idx) (count shell-release))))))
 
-(defn on-keydown [event]
-  (let [k (.-which event)]
-    (cond
-      (= k 37) (swap! state update :fast-forward #(max 1 (dec %)))
-      (= k 39) (swap! state update :fast-forward #(min max-fast-forward (inc %)))
-      :else nil)))
+(defn show-input-error! [msg]
+  (when-let [el (.getElementById js/document "inputError")]
+    (set! (.-textContent el) msg)))
+
+(defn clear-input-error! []
+  (show-input-error! ""))
 
 (defn stop-game []
   (when-let [raf-id (:raf-id @state)]
     (js/cancelAnimationFrame raf-id))
   (swap! state assoc :running? false :raf-id nil :last-frame-time nil :accumulator-ms 0 :previous-world nil))
+
+(defn game-over? []
+  (some? (get-in @state [:world :result])))
+
+(defn restart-game! []
+  (stop-game)
+  (swap! state assoc :world nil :tick-count 0)
+  (when-let [canvas-el (.getElementById js/document "canvas")]
+    (set! (.. canvas-el -style -opacity) "0"))
+  (when-let [legend-el (.getElementById js/document "legend")]
+    (set! (.. legend-el -style -opacity) "0"))
+  (when-let [instruction-box (.querySelector js/document ".instruction-box")]
+    (set! (.. instruction-box -style -height) ""))
+  (clear-input-error!)
+  (when-let [input-el (.getElementById js/document "programsInput")]
+    (.focus input-el)))
+
+(defn on-keydown [event]
+  (let [k (.-which event)]
+    (cond
+      (and (= k 13) (game-over?)) (restart-game!)
+      (= k 37) (swap! state update :fast-forward #(max 1 (dec %)))
+      (= k 39) (swap! state update :fast-forward #(min max-fast-forward (inc %)))
+      :else nil)))
+
+(defn on-canvas-click [_event]
+  (when (game-over?)
+    (restart-game!)))
 
 (defn loop-step [timestamp]
   (when (:running? @state)
@@ -162,12 +190,18 @@
     (.preventDefault event)
     (let [raw-names (parse-program-names (.. event -target -value))
           program-names (if (:manifest @state) (valid-program-names raw-names) raw-names)]
-      (start-transition! (.-target event))
-      (start-game program-names))))
+      (if (< (count program-names) 2)
+        (show-input-error! "Please enter at least 2 valid program names.")
+        (do
+          (clear-input-error!)
+          (start-transition! (.-target event))
+          (start-game program-names))))))
 
 (defn wire-input! []
   (when-let [input-el (.getElementById js/document "programsInput")]
-    (.addEventListener input-el "keydown" on-program-input-keydown)))
+    (.addEventListener input-el "keydown" on-program-input-keydown))
+  (when-let [canvas-el (.getElementById js/document "canvas")]
+    (.addEventListener canvas-el "click" on-canvas-click)))
 
 (defn render-program-names! [manifest]
   (when-let [names-el (.getElementById js/document "programNames")]

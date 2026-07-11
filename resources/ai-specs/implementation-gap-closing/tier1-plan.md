@@ -606,3 +606,55 @@ The `radar-world` and `read-radar` helpers in `register_test.clj` / `register_te
 ### A.30 Return value on ray with no robot hit
 
 When no alive non-self robot's disc intersects the ray, we return the positive wall distance. Because the ray always exits the arena eventually, this is always a positive number, so the sign of the return value cleanly encodes "robot vs. wall" as the spec specifies. Edge case: if the firing robot is exactly on a wall and shoots into it, `ray-arena-exit-distance` returns `0.0`, which rounds to `0`. `0` reads as neither "robot" (would be negative) nor "meaningful wall distance." No behavior workaround was added — it's a rare case (positions are clamped to `[0, RANGE]` inclusive so a robot pinned in a corner shooting outward is the only way to hit this), and it degrades gracefully: the brain reads `0`, which typically already means "point-blank hit."
+
+---
+
+## Addendum — Lessons from Step 7 execution
+
+### A.31 Most of Step 7 was already implemented before this pass
+
+By the time Step 7 was picked up (2026-07-11), the canvas half of the step had already landed:
+
+- `canvas.cljs:87` already guards robot rendering with `(when (:alive? robot) …)`.
+- `canvas.cljs:91-111` already draws the victory overlay — winner's program name in the winner's color, or `"TIE"` in white plus the names of the just-died robots (a nice touch that reads well when the last two die in the same explosion).
+- The `(or (nth robot-colors idx nil) "#fff")` fallback flagged in §5.5 was already removed; `canvas.cljs:90` uses the plain `(nth robot-colors idx)`.
+
+The actual Step 7 work reduced to three things: restart UX, input validation, and adding a DOM element for the error message.
+
+### A.32 Restart trigger routes through the document, not the input
+
+The input is `.blur`'d during `start-transition!` and stays blurred through gameplay and victory. So the Enter keypress after a victory does *not* reach `on-program-input-keydown` — it hits the document-level `on-keydown` handler. This means the Enter-to-restart branch belongs in `on-keydown`, not `on-program-input-keydown`. The latter is only reached after the user has clicked back into the input (which is what `restart-game!` triggers via `.focus`), at which point pressing Enter goes through the normal start-game path.
+
+The canvas click listener was added to `wire-input!` alongside the input keydown listener, gated by a small helper `(game-over?)` that reads `(get-in @state [:world :result])`. Both restart triggers share `restart-game!`.
+
+### A.33 Fade-out mirrors Step 3.5's inline-opacity insight
+
+Step 3.5's addendum warned that the legend's fade-in is an *inline* style, so restart must reset the inline property to `"0"`. The same applies to the canvas — `start-transition!` sets both `#canvas` and `#legend` `style.opacity = "1"` inline. `restart-game!` sets each back to `"0"` inline. A CSS class toggle alone would not override the inline value.
+
+For the instruction-box, the reverse is simpler: `style.height = ""` clears the inline `"0"` and lets the CSS `height: 95px` take over, with the existing `transition: height 0.5s ease` handling the animation. Cleaner than hardcoding `"95px"` in JS (which would drift if the CSS changes).
+
+### A.34 `stop-game` does not clear `:world`; `restart-game!` must
+
+Victory ends the loop by setting `:running? false` inside `loop-step` (`app.cljs:133`). `:world` retains the final `:result`. That's exactly what the `game-over?` check reads. But once `restart-game!` runs, `:world` must be nil'd out — otherwise repeated clicks/Enter presses would keep re-triggering the restart (harmless but wasteful).
+
+`stop-game` deliberately doesn't clear `:world` because it's also called at the top of `start-game`, where clearing world state before the new one is built would risk a rendering blip. `restart-game!` calls `stop-game` and then explicitly sets `:world nil` and `:tick-count 0`.
+
+### A.35 Input error uses a fixed-height paragraph to avoid layout shift
+
+Added `<p id="inputError"></p>` to `index.html` between the input and the arena row, plus a CSS block with `min-height: 22px` so the paragraph occupies vertical space whether or not it has text. Without the min-height, the arena jumps up 22px when the error appears and back down when it clears — a visible layout shift.
+
+Color is `#fa2d0b` (the first robot color) — an intentionally louder red than the palette's green, and consistent with the existing color scheme.
+
+### A.36 `on-program-input-keydown` short-circuits on `< 2` valid names
+
+Validation happens before `start-transition!` so that a failed submit leaves the input+instructions in place and shows the error. If the manifest hasn't loaded yet (`(:manifest @state)` is nil), we skip filtering and let the raw names through — a legitimate degenerate case is fine (start-game will fail on the fetch and log). The `> 5` case is already gated by `valid-program-names` calling `(take max-program-count)`; the engine's `> 5` throw in `init-world` is a defense in depth that isn't user-reachable through the UI.
+
+### A.37 Manual browser verification was not run in this pass
+
+Prior addenda (A.12) mention "headless browser driving the real page." That capability was not available in the environment this pass ran in. Verification here was limited to:
+
+- `npx shadow-cljs compile app` — clean compile, no warnings.
+- Full JVM + CLJS test suites — all pass (79 JVM / 151 assertions, 11 CLJS / 60 assertions, matching the Step 6 numbers exactly since no engine code was touched).
+- `curl` against `npx serve public` — confirms the updated HTML (with `#inputError`) and the CLJS bundle both serve `200`.
+
+The Definition-of-done §6 checklist items that involve click/keypress interaction — restart on canvas click, restart on Enter, error display on `< 2` valid names, fade transitions on restart — remain unverified end-to-end. Recommend a manual browser pass before considering Tier 1 truly shipped.

@@ -98,3 +98,9 @@ p  {
     font-size: 24px;
     border: 0;
 }
+#inputError {
+    color: #fa2d0b;
+    font-size: 18px;
+    min-height: 22px;
+    margin-bottom: 10px;
+}
