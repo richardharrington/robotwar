@@ -2,6 +2,7 @@
   (:require [clojure.test :refer :all]
             [robotwar.robot :refer :all]
             [robotwar.constants :refer :all]
+            [robotwar.physics :as physics]
             [robotwar.register :as register]
             [robotwar.world :as world]))
 
@@ -90,7 +91,9 @@
   ([pos-x pos-y v-x v-y]
    (make-robot-at pos-x pos-y v-x v-y 0.0 0.0))
   ([pos-x pos-y v-x v-y desired-v-x desired-v-y]
-   {:idx            0
+   (make-robot-at 0 pos-x pos-y v-x v-y desired-v-x desired-v-y))
+  ([idx pos-x pos-y v-x v-y desired-v-x desired-v-y]
+   {:idx            idx
     :pos-x          pos-x
     :pos-y          pos-y
     :aim            0.0
@@ -101,7 +104,8 @@
     :desired-v-x    desired-v-x
     :desired-v-y    desired-v-y
     :shot-timer     0.0
-    :touching-walls #{}}))
+    :touching-walls #{}
+    :colliding-with #{}}))
 
 (deftest wall-damage-formula-test
   (testing "wall damage follows quadratic falloff in impact speed"
@@ -193,3 +197,105 @@
       (is (= 0.0 (:pos-x moved)))
       (is (= 0.0 (:pos-y moved)))
       (is (approx= (- 100.0 expected-dmg) (:damage moved) 1e-10)))))
+
+(deftest collision-head-on-max-damage-test
+  (testing "head-on collision at max speed applies MAX-COLLISION-DAMAGE to each robot"
+    (let [gap (* 0.5 ROBOT-RADIUS)
+          a (make-robot-at 0 (- 100.0 gap) 100.0 V-MAX 0.0 V-MAX 0.0)
+          b (make-robot-at 1 (+ 100.0 gap) 100.0 (- V-MAX) 0.0 (- V-MAX) 0.0)
+          result (collision-pass [a b])]
+      (is (approx= (- 100.0 MAX-COLLISION-DAMAGE) (:damage (result 0)) 1e-10))
+      (is (approx= (- 100.0 MAX-COLLISION-DAMAGE) (:damage (result 1)) 1e-10))
+      (is (contains? (:colliding-with (result 0)) 1))
+      (is (contains? (:colliding-with (result 1)) 0)))))
+
+(deftest collision-glancing-small-damage-test
+  (testing "glancing collision applies small damage proportional to approach-speed squared"
+    ; robots approaching at V-MAX/4 along x, offset in y — approach normal ≈ +x direction
+    (let [gap (* 0.5 ROBOT-RADIUS)
+          v (/ V-MAX 4.0)
+          a (make-robot-at 0 (- 100.0 gap) 100.0 v 0.0 v 0.0)
+          b (make-robot-at 1 (+ 100.0 gap) 100.0 (- v) 0.0 (- v) 0.0)
+          result (collision-pass [a b])
+          expected-dmg (* MAX-COLLISION-DAMAGE (/ 1.0 16.0))]
+      (is (approx= (- 100.0 expected-dmg) (:damage (result 0)) 1e-10))
+      (is (approx= (- 100.0 expected-dmg) (:damage (result 1)) 1e-10))
+      (is (< expected-dmg (/ MAX-COLLISION-DAMAGE 4.0))))))
+
+(deftest collision-stationary-no-damage-test
+  (testing "two stationary robots in contact take no damage"
+    (let [gap (* 0.5 ROBOT-RADIUS)
+          a (make-robot-at 0 (- 100.0 gap) 100.0 0.0 0.0 0.0 0.0)
+          b (make-robot-at 1 (+ 100.0 gap) 100.0 0.0 0.0 0.0 0.0)
+          result (collision-pass [a b])]
+      (is (= 100.0 (:damage (result 0))))
+      (is (= 100.0 (:damage (result 1))))
+      (is (contains? (:colliding-with (result 0)) 1))
+      (is (contains? (:colliding-with (result 1)) 0)))))
+
+(deftest collision-first-contact-only-test
+  (testing "damage is applied only on the tick a pair transitions into contact"
+    (let [gap (* 0.5 ROBOT-RADIUS)
+          a (make-robot-at 0 (- 100.0 gap) 100.0 V-MAX 0.0 V-MAX 0.0)
+          b (make-robot-at 1 (+ 100.0 gap) 100.0 (- V-MAX) 0.0 (- V-MAX) 0.0)
+          tick1 (collision-pass [a b])
+          ; simulate them still touching but no longer approaching (velocities swapped last tick)
+          tick2 (collision-pass tick1)]
+      ; both robots damaged on tick1
+      (is (< (:damage (tick1 0)) 100.0))
+      ; but tick2 does NOT damage them again even if still in contact
+      (is (= (:damage (tick1 0)) (:damage (tick2 0))))
+      (is (= (:damage (tick1 1)) (:damage (tick2 1)))))))
+
+(deftest collision-circle-not-square-test
+  (testing "robots at diagonal offset just outside circle-circle radius do NOT collide"
+    ; distance = 1.5 × (2R), placed on the diagonal — old square logic would have collided
+    (let [d (* 1.5 ROBOT-RADIUS)  ; per-axis offset; total distance = d * √2 ≈ 2.12 × ROBOT-RADIUS > 2R
+          a (make-robot-at 0 100.0 100.0 0.0 0.0 0.0 0.0)
+          b (make-robot-at 1 (+ 100.0 d) (+ 100.0 d) 0.0 0.0 0.0 0.0)
+          result (collision-pass [a b])]
+      (is (empty? (:colliding-with (result 0))))
+      (is (empty? (:colliding-with (result 1))))
+      (is (= 100.0 (:damage (result 0)))))))
+
+(deftest collision-separation-test
+  (testing "after a collision the two robots are exactly 2 × ROBOT-RADIUS apart along the normal"
+    (let [gap (* 0.5 ROBOT-RADIUS)
+          a (make-robot-at 0 (- 100.0 gap) 100.0 V-MAX 0.0 V-MAX 0.0)
+          b (make-robot-at 1 (+ 100.0 gap) 100.0 (- V-MAX) 0.0 (- V-MAX) 0.0)
+          result (collision-pass [a b])
+          dx (- (:pos-x (result 1)) (:pos-x (result 0)))
+          dy (- (:pos-y (result 1)) (:pos-y (result 0)))
+          dist (physics/rw-sqrt (+ (* dx dx) (* dy dy)))]
+      (is (approx= (* 2.0 ROBOT-RADIUS) dist 1e-10)))))
+
+(deftest collision-velocity-swap-test
+  (testing "head-on collision along +x swaps normal-component velocities"
+    (let [gap (* 0.5 ROBOT-RADIUS)
+          a (make-robot-at 0 (- 100.0 gap) 100.0 V-MAX 0.0 V-MAX 0.0)
+          b (make-robot-at 1 (+ 100.0 gap) 100.0 (- V-MAX) 0.0 (- V-MAX) 0.0)
+          result (collision-pass [a b])]
+      (is (approx= (- V-MAX) (:v-x (result 0)) 1e-10))
+      (is (approx= V-MAX (:v-x (result 1)) 1e-10)))))
+
+(deftest collision-not-approaching-no-damage-test
+  (testing "overlapping robots moving apart take no damage but still get separated"
+    ; already overlapping and moving in the same direction — B moving away from A faster
+    (let [gap (* 0.5 ROBOT-RADIUS)
+          a (make-robot-at 0 (- 100.0 gap) 100.0 5.0 0.0 5.0 0.0)
+          b (make-robot-at 1 (+ 100.0 gap) 100.0 10.0 0.0 10.0 0.0)
+          result (collision-pass [a b])
+          dx (- (:pos-x (result 1)) (:pos-x (result 0)))]
+      (is (= 100.0 (:damage (result 0))))
+      (is (= 100.0 (:damage (result 1))))
+      (is (approx= (* 2.0 ROBOT-RADIUS) dx 1e-10)))))
+
+(deftest collision-dead-robot-excluded-test
+  (testing "a dead robot is not considered as a collision target"
+    (let [gap (* 0.5 ROBOT-RADIUS)
+          a (assoc (make-robot-at 0 (- 100.0 gap) 100.0 V-MAX 0.0 V-MAX 0.0)
+                   :alive? false)
+          b (make-robot-at 1 (+ 100.0 gap) 100.0 (- V-MAX) 0.0 (- V-MAX) 0.0)
+          result (collision-pass [a b])]
+      (is (= 100.0 (:damage (result 1))) "living robot untouched")
+      (is (empty? (:colliding-with (result 1)))))))

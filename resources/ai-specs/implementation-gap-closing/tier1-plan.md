@@ -311,7 +311,7 @@ The DAMAGE register read already rounds via `rw-round` in `register.cljc:42-44`.
 
 ### 5.2 The dec-damage placeholder
 
-`collide-two-robots` in `robot.cljc` has `(dec damage)` in two places as the placeholder collision damage. Step 5 removes both. Don't leave one behind. The README's Category 1 #5 explicitly calls this out.
+**(No longer present — landed in Step 5.)** `collide-two-robots` and `collide-all-robots` were removed entirely, along with the two `(dec damage)` placeholder calls. Kept here for historical context.
 
 ### 5.3 The "if false" death guard
 
@@ -319,7 +319,7 @@ The DAMAGE register read already rounds via `rw-round` in `register.cljc:42-44`.
 
 ### 5.4 Self vs. other collision indexing
 
-In Step 5, the `:colliding-with` set on each robot stores other robots' `:idx` values. When a robot dies and is skipped, make sure to also clear its `:colliding-with` set so a future revive (not in scope, but hygienic) wouldn't false-positive.
+In Step 5, the `:colliding-with` set on each robot stores other robots' `:idx` values. `collision-pass` only resets *alive* robots' sets, so a dead robot's `:colliding-with` retains whatever value it had on its final tick — this is harmless (dead robots are never iterated as collision candidates) and preserves the "dead robot state is frozen" invariant from Step 3.
 
 ### 5.5 The 5-robot color fallback in canvas
 
@@ -508,3 +508,51 @@ Damage is applied directly on the robot's `:damage` inside `move-robot` (same ti
 ### A.18 Two stale TODO comments removed
 
 The pre-Step-4 `robot.cljc` carried two stale TODOs about walls: `; TODO: deal with bumping into walls.` at the top of the file and a `TODO: add support for collision with walls first…` in `tick-robot`'s docstring. Both were removed. Step 5 will remove any remaining collision-related TODOs.
+
+---
+
+## Addendum — Lessons from Step 5 execution
+
+### A.19 TACTICAL: collision lifted out of `tick-robot` into `tick-combined-world`
+
+Step 5 offered two paths — leave detection inside `tick-robot` (per-actor duplicate detection, handled by the symmetric `:colliding-with` sets), or lift it into a single post-tick pass in `tick-combined-world`. The lift was chosen: `robot/collision-pass` now takes the robots vec and returns it with positions, velocities, `:colliding-with` sets, and damage all updated. `tick-combined-world` calls it exactly once per tick, after all robots have ticked and before shells are ticked.
+
+Benefits confirmed by the resulting code:
+- Every pair is examined once per tick — no more "each pair detected twice per world tick" that the old `collide-all-robots` had.
+- The damage-accumulator pattern from §A.7 falls out naturally: build a `{idx → total-damage}` map in the reduce, then apply once at the end.
+- `tick-robot` shrunk to just brain-tick + shot-timer + `move-robot`. The old `update-robots` helper (only used by the collision code) became dead and was deleted.
+- The whole surface is a pure function on a robots vec, which makes it trivial to unit-test without constructing a full world.
+
+### A.20 Collision-response policy: separate always, swap only when approaching, damage only on transition
+
+The spec was slightly ambiguous about which collision-response effects apply on repeat contact. The implementation split them by physical intent:
+
+- **Position separation:** applied *every* tick the pair overlaps. If we skipped it, robots would tunnel through each other after the first tick.
+- **Normal-velocity swap:** applied only when `approach > 0` (they're moving toward each other along the contact normal). If they're already separating from a previous swap, we don't re-swap and re-approach them.
+- **Damage:** applied only on the tick the pair *transitions* into contact — the "first contact only" rule from §2.4, tracked via each robot's `:colliding-with` set of counterparty idxs.
+
+The transition-detection is symmetric: for pair (a, b), `was-touching? = (contains? (old-a-set) b-idx)`. Both robots' old sets carry the same information, so checking either works. At the end of the pass, each alive robot's `:colliding-with` is rebuilt from the current tick's contacts. Dead robots' sets are left alone (see §5.4).
+
+### A.21 The 1e-12 floor guards against divide-by-zero at exact coincidence
+
+`resolve-collision-pair` computes the unit normal by dividing `dx`/`dy` by `sqrt(d2)`. Two robots at exactly the same position would give `d2 = 0` → NaN normal. The floor `(max d2 1e-12)` picks an arbitrary but consistent direction (falls out of the sign of `dx`/`dy` before flooring). This never happens organically because `move-robot` runs before collisions and produces separated positions, but the guard keeps `collision-pass` a total function for tests and future scenarios.
+
+### A.22 Test overlap sizing gotcha
+
+The first draft of `collision-head-on-max-damage-test` set the two robots 1.5 × ROBOT-RADIUS apart from center → `gap = 10.5`, robots at `x = 89.5` and `x = 110.5`, distance = 21 = 3 × ROBOT-RADIUS. That's *not* overlapping (min collision distance = 2 × ROBOT-RADIUS = 14). The test silently failed on every assertion because no collision fired.
+
+Fix: use `gap = 0.5 × ROBOT-RADIUS` so the distance between centers is `ROBOT-RADIUS = 7 < 14`. All the collision tests in `robot_test.clj` / `.cljs` use this pattern.
+
+**Recommendation for future geometry tests:** if you're setting up two robots to collide, distance-between-centers should be *strictly less than* `2 × ROBOT-RADIUS`, not "close to each other." An easy way is `gap = 0.5 × ROBOT-RADIUS` for each so total distance = `ROBOT-RADIUS`.
+
+### A.23 The `clj` wrapper is silently broken on this machine
+
+`npm test` invokes `./scripts/test-all.sh`, which runs `clj -M:test`. On this machine `clj` requires `rlwrap` (missing), so it prints a one-line warning and exits 0 *without running any tests*. Every prior "npm test passes" claim in the Step 1–4 addenda was therefore likely false for the JVM half.
+
+Workaround used in Step 5 verification: run `clojure -M:test` and `node target/test/node-tests.js` directly. Both suites pass (72 JVM tests / 144 assertions, 10 CLJS tests / 56 assertions, 0 failures).
+
+**Recommendation for future agents:** either install `rlwrap`, patch `scripts/test-all.sh` to call `clojure` instead of `clj`, or run the two suites directly and verify each one printed a real "Ran N tests" line before claiming a pass.
+
+### A.24 Docstring unit fix carried over from A.17
+
+While editing `init-robot`, the stale docstring claim about "decimeters" (called out in §A.17) was replaced with the accurate "meters." No behavior change.

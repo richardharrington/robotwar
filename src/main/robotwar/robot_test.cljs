@@ -1,9 +1,10 @@
 (ns robotwar.robot-test
   (:require [cljs.test :refer-macros [deftest is testing]]
             [robotwar.constants :refer [*GAME-SECONDS-PER-TICK*
-                                        MAX-WALL-DAMAGE V-MAX ROBOT-RANGE-X]]
+                                        MAX-WALL-DAMAGE MAX-COLLISION-DAMAGE
+                                        ROBOT-RADIUS V-MAX ROBOT-RANGE-X]]
             [robotwar.register :as register]
-            [robotwar.robot :refer [tick-robot move-robot]]
+            [robotwar.robot :refer [tick-robot move-robot collision-pass]]
             [robotwar.world :as world]))
 
 (def world (world/init-world ["" ""]))
@@ -26,10 +27,13 @@
             {:pos-x 8.0 :v-x 8.0 :desired-v-x 14.0}]
            (acceleration-seq 0.0 140 :pos-x :v-x :desired-v-x "SPEEDX")))))
 
-(defn- test-robot [pos-x pos-y v-x v-y desired-v-x desired-v-y]
-  {:idx 0 :pos-x pos-x :pos-y pos-y :aim 0.0 :damage 100.0
-   :alive? true :v-x v-x :v-y v-y :desired-v-x desired-v-x :desired-v-y desired-v-y
-   :shot-timer 0.0 :touching-walls #{}})
+(defn- test-robot
+  ([pos-x pos-y v-x v-y desired-v-x desired-v-y]
+   (test-robot 0 pos-x pos-y v-x v-y desired-v-x desired-v-y))
+  ([idx pos-x pos-y v-x v-y desired-v-x desired-v-y]
+   {:idx idx :pos-x pos-x :pos-y pos-y :aim 0.0 :damage 100.0
+    :alive? true :v-x v-x :v-y v-y :desired-v-x desired-v-x :desired-v-y desired-v-y
+    :shot-timer 0.0 :touching-walls #{} :colliding-with #{}}))
 
 (defn- approx= [a b eps]
   (< (js/Math.abs (- a b)) eps))
@@ -56,3 +60,38 @@
                   (move-robot (assoc tick1 :desired-v-x -20.0)))]
       (is (contains? (:touching-walls tick1) :left))
       (is (= (:damage tick1) (:damage tick2))))))
+
+(deftest collision-smoke-test
+  (testing "head-on max-speed collision applies MAX-COLLISION-DAMAGE and swaps normal velocities"
+    (let [gap (* 0.5 ROBOT-RADIUS)
+          a (test-robot 0 (- 100.0 gap) 100.0 V-MAX 0.0 V-MAX 0.0)
+          b (test-robot 1 (+ 100.0 gap) 100.0 (- V-MAX) 0.0 (- V-MAX) 0.0)
+          result (collision-pass [a b])]
+      (is (approx= (- 100.0 MAX-COLLISION-DAMAGE) (:damage (result 0)) 1e-10))
+      (is (approx= (- 100.0 MAX-COLLISION-DAMAGE) (:damage (result 1)) 1e-10))
+      (is (approx= (- V-MAX) (:v-x (result 0)) 1e-10))
+      (is (approx= V-MAX (:v-x (result 1)) 1e-10))
+      (is (contains? (:colliding-with (result 0)) 1))))
+  (testing "diagonal-offset just outside 2R does not collide (circle-circle, not square)"
+    (let [d (* 1.5 ROBOT-RADIUS)  ; per-axis; total distance ≈ 2.12 × ROBOT-RADIUS > 2R
+          a (test-robot 0 100.0 100.0 0.0 0.0 0.0 0.0)
+          b (test-robot 1 (+ 100.0 d) (+ 100.0 d) 0.0 0.0 0.0 0.0)
+          result (collision-pass [a b])]
+      (is (empty? (:colliding-with (result 0))))
+      (is (= 100.0 (:damage (result 0))))))
+  (testing "stationary contact takes no damage"
+    (let [gap (* 0.5 ROBOT-RADIUS)
+          a (test-robot 0 (- 100.0 gap) 100.0 0.0 0.0 0.0 0.0)
+          b (test-robot 1 (+ 100.0 gap) 100.0 0.0 0.0 0.0 0.0)
+          result (collision-pass [a b])]
+      (is (= 100.0 (:damage (result 0))))
+      (is (= 100.0 (:damage (result 1))))))
+  (testing "damage applies only on transition into contact"
+    (let [gap (* 0.5 ROBOT-RADIUS)
+          a (test-robot 0 (- 100.0 gap) 100.0 V-MAX 0.0 V-MAX 0.0)
+          b (test-robot 1 (+ 100.0 gap) 100.0 (- V-MAX) 0.0 (- V-MAX) 0.0)
+          tick1 (collision-pass [a b])
+          tick2 (collision-pass tick1)]
+      (is (< (:damage (tick1 0)) 100.0))
+      (is (= (:damage (tick1 0)) (:damage (tick2 0))))
+      (is (= (:damage (tick1 1)) (:damage (tick2 1)))))))

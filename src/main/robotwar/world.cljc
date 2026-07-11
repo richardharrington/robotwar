@@ -37,14 +37,15 @@
 
 (defn tick-combined-world
   [starting-world]
-  (let [alive-indices (vec (keep-indexed (fn [idx robot] 
+  (let [alive-indices (vec (keep-indexed (fn [idx robot]
                                            (when (:alive? robot) idx))
                                          (:robots starting-world)))
-        {:keys [shells next-shell-id] :as ticked-robots-world} 
+        {:keys [shells next-shell-id] :as ticked-robots-world}
           (reduce (fn [{robots :robots :as world} robot-idx]
                     (robot/tick-robot (robots robot-idx) world))
                   starting-world
                   alive-indices)
+        collided-world (update ticked-robots-world :robots robot/collision-pass)
         ticked-shells (into {} (for [[id shell] shells
                                    :let [ticked (shell/tick-shell shell)]
                                    :when ticked]
@@ -61,19 +62,19 @@
                                   acc))
                               acc))
                           acc
-                          (:robots ticked-robots-world)))
+                          (:robots collided-world)))
                 {}
                 exploded-shells)
         damaged-world
         (if (seq damage-per-robot)
-          (update ticked-robots-world :robots
+          (update collided-world :robots
                   (fn [robots]
                     (mapv (fn [robot]
                             (if-let [damage (get damage-per-robot (:idx robot))]
                               (update robot :damage - damage)
                               robot))
                           robots)))
-          ticked-robots-world)
+          collided-world)
         pre-death-alive-idxs (set (keep-indexed (fn [idx robot] (when (:alive? robot) idx))
                                                 (:robots damaged-world)))
         dead-marked-world

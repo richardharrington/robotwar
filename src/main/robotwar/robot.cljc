@@ -1,7 +1,7 @@
 (ns robotwar.robot
   (:require [robotwar.constants :refer [*GAME-SECONDS-PER-TICK* MAX-ACCEL ROBOT-RADIUS
                                         ROBOT-RANGE-X ROBOT-RANGE-Y
-                                        MAX-WALL-DAMAGE V-MAX]]
+                                        MAX-WALL-DAMAGE MAX-COLLISION-DAMAGE V-MAX]]
             [robotwar.brain :as brain]
             [robotwar.register :as register]
             [robotwar.physics :as physics]))
@@ -16,9 +16,7 @@
 
 (defn init-robot
   "takes a robot-idx, a program, and a robot attribute map and returns a robot.
-  The distance and distance/time units are all in decimeters and
-  decimeters per second. Yes, you read that right. Don't ask. It fits
-  best with the original specs of the game."
+  Distance and distance/time units are all in meters and meters per second."
   [idx src-code attributes]
   {:idx            idx
    :pos-x          (:pos-x attributes)
@@ -32,13 +30,8 @@
    :desired-v-y    0.0
    :shot-timer     0.0
    :touching-walls #{}
+   :colliding-with #{}
    :brain          (brain/init-brain src-code (register/init-registers idx))})
-
-(defn update-robots
-  "takes a world and a function, and returns a world
-  with its robots updated by passing them through the function"
-  [world f]
-  (update-in world [:robots] f))
 
 (defn update-robot
   "takes a robot index, a world, and a function, and returns a world
@@ -100,77 +93,93 @@
                   :touching-walls new-touching
                   :damage (- damage damage-delta)})))
 
-(defn collide-two-robots
-  "takes a vector of robots, two robot-indexes (an acting robot
-  and a target robot), and returns a vector of robots with those
-  two altered if the actor has collided with the target.
-  Right now they're just behaving like square billiard balls --
-  all momentum from one is transferred to the other when they collide.
-  To account for overshoot during the tick, the position of the actor
-  is set to but up against the target.
-  Does not currently calculate damage. when it does, it will
-  need to only assign each robot half the damage, because the other
-  half will be assigned when the other robot it ticks through its own turn."
-  [robots actor-idx target-idx]
-  (let [actor (get robots actor-idx)
-        target (get robots target-idx)
-        dist-x (- (:pos-x target) (:pos-x actor))
-        dist-y (- (:pos-y target) (:pos-y actor))
-        abs-dist-x (rw-abs dist-x)
-        abs-dist-y (rw-abs dist-y)
-        min-dist (* ROBOT-RADIUS 2)
-        colliding (and (< abs-dist-x min-dist)
-                       (< abs-dist-y min-dist)
-                       (if (> abs-dist-x abs-dist-y) :x :y))]
-    (if colliding
-      (let [new-actor (case colliding
-                        :x (assoc
-                             actor 
-                             :damage (dec (:damage actor))
-                             :v-x (:v-x target)
-                             :pos-x (- (:pos-x target) 
-                                        (rw-copy-sign min-dist dist-x)))
-                        :y (assoc 
-                             actor 
-                             :damage (dec (:damage actor))
-                             :v-y (:v-y target)
-                             :pos-y (- (:pos-y target) 
-                                       (rw-copy-sign min-dist dist-y))))
-            new-target (case colliding
-                         :x (assoc 
-                              target 
-                              :damage (dec (:damage target))
-                              :v-x (:v-x actor))
-                         :y (assoc 
-                              target 
-                              :damage (dec (:damage target))
-                              :v-y (:v-y actor)))]
-        {colliding (assoc robots actor-idx new-actor, target-idx new-target)})
-      {nil robots})))
+(defn- collision-damage
+  "quadratic falloff in the approach speed along the contact normal"
+  [approach-speed]
+  (let [factor (/ approach-speed (* 2.0 V-MAX))]
+    (* MAX-COLLISION-DAMAGE factor factor)))
 
-(defn collide-all-robots
-  "takes a vector of robots and an actor-idx,
-  and returns a vector of robots with any collisions that have occurred
-  (may be at most one x-collision and at most one y-collision)."
-  ; TODO: this is remarkably inefficient, and checks the collisions 
-  ; twice in a lot of cases. Sort this out when we sort out the whole :x and :y issue.
-  [robots actor-idx]
-  (let [target-idxs (filter #(not= actor-idx %) (range (count robots)))
-        collided-robots-x (or (some (fn [target-idx]
-                                      (:x (collide-two-robots 
-                                            robots 
-                                            actor-idx 
-                                            target-idx)))
-                                    target-idxs)
-                              robots)
-        collided-robots-y (or (some (fn [target-idx]
-                                      (:y (collide-two-robots 
-                                            collided-robots-x 
-                                            actor-idx 
-                                            target-idx)))
-                                    target-idxs)
-                              collided-robots-x)]
-    collided-robots-y))
+(defn- resolve-collision-pair
+  "given two robots that overlap and the previous-tick contact snapshot,
+  return {:a robot-a' :b robot-b' :damage delta-or-zero} with:
+  - positions separated to exactly 2 × ROBOT-RADIUS along the normal
+  - normal-component velocities swapped iff the robots are approaching
+  - damage delta applied iff this is a *transition* into contact"
+  [a b was-touching?]
+  (let [dx (- (:pos-x b) (:pos-x a))
+        dy (- (:pos-y b) (:pos-y a))
+        d2 (+ (* dx dx) (* dy dy))
+        min-d (* 2.0 ROBOT-RADIUS)
+        dist (physics/rw-sqrt (max d2 1e-12))
+        nx (/ dx dist)
+        ny (/ dy dist)
+        approach (+ (* (- (:v-x a) (:v-x b)) nx)
+                    (* (- (:v-y a) (:v-y b)) ny))
+        approaching? (pos? approach)
+        new-a-vx (if approaching? (- (:v-x a) (* approach nx)) (:v-x a))
+        new-a-vy (if approaching? (- (:v-y a) (* approach ny)) (:v-y a))
+        new-b-vx (if approaching? (+ (:v-x b) (* approach nx)) (:v-x b))
+        new-b-vy (if approaching? (+ (:v-y b) (* approach ny)) (:v-y b))
+        half-overlap (/ (- min-d dist) 2.0)
+        clamp-x #(max 0.0 (min ROBOT-RANGE-X %))
+        clamp-y #(max 0.0 (min ROBOT-RANGE-Y %))
+        damage-delta (if (and (not was-touching?) approaching?)
+                       (collision-damage approach)
+                       0.0)]
+    {:a (assoc a
+               :pos-x (clamp-x (- (:pos-x a) (* half-overlap nx)))
+               :pos-y (clamp-y (- (:pos-y a) (* half-overlap ny)))
+               :v-x new-a-vx
+               :v-y new-a-vy)
+     :b (assoc b
+               :pos-x (clamp-x (+ (:pos-x b) (* half-overlap nx)))
+               :pos-y (clamp-y (+ (:pos-y b) (* half-overlap ny)))
+               :v-x new-b-vx
+               :v-y new-b-vy)
+     :damage damage-delta}))
+
+(defn collision-pass
+  "single pass over pairs of alive robots. Detects circle-circle overlap,
+  separates the robots along the contact normal, swaps normal-component
+  velocities when approaching, and applies quadratic damage on the tick a
+  pair transitions into contact. Refreshes :colliding-with sets to reflect
+  the current tick's contacts."
+  [robots]
+  (let [alive-idxs (filterv #(:alive? (robots %)) (range (count robots)))
+        old-touching (into {}
+                           (for [idx alive-idxs]
+                             [idx (or (:colliding-with (robots idx)) #{})]))
+        pairs (for [i (range (count alive-idxs))
+                    j (range (inc i) (count alive-idxs))]
+                [(alive-idxs i) (alive-idxs j)])
+        min-d (* 2.0 ROBOT-RADIUS)
+        min-d2 (* min-d min-d)
+        init-robots (mapv #(if (:alive? %) (assoc % :colliding-with #{}) %) robots)
+        {:keys [robots damage]}
+        (reduce
+          (fn [{:keys [robots damage] :as acc} [a-idx b-idx]]
+            (let [a (robots a-idx)
+                  b (robots b-idx)
+                  dx (- (:pos-x b) (:pos-x a))
+                  dy (- (:pos-y b) (:pos-y a))
+                  d2 (+ (* dx dx) (* dy dy))]
+              (if (< d2 min-d2)
+                (let [was-touching? (contains? (old-touching a-idx) b-idx)
+                      {new-a :a new-b :b delta :damage} (resolve-collision-pair a b was-touching?)
+                      new-a (update new-a :colliding-with conj b-idx)
+                      new-b (update new-b :colliding-with conj a-idx)]
+                  {:robots (assoc robots a-idx new-a b-idx new-b)
+                   :damage (-> damage
+                               (update a-idx (fnil + 0.0) delta)
+                               (update b-idx (fnil + 0.0) delta))})
+                acc)))
+          {:robots init-robots :damage {}}
+          pairs)]
+    (mapv (fn [r]
+            (if-let [d (get damage (:idx r))]
+              (update r :damage - d)
+              r))
+          robots)))
 
 (defn tick-robot
   "takes a robot and a world and returns the new state of the world
@@ -178,21 +187,18 @@
   [{robot-idx :idx :as robot} world]
   (if (not (:alive? robot))
     world
-    (let [ticked-world             (brain/tick-brain 
-                                     robot 
-                                     world 
-                                     register/read-register 
+    (let [ticked-world             (brain/tick-brain
+                                     robot
+                                     world
+                                     register/read-register
                                      register/write-register)
-          shot-timer-updated-world (update-robot 
-                                     robot-idx 
-                                     ticked-world 
+          shot-timer-updated-world (update-robot
+                                     robot-idx
+                                     ticked-world
                                      update-shot-timer)
           moved-world              (update-robot
                                      robot-idx
                                      shot-timer-updated-world
-                                     move-robot)
-          collision-detected-world (update-robots 
-                                     moved-world 
-                                     #(collide-all-robots % robot-idx))]  
-      collision-detected-world)))
+                                     move-robot)]
+      moved-world)))
 
