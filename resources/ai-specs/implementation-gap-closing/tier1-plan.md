@@ -222,22 +222,22 @@ This step replaces `collide-two-robots`, `collide-all-robots`, and the `(dec dam
 
 ### Step 6 — RADAR register implementation
 
-**Files:** `register.cljc`, `physics.cljc` (probably)
+**Files:** `register.cljc`, `physics.cljc`
 
-- Define `RadarRegister` (currently stubbed as TODO at `register.cljc:164`).
-- Implement `IReadRegister`:
+**(Landed 2026-07-11 — see §A.25–A.30 addendum.)**
+
+- Define `RadarRegister` record `[robot-idx reg-name val]` and instantiate it in `init-registers` alongside `AimRegister` / `ShotRegister`.
+- Implement `IReadRegister` (`radar-scan` in `register.cljc`):
   - Get the firing robot's position and the value previously written to RADAR (the direction in degrees).
-  - Construct a ray from robot center along that direction.
-  - For each other *alive* robot, compute the closest-point distance from the ray to that robot's center. If `<= ROBOT-RADIUS`, the ray hits — record the distance from firing-robot center to the entry point of the disc.
-  - Compute the wall-intersection distance: where does the ray exit the arena `[0, ROBOT-RANGE-X] × [0, ROBOT-RANGE-Y]`?
-  - If any robot hit: return `-min_hit_distance`. Else: return `+wall_distance`.
-- Implement `IWriteRegister`: store the direction value (the AIM-like angle). Behavior: writing the direction is what "pings" the radar; the next read returns the result. Match the convention of the existing `AimRegister`.
+  - Decompose the direction via `physics/decompose-angle` (same robotwar-degrees convention as AIM).
+  - For each *alive* robot except the firing one, call `physics/ray-disc-hit-distance` with `ROBOT-RADIUS`. Take the min of the resulting hit distances (skip nils).
+  - Compute the wall-exit distance via `physics/ray-arena-exit-distance` on `[0, ROBOT-RANGE-X] × [0, ROBOT-RANGE-Y]`.
+  - If any robot hit: return `(rw-round (- min_hit_distance))`. Else: return `(rw-round wall_distance)`.
+- Implement `IWriteRegister`: store `(mod (double data) 360)` into the register's `:val` slot via `path-to-val`. No side effects on the robot.
 
-**TACTICAL:** the exact "distance to disc-entry" math has a couple of acceptable formulations (closest-point-on-ray, or solve the quadratic for the intersection). Pick one — both are fine for game purposes. Document the choice.
+**Where the helpers went:** `physics.cljc` gained `ray-disc-hit-distance` (closest-approach quadratic formulation; returns `nil` on miss, `0.0` if origin is inside the disc, positive entry distance otherwise) and `ray-arena-exit-distance` (per-axis parametric; assumes origin inside the arena).
 
-**TACTICAL:** decide where to add the ray-vs-disc and ray-vs-wall helpers. Probably `physics.cljc` to keep them pure and testable.
-
-**Tests:** unit-test the geometry: ray hitting one robot returns negative distance. Ray hitting two returns negative distance to the closer one. Ray hitting no robots returns positive distance to wall. Self-detection excluded. Dead robots excluded.
+**Tests:** JVM (`register_test.clj`) covers each geometry case explicitly: hit at (100-ROBOT-RADIUS), closer-of-two wins, no hit → wall distance, self excluded, dead excluded, ray along -y, write mods 360. CLJS (`register_test.cljs`) covers the same in a compact smoke test.
 
 ### Step 7 — Frontend: victory overlay + restart UX + alive-only rendering
 
@@ -556,3 +556,53 @@ Workaround used in Step 5 verification: run `clojure -M:test` and `node target/t
 ### A.24 Docstring unit fix carried over from A.17
 
 While editing `init-robot`, the stale docstring claim about "decimeters" (called out in §A.17) was replaced with the accurate "meters." No behavior change.
+
+---
+
+## Addendum — Lessons from Step 6 execution
+
+### A.25 TACTICAL choices made
+
+- **Distance-to-disc math:** solved the ray-vs-disc quadratic in the "closest-approach then step back to entry" form: given ray origin `P`, unit direction `D`, target center `C`, and radius `r`, compute `v = C - P`, `tc = v · D`, `d² = |v|² - tc²`. If `d² ≤ r²`, entry distance is `t_near = tc - sqrt(r² - d²)`. This is `physics/ray-disc-hit-distance`. Returns `nil` (miss), `0.0` (origin inside the disc), or the positive entry distance.
+- **Ray-vs-wall math:** parametric line-plane intersection per axis (`t = (wall - p) / dir` on whichever axis's direction is non-zero), then `min` of the resulting positive `t`s. This is `physics/ray-arena-exit-distance`. Since the origin is always inside the arena (positions are clamped in `move-robot`), it always returns a non-negative distance.
+- **Helper location:** both helpers live in `physics.cljc` — pure math, no world knowledge. The RADAR register logic in `register.cljc` glues them together and does the alive/self filtering.
+- **Aim convention reused:** RADAR direction uses the same robotwar-degrees convention as AIM (0° = up = -y, 90° = right = +x), so `physics/decompose-angle` gives the ray direction directly. No new angle plumbing.
+- **Rounding:** the return value is rounded to an integer via `rw-round` before being handed back to the brain, matching the DAMAGE register convention and the assumption that the Robotwar VM sees integers.
+
+### A.26 RADAR write is *not* a triggering side effect
+
+Unlike SHOT (which spawns a shell as its write side effect) and AIM (which mods 360 into a robot field), RADAR's write is a plain store into the register's `:val` slot. The ray is cast at *read* time, against the world state present when the brain reads the register. This means:
+
+- A brain that writes RADAR at tick T and reads RADAR at tick T+1 sees geometry as of T+1, not T.
+- Nothing prevents a brain from reading RADAR without ever writing it — the initial `:val` is 0, which is a valid direction (aim 0° = up).
+
+**Recommendation for future agents:** RadarRegister doesn't need to touch any robot field; it's a self-contained storage-plus-computed-read pattern. Don't add a `:radar-dir` field on the robot — it duplicates the register's own `:val`.
+
+### A.27 The extra require in register.cljc
+
+`radar-scan` needs `ROBOT-RADIUS`, `ROBOT-RANGE-X`, `ROBOT-RANGE-Y` from `constants`, plus `decompose-angle` and the two new helpers from `physics`. `register.cljc` didn't previously require `physics` — that require had to be added. There is no dep cycle (physics requires nothing, shell requires physics + constants, register requires all three).
+
+### A.28 Reader-conditional paren juggling gotcha
+
+Adding a new `(extend ...)` / `(extend-type ...)` block to an existing `#?(:clj (do ...) :cljs (do ...))` requires **subtracting a closing paren from the previously-last extend block** and **adding the removed count back to the new last extend block**, because the final block is the one that closes both the `(do ...)` and (for the `:cljs` branch) the entire `#?(...)` form. Getting this wrong produces an off-by-one paren error that reads at the wrong offset (the reader reports the problem where the count *first* stops matching, not where you actually miscounted).
+
+For this step, the paren totals ended up:
+- `:clj` branch ShotRegister's trailing line changed from 8 `)` + `}` (closing extend + do) → 7 `)` + `}` (closing extend only), and the new RadarRegister extend ends with `))))` + `}` + `))` (closing mod, assoc-in, fn, `}`, extend, do).
+- `:cljs` branch ShotRegister's trailing line changed similarly, and the new RadarRegister extend-type ends with `))))))` (closing mod, assoc-in, method, extend-type, do, and the `#?(...)` outer paren).
+
+**Recommendation for future agents:** if you add a record to `register.cljc`, use a paren-checker (e.g. `python3 -c "..." | count`, or your editor's rainbow brackets) *before* running the test suite — the reader error is confusing, and manual counting inside dense `#?` blocks is error-prone.
+
+### A.29 Tests that live entirely at the register layer
+
+RADAR unit tests don't need a whole world tick; they need only:
+1. A 2- or 3-robot world (via `world/init-world`) whose robots are then `update-in`-patched to have specific `:pos-x`/`:pos-y`/`:alive?` values.
+2. `write-register` to store a direction into RADAR.
+3. `read-register` to trigger the ray cast.
+
+The `radar-world` and `read-radar` helpers in `register_test.clj` / `register_test.cljs` encapsulate this. No brain, no `tick-combined-world`, no assembler. This keeps the tests direct and independent of unrelated moving parts.
+
+**Verification approach:** JVM (`clojure -M:test`) and CLJS (`node target/test/node-tests.js`, after `npx shadow-cljs compile test`) both pass with 79 JVM tests / 151 assertions and 11 CLJS tests / 60 assertions. Per §A.23, `npm test` invokes the broken `clj` wrapper; run the two suites directly.
+
+### A.30 Return value on ray with no robot hit
+
+When no alive non-self robot's disc intersects the ray, we return the positive wall distance. Because the ray always exits the arena eventually, this is always a positive number, so the sign of the return value cleanly encodes "robot vs. wall" as the spec specifies. Edge case: if the firing robot is exactly on a wall and shoots into it, `ray-arena-exit-distance` returns `0.0`, which rounds to `0`. `0` reads as neither "robot" (would be negative) nor "meaningful wall distance." No behavior workaround was added — it's a rare case (positions are clamped to `[0, RANGE]` inclusive so a robot pinned in a corner shooting outward is the only way to hit this), and it degrades gracefully: the brain reads `0`, which typically already means "point-blank hit."

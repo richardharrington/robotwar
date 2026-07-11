@@ -1,5 +1,7 @@
 (ns robotwar.register
-  (:require [robotwar.constants :refer [*GAME-SECONDS-PER-TICK* GAME-SECONDS-PER-SHOT]]
+  (:require [robotwar.constants :refer [*GAME-SECONDS-PER-TICK* GAME-SECONDS-PER-SHOT
+                                        ROBOT-RADIUS ROBOT-RANGE-X ROBOT-RANGE-Y]]
+            [robotwar.physics :as physics]
             [robotwar.shell :as shell]))
 
 (def reg-names [ "DATA"
@@ -67,6 +69,28 @@
 (defrecord RandomRegister [robot-idx reg-name val])
 (defrecord AimRegister [robot-idx field-name multiplier])
 (defrecord ShotRegister [robot-idx field-name multiplier])
+(defrecord RadarRegister [robot-idx reg-name val])
+
+(defn- radar-scan
+  "cast a ray from the firing robot's center along the direction stored in
+  the RADAR register (degrees, robotwar convention). Returns the rounded
+  signed distance: negative if the closest hit is another alive robot's
+  disc, otherwise the positive distance to the arena wall the ray exits."
+  [{:keys [robot-idx val]} world]
+  (let [{px :pos-x py :pos-y} (get-in world (path-to-robot robot-idx))
+        {dx :x dy :y} (physics/decompose-angle val)
+        robot-hits (keep (fn [other]
+                           (when (and (:alive? other)
+                                      (not= (:idx other) robot-idx))
+                             (physics/ray-disc-hit-distance
+                               px py dx dy
+                               (:pos-x other) (:pos-y other)
+                               ROBOT-RADIUS)))
+                         (:robots world))
+        closest-robot (when (seq robot-hits) (apply min robot-hits))
+        wall-dist (physics/ray-arena-exit-distance
+                    px py dx dy ROBOT-RANGE-X ROBOT-RANGE-Y)]
+    (rw-round (if closest-robot (- closest-robot) wall-dist))))
 
 #?(:clj
    (do
@@ -103,7 +127,13 @@
                                                             GAME-SECONDS-PER-SHOT)]
                                               (assoc world-with-new-shot-timer
                                                      :shells (assoc shells next-shell-id (shell/init-shell pos-x pos-y aim next-shell-id data))
-                                                     :next-shell-id (inc next-shell-id))))))}))
+                                                     :next-shell-id (inc next-shell-id))))))})
+     (extend RadarRegister
+       IReadRegister {:read-register radar-scan}
+       IWriteRegister {:write-register (fn [{:keys [robot-idx reg-name]} world data]
+                                         (assoc-in world
+                                                   (path-to-val robot-idx reg-name)
+                                                   (mod (double data) 360)))}))
    :cljs
    (do
      (extend-type StorageRegister
@@ -137,7 +167,13 @@
                                            GAME-SECONDS-PER-SHOT)]
                              (assoc world-with-new-shot-timer
                                     :shells (assoc shells next-shell-id (shell/init-shell pos-x pos-y aim next-shell-id data))
-                                    :next-shell-id (inc next-shell-id)))))))))
+                                    :next-shell-id (inc next-shell-id)))))))
+     (extend-type RadarRegister
+       IReadRegister (read-register [this world] (radar-scan this world))
+       IWriteRegister (write-register [this world data]
+                       (assoc-in world
+                                 (path-to-val (:robot-idx this) (:reg-name this))
+                                 (mod (double data) 360))))))
 
 (defn get-target-register
   "helper function for DataRegister record"
@@ -158,10 +194,6 @@
       ; by the index-reg-name register updated with the data argument to write-register
       [this world data]
       (write-register (get-target-register world robot-idx index-reg-name) world data)))
-
-; TODO: (defrecord ShotRegister [robot-idx reg-name])
-
-; TODO: (defrecord RadarRegister [robot-idx reg-name])
 
 (defn init-registers
   "AIM, INDEX, SPEEDX and SPEEDY.
@@ -191,5 +223,4 @@
                       {"RANDOM" (->RandomRegister  robot-idx "RANDOM" 0)}
                       {"AIM"    (->AimRegister     robot-idx :aim 1.0)}
                       {"SHOT"   (->ShotRegister    robot-idx :shot-timer *GAME-SECONDS-PER-TICK*)}
-                      ; TODO: {"RADAR"  (->RadarRegister robot-idx "RADAR")}
-                      ]))))
+                      {"RADAR"  (->RadarRegister   robot-idx "RADAR" 0)}]))))

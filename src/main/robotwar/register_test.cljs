@@ -1,5 +1,6 @@
 (ns robotwar.register-test
   (:require [cljs.test :refer-macros [deftest is testing]]
+            [robotwar.constants :refer [ROBOT-RADIUS ROBOT-RANGE-X]]
             [robotwar.register :refer [read-register write-register]]
             [robotwar.world :as world]))
 
@@ -30,3 +31,39 @@
           r1 (get-registers w1)]
       (is (= 90 (read-register (r1 "SPEEDX") w1)))
       (is (= 9.0 (get-in w1 [:robots 0 :desired-v-x]))))))
+
+(defn- radar-world [& robot-updates]
+  (let [w (world/init-world ["" "" ""])]
+    (reduce (fn [acc [idx updates]]
+              (update-in acc [:robots idx] merge updates))
+            w
+            (map-indexed vector robot-updates))))
+
+(defn- read-radar [w dir]
+  (let [regs (get-in w [:robots 0 :brain :registers])
+        w' (write-register (regs "RADAR") w dir)
+        regs' (get-in w' [:robots 0 :brain :registers])]
+    (read-register (regs' "RADAR") w')))
+
+(deftest radar-smoke-test
+  (testing "ray hits closest alive non-self robot; else returns wall distance"
+    (let [robot-hit (radar-world {:pos-x 50.0 :pos-y 128.0}
+                                 {:pos-x 150.0 :pos-y 128.0}
+                                 {:pos-x 200.0 :pos-y 10.0})]
+      (is (= (- (- 100 ROBOT-RADIUS))
+             (read-radar robot-hit 90))))
+    (let [closer-wins (radar-world {:pos-x 50.0 :pos-y 128.0}
+                                   {:pos-x 100.0 :pos-y 128.0}
+                                   {:pos-x 200.0 :pos-y 128.0})]
+      (is (= (- (- 50 ROBOT-RADIUS))
+             (read-radar closer-wins 90))))
+    (let [no-hit (radar-world {:pos-x 50.0 :pos-y 128.0}
+                              {:pos-x 50.0 :pos-y 200.0}
+                              {:pos-x 60.0 :pos-y 220.0})]
+      (is (= (- ROBOT-RANGE-X 50)
+             (read-radar no-hit 90))))
+    (let [dead-excluded (radar-world {:pos-x 50.0 :pos-y 128.0}
+                                     {:pos-x 100.0 :pos-y 128.0 :alive? false}
+                                     {:pos-x 200.0 :pos-y 10.0})]
+      (is (= (- ROBOT-RANGE-X 50)
+             (read-radar dead-excluded 90))))))
