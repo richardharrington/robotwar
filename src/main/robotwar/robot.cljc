@@ -1,5 +1,7 @@
 (ns robotwar.robot
-  (:require [robotwar.constants :refer [*GAME-SECONDS-PER-TICK* MAX-ACCEL ROBOT-RADIUS]]
+  (:require [robotwar.constants :refer [*GAME-SECONDS-PER-TICK* MAX-ACCEL ROBOT-RADIUS
+                                        ROBOT-RANGE-X ROBOT-RANGE-Y
+                                        MAX-WALL-DAMAGE V-MAX]]
             [robotwar.brain :as brain]
             [robotwar.register :as register]
             [robotwar.physics :as physics]))
@@ -12,26 +14,25 @@
   #?(:clj (Math/copySign magnitude sign)
      :cljs (* (rw-abs magnitude) (if (neg? sign) -1 1))))
 
-; TODO: deal with bumping into walls.
-
 (defn init-robot
   "takes a robot-idx, a program, and a robot attribute map and returns a robot.
   The distance and distance/time units are all in decimeters and
   decimeters per second. Yes, you read that right. Don't ask. It fits
   best with the original specs of the game."
   [idx src-code attributes]
-  {:idx         idx
-   :pos-x       (:pos-x attributes)
-   :pos-y       (:pos-y attributes)
-   :aim         (:aim attributes)
-   :damage      (:damage attributes)
-   :alive?      true
-   :v-x         0.0
-   :v-y         0.0
-   :desired-v-x 0.0
-   :desired-v-y 0.0
-   :shot-timer  0.0
-   :brain       (brain/init-brain src-code (register/init-registers idx))})
+  {:idx            idx
+   :pos-x          (:pos-x attributes)
+   :pos-y          (:pos-y attributes)
+   :aim            (:aim attributes)
+   :damage         (:damage attributes)
+   :alive?         true
+   :v-x            0.0
+   :v-y            0.0
+   :desired-v-x    0.0
+   :desired-v-y    0.0
+   :shot-timer     0.0
+   :touching-walls #{}
+   :brain          (brain/init-brain src-code (register/init-registers idx))})
 
 (defn update-robots
   "takes a world and a function, and returns a world
@@ -51,28 +52,53 @@
   (merge robot {:shot-timer 
                 (max (- shot-timer *GAME-SECONDS-PER-TICK*) 0.0)}))
 
+(defn- wall-damage
+  "quadratic falloff in the perpendicular velocity component"
+  [v-perp]
+  (let [factor (/ (rw-abs v-perp) V-MAX)]
+    (* MAX-WALL-DAMAGE factor factor)))
+
 (defn move-robot
-  "takes a robot and returns it, moved through space.
+  "takes a robot and returns it, moved through space (with wall clamping,
+  slide behavior, and first-contact wall damage applied).
   helper function for tick-robot."
-  [{:keys [pos-x pos-y v-x v-y desired-v-x desired-v-y] :as robot}]
+  [{:keys [pos-x pos-y v-x v-y desired-v-x desired-v-y damage touching-walls] :as robot}]
   (let [max-accel-x (rw-copy-sign MAX-ACCEL desired-v-x)
         max-accel-y (rw-copy-sign MAX-ACCEL desired-v-y)
-        {new-pos-x :d, new-v-x :v} (physics/d-and-v-given-desired-v 
-                                     pos-x 
-                                     v-x 
-                                     desired-v-x 
-                                     max-accel-x 
+        {raw-pos-x :d, raw-v-x :v} (physics/d-and-v-given-desired-v
+                                     pos-x
+                                     v-x
+                                     desired-v-x
+                                     max-accel-x
                                      *GAME-SECONDS-PER-TICK*)
-        {new-pos-y :d, new-v-y :v} (physics/d-and-v-given-desired-v 
-                                     pos-y 
-                                     v-y 
-                                     desired-v-y 
-                                     max-accel-y 
-                                     *GAME-SECONDS-PER-TICK*)]
-    (merge robot {:pos-x new-pos-x
-                  :pos-y new-pos-y
-                  :v-x new-v-x
-                  :v-y new-v-y})))
+        {raw-pos-y :d, raw-v-y :v} (physics/d-and-v-given-desired-v
+                                     pos-y
+                                     v-y
+                                     desired-v-y
+                                     max-accel-y
+                                     *GAME-SECONDS-PER-TICK*)
+        hit-left?   (<= raw-pos-x 0.0)
+        hit-right?  (>= raw-pos-x ROBOT-RANGE-X)
+        hit-top?    (<= raw-pos-y 0.0)
+        hit-bottom? (>= raw-pos-y ROBOT-RANGE-Y)
+        new-touching (cond-> #{}
+                       hit-left?   (conj :left)
+                       hit-right?  (conj :right)
+                       hit-top?    (conj :top)
+                       hit-bottom? (conj :bottom))
+        old-touching (or touching-walls #{})
+        newly-hit-x? (and (or hit-left? hit-right?)
+                          (not (or (:left old-touching) (:right old-touching))))
+        newly-hit-y? (and (or hit-top? hit-bottom?)
+                          (not (or (:top old-touching) (:bottom old-touching))))
+        damage-delta (+ (if newly-hit-x? (wall-damage raw-v-x) 0.0)
+                        (if newly-hit-y? (wall-damage raw-v-y) 0.0))]
+    (merge robot {:pos-x (max 0.0 (min ROBOT-RANGE-X raw-pos-x))
+                  :pos-y (max 0.0 (min ROBOT-RANGE-Y raw-pos-y))
+                  :v-x   (if (or hit-left? hit-right?) 0.0 raw-v-x)
+                  :v-y   (if (or hit-top? hit-bottom?) 0.0 raw-v-y)
+                  :touching-walls new-touching
+                  :damage (- damage damage-delta)})))
 
 (defn collide-two-robots
   "takes a vector of robots, two robot-indexes (an acting robot
@@ -148,10 +174,7 @@
 
 (defn tick-robot
   "takes a robot and a world and returns the new state of the world
-  after the robot has taken its turn.
-  TODO: add support for collision with walls first (right now it just 
-  stops when it gets there, and doesn't get damaged or bounce), 
-  then support for collision with other robots." 
+  after the robot has taken its turn."
   [{robot-idx :idx :as robot} world]
   (if (not (:alive? robot))
     world

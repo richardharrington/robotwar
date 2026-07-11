@@ -74,7 +74,7 @@ The following decisions are the outcome of the design conversation. Each is fina
 
 ### 2.4 Robot-on-robot collisions
 
-- **Detection: circle-circle.** Two robots collide when the distance between their centers is `< 2 × ROBOT-RADIUS`. Replace the existing axis-by-axis square logic in `robot.cljc:76-146`.
+- **Detection: circle-circle.** Two robots collide when the distance between their centers is `< 2 × ROBOT-RADIUS`. Replace the existing axis-by-axis square logic in `collide-two-robots` / `collide-all-robots` in `robot.cljc` (currently ~line 103 onward; shifts as steps land).
 - **Damage formula:** `damage = MAX_COLLISION_DAMAGE × (approach_speed / (2 × V_MAX))²` per robot, where `approach_speed = (v_actor - v_target) · contact_normal` and `contact_normal = (target_pos - actor_pos) / distance`. `MAX_COLLISION_DAMAGE = 25` (matches the manual's "head-on" reference).
 - **First-contact only.** Same policy as walls — only apply damage on the tick of transition. Track per-robot-pair contact state.
 - **Collision response.** Preserve the existing "swap momentum" billiard-ball behavior, but along the contact normal vector rather than along a picked axis. Separate the robots so they're exactly `2 × ROBOT-RADIUS` apart along the normal (eliminate overlap).
@@ -192,7 +192,7 @@ A development aid pulled forward from later polish: a DOM sidebar to the right o
 
 - Add per-robot wall-touching state: `:touching-walls #{}` (a set of `:left`, `:right`, `:top`, `:bottom`).
 - In `move-robot`, after computing `new-pos-x`/`new-pos-y`:
-  - Detect which walls the new position would cross (`new-pos-x < ROBOT-RADIUS` → `:left`, etc).
+  - Detect which walls the new position would cross. Walls sit at `pos-x = 0` (left), `pos-x = ROBOT-RANGE-X` (right), `pos-y = 0` (top), `pos-y = ROBOT-RANGE-Y` (bottom) — `pos-x/y` is the robot's *center* and the canvas visually pads by `ROBOT-RADIUS` on every side so the render doesn't clip. Legal range is `[0, ROBOT-RANGE-X] × [0, ROBOT-RANGE-Y]`, matching `(rand ROBOT-RANGE-X)` at init. So: `new-pos-x <= 0` → `:left`, `>= ROBOT-RANGE-X` → `:right`, etc.
   - Clamp position to the legal range.
   - For each wall the robot is newly touching (in new set but not in old): compute `v_perp` (the velocity component into that wall at impact), apply quadratic damage.
   - Zero the perpendicular velocity component for each currently-touching wall.
@@ -311,11 +311,11 @@ The DAMAGE register read already rounds via `rw-round` in `register.cljc:42-44`.
 
 ### 5.2 The dec-damage placeholder
 
-`robot.cljc:101-119` has `(dec damage)` in two places as the placeholder collision damage. Step 5 removes both. Don't leave one behind. The README's Category 1 #5 explicitly calls this out.
+`collide-two-robots` in `robot.cljc` has `(dec damage)` in two places as the placeholder collision damage. Step 5 removes both. Don't leave one behind. The README's Category 1 #5 explicitly calls this out.
 
 ### 5.3 The "if false" death guard
 
-`robot.cljc:155` has `(if false ...)` with a comment `replace this real damage line when we get robot death implemented correctly: (if (<= (:damage robot) 0)`. Step 3 changes this to `(if (not (:alive? robot)) ...)`. Be careful not to apply the literal commented version — we want the `:alive?` flag check, not a direct damage check, because the dead-robot bookkeeping happens upstream in `tick-combined-world`.
+**(No longer present — landed in Step 3.)** `tick-robot` now branches on `(if (not (:alive? robot)) ...)`. Kept here for historical context.
 
 ### 5.4 Self vs. other collision indexing
 
@@ -465,3 +465,46 @@ The canvas had a `shell-map` helper that defensively converted this runtime type
 ### A.12 Verification approach (no test code)
 
 As specified, no engine code was touched and no automated tests were added. Manual verification per §4.4 was done with a headless browser driving the real page: duplicate-name lineup (`shooter, shooter, mover`) confirmed distinct swatch colors matching the arena; health counted down per frame; the dead robot's row dimmed to 0.35 opacity at `0%` and never went negative (the `max 0` clamp held against overkill); a second `start-game` with a different lineup rebuilt the legend with no stale rows. One observation for later steps: two `shooter` robots stalemate indefinitely until radar (Step 6) exists, so end-of-battle legend freezing under the victory overlay could not be observed yet — re-check it during Step 7 verification.
+
+---
+
+## Addendum — Lessons from Step 4 execution
+
+### A.13 Walls live at `pos-x = 0` / `pos-x = ROBOT-RANGE-X`, not at `± ROBOT-RADIUS`
+
+The original Step 4 body said "detect which walls the new position would cross (`new-pos-x < ROBOT-RADIUS` → `:left`, etc)." That's inconsistent with how the coordinate system actually works and would have made every random init position (0 ≤ `pos-x` < `ROBOT-RADIUS`) start life "already touching" the left wall.
+
+`pos-x`/`pos-y` is the robot's **center** in game coordinates. The canvas visually pads by `ROBOT-RADIUS` on every side (see `canvas.cljs`'s `room-for-robots` / `arena-width`) so a robot at `pos-x = 0` renders with its center at canvas x = `ROBOT-RADIUS` — its left edge flush against the visible wall. The legal range is `[0, ROBOT-RANGE-X] × [0, ROBOT-RANGE-Y]`, matching `(rand ROBOT-RANGE-X)` at init.
+
+The Step 4 body has been corrected inline. Future steps that reason about wall geometry should treat walls as at `0` and `ROBOT-RANGE-{X,Y}` on the corresponding axis.
+
+### A.14 Impact velocity is the physics tick's returned `v` (before wall clamping)
+
+The spec asks for "the velocity component into the wall at impact," but doesn't pin down which velocity. The natural choice is the `v` returned by `physics/d-and-v-given-desired-v` for the tick — i.e., what the velocity *would* have been at end-of-tick if the wall weren't there. This slightly overestimates for impacts that happen mid-tick with acceleration still being applied (the robot might have hit the wall *before* the acceleration boost took full effect), but it's simple, deterministic, and reads correctly under the spec language.
+
+**Recommendation for Step 5:** use the same convention — compute `approach_speed` from robot velocities at end-of-tick (post-`move-robot`, pre-collision-response). Don't try to reconstruct "velocity at the exact moment of contact"; it's not worth the physics.
+
+### A.15 Tests need `v = desired-v` to assert exact damage magnitudes
+
+Any test that asserts a specific wall-damage value must set `desired-v-{x,y}` equal to `v-{x,y}` at test setup. Otherwise the physics accelerates or decelerates the robot during the tick and the returned `v` (which drives damage) is not what the test-writer expected.
+
+Worse: with `v-x = V-MAX` and `desired-v-x = 0.0`, `Math/copySign(MAX-ACCEL, 0.0)` returns `+MAX-ACCEL` (positive zero has positive sign under IEEE 754), so the physics *accelerates* the robot in the +x direction rather than decelerating. Combined with a resulting *negative* `time-to-reach-desired-v`, `d-and-v-given-desired-v` can produce a position that runs **backwards** from where the robot started — clean state but nonsense physics. This is an artifact of the existing physics helper being written for the "brain sets a new desired-v" use case, not "velocity is decoupled from desired-v at rest." Not worth fixing in Step 4, but worth knowing when writing Step 5 tests.
+
+### A.16 Wall damage integrates cleanly with the existing tick order
+
+Damage is applied directly on the robot's `:damage` inside `move-robot` (same tick as movement). No world-level accumulator was needed — wall damage is per-robot and doesn't cross robot boundaries. The existing `tick-combined-world` sequence still works:
+
+1. Each alive robot ticks → `move-robot` applies wall damage → robot's `:damage` may already be `≤ 0`
+2. Shells tick → shell-damage accumulator applied
+3. Death mark → any robot with `:damage ≤ 0` gets `:alive? false`
+4. `:result` computed → `:just-died` correctly includes wall-killed robots
+
+**Recommendation for Step 5:** robot-robot collisions *do* cross robot boundaries, so they should use the per-robot accumulator pattern from §A.7 (compute all deltas over pairs first, apply in one pass). Wall damage's in-place mutation would double-apply if used naively for collisions.
+
+### A.17 `MAX-ACCEL`'s comment is wrong (but the value is right)
+
+`constants.cljc` comments `MAX-ACCEL` as "decimeters per second per second" and `init-robot`'s docstring says "distance and distance/time units are all in decimeters." Both are stale. The unit is m/s² — verified from the existing acceleration test: starting at `v-x = 0` with `desired-v-x = 14` (from SPEEDX=140 × 0.1 multiplier) and `MAX-ACCEL = 4`, after 1 second `v-x = 4` and `pos-x = 2` — which matches `a = 4 m/s²`, not `4 dm/s²`. `V-MAX = 25.5` and `ROBOT-RANGE-X = 256.0` are also both in meters. Don't take the comments at face value; grep the constants file for the units and verify against the acceleration test if in doubt.
+
+### A.18 Two stale TODO comments removed
+
+The pre-Step-4 `robot.cljc` carried two stale TODOs about walls: `; TODO: deal with bumping into walls.` at the top of the file and a `TODO: add support for collision with walls first…` in `tick-robot`'s docstring. Both were removed. Step 5 will remove any remaining collision-related TODOs.
