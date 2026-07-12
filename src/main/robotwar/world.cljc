@@ -42,7 +42,7 @@
         alive-indices (vec (keep-indexed (fn [idx robot]
                                            (when (:alive? robot) idx))
                                          (:robots starting-world)))
-        {:keys [shells next-shell-id] :as ticked-robots-world}
+        {:keys [shells] :as ticked-robots-world}
         (reduce (fn [{robots :robots :as world} robot-idx]
                   (robot/tick-robot (robots robot-idx) world))
                 starting-world

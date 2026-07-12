@@ -2,7 +2,7 @@
   (:require [cljs.test :refer-macros [deftest is testing]]
             [robotwar.constants :refer [*GAME-SECONDS-PER-TICK*
                                         MAX-WALL-DAMAGE MAX-COLLISION-DAMAGE
-                                        ROBOT-RADIUS V-MAX ROBOT-RANGE-X]]
+                                        ROBOT-RADIUS V-MAX]]
             [robotwar.register :as register]
             [robotwar.robot :refer [tick-robot move-robot collision-pass]]
             [robotwar.world :as world]))

@@ -2,7 +2,7 @@
   (:require [clojure.test :refer :all]
             [robotwar.world :refer :all]
             [robotwar.robot :as robot]
-            [robotwar.constants :refer [MAX-BLAST-DAMAGE BLAST-RADIUS]]))
+            [robotwar.constants :refer [MAX-BLAST-DAMAGE]]))
 
 (defn- make-test-robot
   [idx pos-x pos-y damage]

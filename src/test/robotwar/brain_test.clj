@@ -1,8 +1,7 @@
 (ns robotwar.brain-test
   (:require [clojure.test :refer :all]
             [robotwar.brain :refer :all]
-            [robotwar.world :as world]
-            [robotwar.register :as register]))
+            [robotwar.world :as world]))
 
 (def initial-world
   (world/init-world [(slurp "public/programs/multi-use.rw")

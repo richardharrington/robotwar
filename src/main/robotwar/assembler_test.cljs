@@ -1,7 +1,7 @@
 (ns robotwar.assembler-test
   (:require [cljs.test :refer-macros [deftest is testing]]
             [clojure.string :refer [join]]
-            [robotwar.assembler :refer [assemble disambiguate-minus-signs lex make-instr-pairs map-labels parse parse-token str->int strip-comments valid-word]]))
+            [robotwar.assembler :refer [assemble disambiguate-minus-signs make-instr-pairs map-labels parse parse-token str->int strip-comments valid-word]]))
 
 (def line1 "IF DAMAGE # D GOTO MOVE    ; comment or something")
 (def line2 "AIM-17 TO AIM              ; other comment")

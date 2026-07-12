@@ -1,6 +1,6 @@
 (ns robotwar.register-test
   (:require [clojure.test :refer :all]
-            [robotwar.constants :refer [ROBOT-RADIUS ROBOT-RANGE-X ROBOT-RANGE-Y]]
+            [robotwar.constants :refer [ROBOT-RADIUS ROBOT-RANGE-X]]
             [robotwar.register :refer :all]
             [robotwar.world :as world]))
 

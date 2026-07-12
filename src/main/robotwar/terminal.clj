@@ -1,9 +1,7 @@
 (ns robotwar.terminal
   (:use [clojure.string :only [join]]
-        [clojure.pprint :only [pprint]]
         [robotwar.constants])
-  (:require [clj-time.core :as time]
-            [clj-time.periodic :as periodic]))
+  (:require [clj-time.core :as time]))
 
 (defn worlds-for-terminal
   "takes worlds and a fast-forward factor, and

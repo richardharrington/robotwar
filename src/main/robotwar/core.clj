@@ -2,7 +2,6 @@
   (:use [clojure.pprint :only [pprint]])
   (:require [robotwar.world :as world]
             [robotwar.register :as register]
-            [robotwar.robot :as robot]
             [robotwar.terminal :as terminal]))
 
 ; this is a hacky place for messing with stuff.

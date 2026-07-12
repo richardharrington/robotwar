@@ -31,7 +31,7 @@
 
 (def register-field-read-mixin
   ; returns :val field of register
-  (fn [{val :val} world]
+  (fn [{val :val} _world]
     val))
 
 (def register-field-write-mixin
@@ -102,9 +102,9 @@
        IWriteRegister {:write-register robot-field-write-mixin})
      (extend ReadOnlyRobotFieldRegister
        IReadRegister {:read-register robot-field-read-mixin}
-       IWriteRegister {:write-register (fn [this world data] world)})
+       IWriteRegister {:write-register (fn [_this world _data] world)})
      (extend RandomRegister
-       IReadRegister {:read-register (fn [{val :val} world] (rand-int val))}
+       IReadRegister {:read-register (fn [{val :val} _world] (rand-int val))}
        IWriteRegister {:write-register register-field-write-mixin})
      (extend AimRegister
        IReadRegister {:read-register robot-field-read-mixin}
@@ -114,10 +114,10 @@
                                                    (mod (double (* data multiplier)) 360)))})
      (extend ShotRegister
        IReadRegister {:read-register robot-field-read-mixin}
-       IWriteRegister {:write-register (fn [{:keys [robot-idx field-name]}
+       IWriteRegister {:write-register (fn [{:keys [robot-idx]}
                                             {:keys [shells next-shell-id] :as world}
                                             data]
-                                         (let [{:keys [pos-x pos-y aim shot-timer] :as robot}
+                                         (let [{:keys [pos-x pos-y aim shot-timer]}
                                                (get-in world (path-to-robot robot-idx))]
                                            (if (> shot-timer 0)
                                              world
@@ -144,9 +144,9 @@
        IWriteRegister (write-register [this world data] (robot-field-write-mixin this world data)))
      (extend-type ReadOnlyRobotFieldRegister
        IReadRegister (read-register [this world] (robot-field-read-mixin this world))
-       IWriteRegister (write-register [this world data] world))
+       IWriteRegister (write-register [_this world _data] world))
      (extend-type RandomRegister
-       IReadRegister (read-register [this world] (rand-int (:val this)))
+       IReadRegister (read-register [this _world] (rand-int (:val this)))
        IWriteRegister (write-register [this world data] (register-field-write-mixin this world data)))
      (extend-type AimRegister
        IReadRegister (read-register [this world] (robot-field-read-mixin this world))
@@ -157,7 +157,7 @@
      (extend-type ShotRegister
        IReadRegister (read-register [this world] (robot-field-read-mixin this world))
        IWriteRegister (write-register [this {:keys [shells next-shell-id] :as world} data]
-                        (let [{:keys [pos-x pos-y aim shot-timer] :as robot}
+                        (let [{:keys [pos-x pos-y aim shot-timer]}
                               (get-in world (path-to-robot (:robot-idx this)))]
                           (if (> shot-timer 0)
                             world
@@ -186,13 +186,13 @@
   (read-register
       ; returns the number stored in whatever register
       ; is pointed to by the index-reg-name register
-    [this world]
+    [_this world]
     (read-register (get-target-register world robot-idx index-reg-name) world))
   IWriteRegister
   (write-register
       ; returns a world with the number in the register pointed to
       ; by the index-reg-name register updated with the data argument to write-register
-    [this world data]
+    [_this world data]
     (write-register (get-target-register world robot-idx index-reg-name) world data)))
 
 (defn init-registers

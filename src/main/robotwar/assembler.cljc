@@ -54,7 +54,7 @@
   "parseInt, but returns nil on failure"
   [s-raw]
   #?(:clj (try (Integer/parseInt s-raw)
-               (catch Exception e nil))
+               (catch Exception _e nil))
      :cljs (let [n (js/parseInt s-raw)]
              (if (js/isNaN n) nil n))))
 
@@ -94,7 +94,7 @@
          parsed-tokens []]
     (if (empty? tokens)
       parsed-tokens
-      (let [{token-type :type token-val :val :as parsed-token} (parse-token token)]
+      (let [{token-type :type :as parsed-token} (parse-token token)]
         (case token-type
           :error parsed-token
           (:command :number) (recur tail (conj parsed-tokens parsed-token))
@@ -126,7 +126,7 @@
          results []]
     (let [{prev-type :type} (last results)
           [{current-val :val :as current-token}
-           & [{next-val :val, next-type :type :as next-token} :as tail]] tokens]
+           & [{next-val :val, next-type :type} :as tail]] tokens]
       (cond
         (empty? tokens) results
         (and (= current-val "-")

@@ -19,7 +19,7 @@
 (defn- ticks-survived [robot final-tick]
   (or (:died-at-tick robot) final-tick))
 
-(defn- leaderboard-rows [{:keys [robots program-names tick result]}]
+(defn- leaderboard-rows [{:keys [robots tick result]}]
   (let [winner-idx (:winner result)]
     (sort-by (fn [robot]
                [(if (= (:idx robot) winner-idx) 0 1)
