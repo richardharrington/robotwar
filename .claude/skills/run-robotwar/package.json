@@ -1,0 +1,8 @@
+{
+  "name": "run-robotwar-driver",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "playwright-core": "^1.49.0"
+  }
+}
