@@ -63,6 +63,60 @@
     {:x (* distance (js/Math.cos a))
      :y (* distance (js/Math.sin a))}))
 
+;; ---------------------------------------------------------------------
+;; Death animation (presentation state only — the engine's :alive? flag
+;; stays authoritative). Spawned by app.cljs on the alive->dead
+;; transition; ticked in wall-clock time inside animate-world, so it
+;; runs at the same speed regardless of fast-forward.
+
+(def ^:private death-particle-count 30)
+(def ^:private death-flash-ms 150)
+(def ^:private death-ring-ms 500)
+(def ^:private death-anim-ms 900)
+
+(defonce death-animations (atom {}))
+
+(defn animations-active? []
+  (boolean (seq @death-animations)))
+
+(defn clear-animations! []
+  (reset! death-animations {}))
+
+(defn spawn-death-animation!
+  "Register a death burst at (x, y) in world meters. Particle velocities
+  are deterministic per (robot-idx, particle-number) — §4.4."
+  [robot-idx x y color]
+  (swap! death-animations assoc robot-idx
+         {:x x
+          :y y
+          :color color
+          :age-ms 0
+          :last-ms nil
+          :particles
+          (vec (for [k (range death-particle-count)]
+                 (let [seed (+ (* robot-idx 31.7) (* k 7.93))
+                       angle (* 2 js/Math.PI (rand01 seed))
+                       speed (+ 20 (* 60 (rand01 (+ seed 1.7))))] ; m/s
+                   {:vx (* speed (js/Math.cos angle))
+                    :vy (* speed (js/Math.sin angle))
+                    :max-age-ms (+ 400 (* 500 (rand01 (+ seed 3.1))))
+                    :color (if (zero? (mod k 3)) "#ffffff" color)})))}))
+
+(defn- tick-animations!
+  "Advance every animation's age by wall-clock elapsed time and cull
+  finished ones."
+  []
+  (let [now (js/performance.now)]
+    (swap! death-animations
+           (fn [anims]
+             (into {}
+                   (keep (fn [[idx anim]]
+                           (let [last-ms (or (:last-ms anim) now)
+                                 age (+ (:age-ms anim) (- now last-ms))]
+                             (when (< age death-anim-ms)
+                               [idx (assoc anim :age-ms age :last-ms now)])))
+                         anims))))))
+
 (defn animation [canvas]
   (let [width (.-width canvas)
         height (.-height canvas)
@@ -166,7 +220,45 @@
               (fill-circle (offset-x (:pos-x shell))
                            (offset-y (:pos-y shell))
                            (* shell-display-radius 10)
-                           shell-color))]
+                           shell-color))
+            (draw-death-animations []
+              (doseq [[_ {:keys [x y color age-ms particles]}] @death-animations]
+                (let [cx (offset-x x)
+                      cy (offset-y y)]
+                  ;; white flash: covers the vanished body for the first
+                  ;; beat so the burst visibly grows out of the robot
+                  (when (< age-ms death-flash-ms)
+                    (let [t (/ age-ms death-flash-ms)]
+                      (set! (.-globalAlpha ctx) (- 1 t))
+                      (fill-circle cx cy
+                                   (* robot-display-radius (+ 1 (* 0.8 t)))
+                                   "#ffffff")))
+                  ;; inner ring: same expand-and-fade language as
+                  ;; explode-shell, in the dead robot's color
+                  (when (< age-ms death-ring-ms)
+                    (let [t (/ age-ms death-ring-ms)]
+                      (set! (.-globalAlpha ctx) (- 1 t))
+                      (set! (.-strokeStyle ctx) color)
+                      (set! (.-lineWidth ctx) 3)
+                      (.beginPath ctx)
+                      (.arc ctx cx cy
+                            (* robot-display-radius (+ 1 (* 2.5 t)))
+                            0 (* 2 js/Math.PI) true)
+                      (.stroke ctx)))
+                  ;; sparks: position is a pure function of age —
+                  ;; outward velocity with ease-out deceleration; alpha
+                  ;; fades quadratically (bright early, gone by max-age)
+                  ;; and size shrinks from 3px to 1px
+                  (doseq [{:keys [vx vy max-age-ms] pcolor :color} particles]
+                    (when (< age-ms max-age-ms)
+                      (let [t (/ age-ms max-age-ms)
+                            secs (/ age-ms 1000)
+                            ease (- 1 (* 0.5 t))]
+                        (set! (.-globalAlpha ctx) (- 1 (* t t)))
+                        (fill-circle (offset-x (+ x (* vx secs ease)))
+                                     (offset-y (+ y (* vy secs ease)))
+                                     (- 3 (* 2 t)) pcolor))))
+                  (set! (.-globalAlpha ctx) 1))))]
       {:animate-world
        (fn [previous-world current-world]
          (.clearRect ctx 0 0 width height)
@@ -183,6 +275,8 @@
              (if (not= (:damage (get-in previous-world [:robots idx])) (:damage robot))
                (draw-robot robot idx "#fff")
                (draw-robot robot idx (damage-color idx (:damage robot))))))
+         (tick-animations!)
+         (draw-death-animations)
          (when-let [result (:result current-world)]
            (let [program-names (:program-names current-world)]
              (if (:winner result)

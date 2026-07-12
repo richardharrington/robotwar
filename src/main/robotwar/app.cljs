@@ -84,6 +84,21 @@
                   (map vector prev-robots next-robots))
         (audio/play! :robot-death)))))
 
+(defn spawn-death-animations!
+  "Spawn a particle burst for every robot whose :alive? flipped false
+  this frame, at its last position, in its full-saturation color."
+  [prev-world next-world]
+  (when (and prev-world next-world (not (identical? prev-world next-world)))
+    (doseq [[idx [prev next]] (map-indexed vector
+                                           (map vector
+                                                (:robots prev-world)
+                                                (:robots next-world)))]
+      (when (and (:alive? prev) (not (:alive? next)))
+        (canvas/spawn-death-animation! idx
+                                       (:pos-x next)
+                                       (:pos-y next)
+                                       (nth canvas/robot-colors idx))))))
+
 (defn update-sound-toggle-button! []
   (when-let [el (.getElementById js/document "soundToggle")]
     (set! (.-textContent el) (if (audio/sound-enabled?) "🔊" "🔇"))))
@@ -110,6 +125,7 @@
 
 (defn restart-game! []
   (stop-game)
+  (canvas/clear-animations!)
   (swap! state assoc :world nil :tick-count 0)
   (when-let [canvas-el (.getElementById js/document "canvas")]
     (set! (.. canvas-el -style -opacity) "0"))
@@ -137,6 +153,17 @@
   (when (game-over?)
     (restart-game!)))
 
+(defn game-over-step
+  "Post-victory wind-down: the engine no longer ticks, but death
+  animations run in wall time and must play out. Keep redrawing until
+  they're done."
+  [_timestamp]
+  (let [{:keys [world]} @state]
+    (when world
+      (canvas/animate-world! world world)
+      (when (canvas/animations-active?)
+        (swap! state assoc :raf-id (js/requestAnimationFrame game-over-step))))))
+
 (defn loop-step [timestamp]
   (when (:running? @state)
     (let [{:keys [world tick-count tick-duration-ms accumulator-ms last-frame-time fast-forward previous-world]} @state
@@ -160,11 +187,13 @@
              :tick-count next-tick-count
              :accumulator-ms next-accumulator-ms
              :last-frame-time timestamp)
+      (spawn-death-animations! (or previous-world world) next-world)
       (canvas/animate-world! (or previous-world world) next-world)
       (legend/update-legend! next-world)
       (play-battle-sfx! (or previous-world world) next-world)
       (if (:result next-world)
-        (swap! state assoc :running? false)
+        (do (swap! state assoc :running? false)
+            (swap! state assoc :raf-id (js/requestAnimationFrame game-over-step)))
         (swap! state assoc :raf-id (js/requestAnimationFrame loop-step))))))
 
 (defn parse-program-names [value]

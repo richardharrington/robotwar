@@ -496,6 +496,18 @@ particles fans out from its last position, the inner ring expands and fades,
 and the death sound plays. The animation completes within ~1 second and
 doesn't leave debris on screen.
 
+**Resolved during implementation (see Slice E addendum, §8):** animation
+state lives in a `death-animations` atom in `canvas.cljs`; 30 particles,
+900ms total; particle kinematics are pure functions of age (deterministic
+per robot-idx + particle-number). Body-to-particles transition: (a)
+immediate vanish, judged from screenshots, then augmented with a brief
+150ms white flash disc at the death spot — option (c)'s "violent flash"
+in `explode-shell`'s expand-and-fade language — which bridges the vanish
+without (b)'s body-fade machinery. A gap the plan missed: the RAF loop
+stops on `:result`, which would freeze the final death's animation, so a
+`game-over-step` wind-down loop keeps redrawing until animations finish.
+Animations tick in wall-clock time, unaffected by fast-forward.
+
 ---
 
 ### Slice F — DOM-overlay victory display (LOCKED)
@@ -776,3 +788,42 @@ recommendations:
 - Verified via injected-damage screenshots: all three shapes render,
   colors and desaturation unchanged, marks clip correctly on circle and
   diamond. Zero console errors; suites green.
+
+### Slice E addendum (landed 2026-07-11)
+
+- **State ownership:** option (a) — a `death-animations` atom in
+  `canvas.cljs` keyed by robot idx. Engine untouched; `:alive?` stays
+  authoritative. `app.cljs` diffs alive→dead per frame
+  (`spawn-death-animations!`, right next to Slice B's SFX diff, which
+  already fires `:robot-death` on the same transition).
+- **Particle model:** 30 particles per death, deterministic per
+  `(robot-idx, particle-number)` via the Slice C hash (§4.4). Each
+  particle stores only velocity (20–80 m/s, random direction) and a
+  max age (400–900ms); position and alpha are *pure functions of age*
+  (ease-out deceleration; quadratic alpha fade; 3px→1px shrink), so
+  there is no per-particle mutation — the tick only advances one age
+  counter per animation. Every third particle is white, the rest the
+  robot's color. Positions are stored in world meters and scaled at
+  draw time.
+- **Composition:** white flash disc (150ms, expand + fade) + colored
+  expanding ring (500ms, `explode-shell`'s language) + sparks (up to
+  900ms). Animations tick in wall-clock time via `performance.now`,
+  so they look identical at any fast-forward.
+- **Body-to-particles judgment (locked process followed):** implemented
+  (a) immediate-vanish and screenshotted frames at 80/250/500/800ms.
+  The colored ring anchored the burst to the robot's spot well, but the
+  first beat lacked punch and the linear alpha fade read dim. Rather
+  than (b)'s body fade, added option (c)'s flavor: the 150ms white
+  flash disc covering the vanished body. Screenshots after: the burst
+  visibly erupts *from* the robot. Shipped (a) + flash.
+- **Plan gap found:** `loop-step` stops requesting frames once
+  `:result` is set, which would freeze the battle-ending death's
+  animation on its first frame. Added `game-over-step` in `app.cljs`: a
+  wind-down RAF loop that keeps calling `animate-world!` (world no
+  longer ticks) until `animations-active?` goes false, then draws one
+  final clean frame. `restart-game!` clears the animations atom and
+  cancels the wind-down's RAF id via the existing `stop-game` path.
+- Verified via kill-injection screenshots: single death mid-battle
+  (flash → ring+sparks → dispersal → clean tail, ~900ms) and a
+  four-robot simultaneous kill that ends the battle (all four bursts
+  play out under the victory text). Zero console errors; suites green.
