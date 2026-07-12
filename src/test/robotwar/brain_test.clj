@@ -1,6 +1,5 @@
 (ns robotwar.brain-test
-  (:require [clojure.test :refer :all]
-            [robotwar.brain :refer :all]
+  (:require [clojure.test :refer [deftest is testing]]
             [robotwar.world :as world]))
 
 (def initial-world

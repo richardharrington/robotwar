@@ -1,6 +1,6 @@
 (ns robotwar.world-test
-  (:require [clojure.test :refer :all]
-            [robotwar.world :refer :all]
+  (:require [clojure.test :refer [deftest is testing]]
+            [robotwar.world :refer [init-world tick-combined-world]]
             [robotwar.robot :as robot]
             [robotwar.constants :refer [MAX-BLAST-DAMAGE]]))
 

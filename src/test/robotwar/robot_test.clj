@@ -1,7 +1,9 @@
 (ns robotwar.robot-test
-  (:require [clojure.test :refer :all]
-            [robotwar.robot :refer :all]
-            [robotwar.constants :refer :all]
+  (:require [clojure.test :refer [deftest is testing]]
+            [robotwar.robot :refer [collision-pass move-robot tick-robot]]
+            [robotwar.constants :refer [*GAME-SECONDS-PER-TICK* MAX-COLLISION-DAMAGE
+                                        MAX-WALL-DAMAGE ROBOT-RADIUS ROBOT-RANGE-X
+                                        ROBOT-RANGE-Y V-MAX]]
             [robotwar.physics :as physics]
             [robotwar.register :as register]
             [robotwar.world :as world]))

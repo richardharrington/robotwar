@@ -134,7 +134,7 @@
              (not (#{:number :register} prev-type)))
         (recur (rest tail)
                (conj results (into current-token {:val (- next-val), :type :number})))
-        :otherwise (recur tail (conj results current-token))))))
+        :else (recur tail (conj results current-token))))))
 
 (defn make-instr-pairs
   "Compiles the tokens into token-pairs. Commands consume the next token.
@@ -174,12 +174,13 @@
           (recur tail (assoc-in result [:labels (command :val)] next-instr-num))
           (recur tail (assoc-in result [:instrs next-instr-num] instr)))))))
 
-(defn assemble [src-code]
+(defn assemble
   "compiles robotwar code, with error-checking beginning after the lexing
   step. All functions that return errors will return a map with the keyword
   :error, and then a token with a :val field containing the error string,
   and metadata containing :pos and :line fields containing the location.
   So far only parse implements error-checking."
+  [src-code]
   (let [lexed (-> src-code split-lines strip-comments lex)]
     (reduce (fn [result step]
               (if (= (:type result) :error)

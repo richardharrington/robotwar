@@ -1,7 +1,7 @@
 (ns robotwar.terminal
-  (:use [clojure.string :only [join]]
-        [robotwar.constants])
-  (:require [clj-time.core :as time]))
+  (:require [clojure.string :refer [join]]
+            [robotwar.constants :refer [*GAME-SECONDS-PER-TICK* ROBOT-RANGE-X ROBOT-RANGE-Y]]
+            [clj-time.core :as time]))
 
 (defn worlds-for-terminal
   "takes worlds and a fast-forward factor, and
@@ -49,7 +49,7 @@
   (println (format "Animation frame rate: %.1f frames per second", fps))
   (println "Round number:" idx)
   (println (format "Seconds elapsed in the game world: %d", (int (* idx *GAME-SECONDS-PER-TICK*))))
-  (println (format "Seconds elapsed in the real world: %d", (time/in-secs time-since-start)))
+  (println (format "Seconds elapsed in the real world: %d", (time/in-seconds time-since-start)))
   (println))
 
 (defn animate
@@ -69,12 +69,12 @@
                                       (-> (time/interval
                                            this-instant
                                            desired-next-frame-calc-start)
-                                          (time/in-msecs)
+                                          (time/in-millis)
                                           (Thread/sleep))
                                       desired-next-frame-calc-start))
-            animation-timestamp (time/in-msecs (time/interval
-                                                starting-instant
-                                                next-frame-calc-start))]
+            animation-timestamp (time/in-millis (time/interval
+                                                 starting-instant
+                                                 next-frame-calc-start))]
         (recur (drop-while #(< (:timestamp %) animation-timestamp)
                            worlds)
                next-frame-calc-start)))))

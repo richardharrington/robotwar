@@ -1,7 +1,7 @@
 (ns robotwar.register-test
-  (:require [clojure.test :refer :all]
+  (:require [clojure.test :refer [deftest is testing]]
             [robotwar.constants :refer [ROBOT-RADIUS ROBOT-RANGE-X]]
-            [robotwar.register :refer :all]
+            [robotwar.register :refer [read-register write-register]]
             [robotwar.world :as world]))
 
 (def world (world/init-world ["" ""]))

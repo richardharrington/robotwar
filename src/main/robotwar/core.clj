@@ -1,6 +1,6 @@
 (ns robotwar.core
-  (:use [clojure.pprint :only [pprint]])
-  (:require [robotwar.world :as world]
+  (:require [clojure.pprint :refer [pprint]]
+            [robotwar.world :as world]
             [robotwar.register :as register]
             [robotwar.terminal :as terminal]))
 

@@ -25,9 +25,10 @@
    :registers registers
    :obj-code (assembler/assemble src-code)})
 
-(defn resolve-arg [{arg-val :val arg-type :type} registers labels world read-register]
+(defn resolve-arg
   "resolves an instruction argument to a numeric value
   (either an arithmetic or logical comparison operand, or an instruction pointer)."
+  [{arg-val :val arg-type :type} registers labels world read-register]
   (case arg-type
     :label     (labels arg-val)
     :number    arg-val
