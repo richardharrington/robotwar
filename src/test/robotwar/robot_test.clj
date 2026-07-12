@@ -209,9 +209,9 @@
       (is (contains? (:colliding-with (result 0)) 1))
       (is (contains? (:colliding-with (result 1)) 0)))))
 
-(deftest collision-glancing-small-damage-test
-  (testing "glancing collision applies small damage proportional to approach-speed squared"
-    ; robots approaching at V-MAX/4 along x, offset in y — approach normal ≈ +x direction
+(deftest collision-slow-head-on-small-damage-test
+  (testing "slow head-on collision applies small damage proportional to approach-speed squared"
+    ; robots approaching head-on along x at V-MAX/4 each → approach speed = V-MAX/2
     (let [gap (* 0.5 ROBOT-RADIUS)
           v (/ V-MAX 4.0)
           a (make-robot-at 0 (- 100.0 gap) 100.0 v 0.0 v 0.0)
@@ -221,6 +221,24 @@
       (is (approx= (- 100.0 expected-dmg) (:damage (result 0)) 1e-10))
       (is (approx= (- 100.0 expected-dmg) (:damage (result 1)) 1e-10))
       (is (< expected-dmg (/ MAX-COLLISION-DAMAGE 4.0))))))
+
+(deftest collision-glancing-angle-scaled-damage-test
+  (testing "glancing collision damages by the normal component of relative velocity only"
+    ; contact normal is 45° off A's velocity: B sits diagonally offset so
+    ; b - a = (h, h) with h = ROBOT-RADIUS/√2 → distance = ROBOT-RADIUS < 2R.
+    ; A moves +x at V-MAX, B is stationary → approach = V-MAX/√2, so
+    ; damage = MAX-COLLISION-DAMAGE × (1/(2√2))² = MAX-COLLISION-DAMAGE/8 —
+    ; half of what the same speed dealt head-on against a stationary robot.
+    (let [h (/ ROBOT-RADIUS (physics/rw-sqrt 2.0))
+          a (make-robot-at 0 100.0 100.0 V-MAX 0.0 V-MAX 0.0)
+          b (make-robot-at 1 (+ 100.0 h) (+ 100.0 h) 0.0 0.0 0.0 0.0)
+          result (collision-pass [a b])
+          expected-dmg (/ MAX-COLLISION-DAMAGE 8.0)
+          head-on-dmg (/ MAX-COLLISION-DAMAGE 4.0)]
+      (is (approx= (- 100.0 expected-dmg) (:damage (result 0)) 1e-10))
+      (is (approx= (- 100.0 expected-dmg) (:damage (result 1)) 1e-10))
+      (is (< expected-dmg head-on-dmg)
+          "45° glancing contact deals less than a head-on at the same speed"))))
 
 (deftest collision-stationary-no-damage-test
   (testing "two stationary robots in contact take no damage"

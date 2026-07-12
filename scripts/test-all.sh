@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-clj -M:test
+clojure -M:test
 npx shadow-cljs compile test
 node target/test/node-tests.js

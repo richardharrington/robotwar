@@ -79,6 +79,13 @@
           result (collision-pass [a b])]
       (is (empty? (:colliding-with (result 0))))
       (is (= 100.0 (:damage (result 0))))))
+  (testing "glancing contact at 45° deals angle-scaled damage (normal component only)"
+    (let [h (/ ROBOT-RADIUS (js/Math.sqrt 2.0))
+          a (test-robot 0 100.0 100.0 V-MAX 0.0 V-MAX 0.0)
+          b (test-robot 1 (+ 100.0 h) (+ 100.0 h) 0.0 0.0 0.0 0.0)
+          result (collision-pass [a b])]
+      (is (approx= (- 100.0 (/ MAX-COLLISION-DAMAGE 8.0)) (:damage (result 0)) 1e-10))
+      (is (approx= (- 100.0 (/ MAX-COLLISION-DAMAGE 8.0)) (:damage (result 1)) 1e-10))))
   (testing "stationary contact takes no damage"
     (let [gap (* 0.5 ROBOT-RADIUS)
           a (test-robot 0 (- 100.0 gap) 100.0 0.0 0.0 0.0 0.0)
