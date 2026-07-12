@@ -1,10 +1,19 @@
 # RobotWar
 
+## Overview
+
 A reverse-engineered version (in Clojure/ClojureScript) of Silas Warner's 1981 Apple II game, RobotWar.
 
 In RobotWar, players write programs in a Forth-like language created specifically for the game. Those programs are compiled to virtual-machine code and used as AI brains for robots battling in an arena.
 
-Resources:
+### Note on project history
+
+I (Richard Harrington, core contributor) started this project as a way to teach myself Clojure during a batch of Hacker School (later renamed the [Recurse Center](https://recurse.com)) in the summer of 2013. It had a Clojure backend and a JavaScript frontend.
+
+After the commit tagged `last-non-llm-assisted-commit` in May 2026, it became an experiment in vibe-coding. Two main things have happened since then: it's been refactored to be an almost entirely front-end ClojureScript app, and a few more of the features of the original 1982 game have been implemented.
+
+### Resources
+
 - Original manual: ftp://ftp.apple.asimov.net/pub/apple_II/documentation/games/misc/Robotwar.pdf (also in this repo at [resources/manual.txt](resources/manual.txt))
 - Overview article: http://www.filfre.net/2012/01/robot-war/
 
