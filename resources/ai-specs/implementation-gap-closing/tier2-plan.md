@@ -355,6 +355,13 @@ silhouette. Easy to draw, reads as "damage" rather than "decoration".
 damage. Marks accumulate visibly after each hit and don't shimmer. The
 hit-flash still fires on each new hit, even on heavily damaged robots.
 
+**Resolved during implementation (see Slice C addendum, §8):** linear
+saturation interpolation in HSL (hex palette converted once at namespace
+load; per-frame color emitted as a CSS `hsl()` string); marks are short
+dark line segments whose geometry derives from `(idx, mark-number)` — a
+refinement of the recommended `(idx, damage)` seed, since seeding by the
+damage *value* would re-roll existing marks whenever damage changes.
+
 ---
 
 ### Slice D — Per-robot shape variety (LOCKED)
@@ -705,3 +712,35 @@ recommendations:
 - Verified headlessly with a scripted browser run: button + `4` key
   toggle correctly, state persists across reload, battle runs with zero
   console errors. JVM + CLJS suites green.
+
+### Slice C addendum (landed 2026-07-11)
+
+- **Color space:** HSL. The hex palette is converted once at namespace
+  load (`robot-colors-hsl`); `damage-color` scales saturation linearly
+  by `damage/100` and emits a CSS `hsl()` string. Linear (not curved)
+  interpolation — verified legible across the range by screenshotting
+  injected damage values 90/70/45/25/5: vivid at 90, clearly dulled by
+  45, unmistakably grey below ~10.
+- **Mark determinism — one deviation from the recommendation.** The plan
+  suggested deriving mark geometry from `(idx, damage)`, but seeding by
+  the damage *value* would re-roll all existing marks every time damage
+  changes, violating the stability requirement it was meant to serve.
+  Marks are instead derived from `(idx, mark-number)` via a
+  `fract(sin(seed)·43758.5453)` hash: mark k of robot idx is always in
+  the same place, and dropping damage only appends marks. No engine
+  state touched.
+- **Mark style:** per the recommendation — dark line segments
+  (`rgba(0,0,0,0.75)`, 2px wide, 8px long) at deterministic angles,
+  centers confined to ±0.7·robot-display-radius, drawn after the body
+  fill and before the gun. No explicit clipping needed for the square
+  body (the offset bound keeps them inside); revisit under Slice D's
+  non-square shapes. Initial 6px/0.6-alpha marks read too faint in
+  close-up screenshots; bumped to 8px/0.75.
+- **Mark count:** `floor((100 - damage) / 20)` — 0 marks at full health,
+  stepping at 80/60/40/20, capped by death at ~5.
+- Hit flash preserved untouched: the flash branch still short-circuits
+  the color choice to `#fff`; marks draw on flash frames too, which
+  keeps the silhouette continuous.
+- Verified via state-injection screenshots (all five damage tiers,
+  close-ups per robot) plus a full driver battle: zero console errors,
+  suites green.
