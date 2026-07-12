@@ -5,6 +5,14 @@
 (def robot-colors ["#fa2d0b" "#0bfaf7" "#faf20b" "#e312f0" "#4567fb"])
 (def shell-color "#ffffff")
 
+(def robot-shapes
+  "body shape per robot, chosen by idx mod 3. Visual identity only —
+  collision stays circle-circle in the engine regardless of shape."
+  [:square :circle :diamond])
+
+(defn robot-shape [idx]
+  (nth robot-shapes (mod idx (count robot-shapes))))
+
 (defn- hex->hsl [hex]
   (let [r (/ (js/parseInt (subs hex 1 3) 16) 255)
         g (/ (js/parseInt (subs hex 3 5) 16) 255)
@@ -84,11 +92,6 @@
               (.beginPath ctx)
               (.arc ctx x y r 0 (* js/Math.PI 2) true)
               (.stroke ctx))
-            (fill-square [x y size color]
-              (set! (.-fillStyle ctx) color)
-              (.beginPath ctx)
-              (.rect ctx (- x (/ size 2)) (- y (/ size 2)) size size)
-              (.fill ctx))
             (draw-line-polar [x y angle d line-width color]
               (let [{dx :x dy :y} (polar->cartesian angle d)]
                 (set! (.-lineWidth ctx) line-width)
@@ -97,14 +100,41 @@
                 (.moveTo ctx x y)
                 (.lineTo ctx (+ x dx) (+ y dy))
                 (.stroke ctx)))
-            (draw-damage-marks [x y idx damage]
+            (body-path [shape x y]
+              ;; the diamond's vertex radius is inflated for visual
+              ;; parity — at equal radius it reads much smaller than the
+              ;; square (half the area). Collision stays circle-circle
+              ;; at ROBOT-RADIUS regardless.
+              (let [r robot-display-radius
+                    dr (* r 1.2)]
+                (.beginPath ctx)
+                (case shape
+                  :square (.rect ctx (- x r) (- y r) (* r 2) (* r 2))
+                  :circle (.arc ctx x y r 0 (* js/Math.PI 2) true)
+                  :diamond (doto ctx
+                             (.moveTo x (- y dr))
+                             (.lineTo (+ x dr) y)
+                             (.lineTo x (+ y dr))
+                             (.lineTo (- x dr) y)
+                             (.closePath)))))
+            (fill-body [shape x y color]
+              (set! (.-fillStyle ctx) color)
+              (body-path shape x y)
+              (.fill ctx))
+            (draw-damage-marks [shape x y idx damage]
               ;; short dark line segments, one per damage-per-mark points
               ;; lost; geometry is a pure function of (idx, mark-number)
-              ;; so existing marks stay put as damage keeps dropping
+              ;; so existing marks stay put as damage keeps dropping.
+              ;; Clipped to the body silhouette; mark centers also stay
+              ;; within a per-shape offset bound so few get clipped away.
               (let [mark-count (damage-mark-count damage)
-                    max-offset (* robot-display-radius 0.7)
+                    max-offset (* robot-display-radius
+                                  (case shape :square 0.7 :circle 0.6 :diamond 0.55))
                     half-len 4]
                 (when (pos? mark-count)
+                  (.save ctx)
+                  (body-path shape x y)
+                  (.clip ctx)
                   (set! (.-strokeStyle ctx) "rgba(0,0,0,0.75)")
                   (set! (.-lineWidth ctx) 2)
                   (dotimes [k mark-count]
@@ -117,12 +147,14 @@
                       (.beginPath ctx)
                       (.moveTo ctx (- mx dx) (- my dy))
                       (.lineTo ctx (+ mx dx) (+ my dy))
-                      (.stroke ctx))))))
+                      (.stroke ctx)))
+                  (.restore ctx))))
             (draw-robot [robot idx color]
               (let [x (offset-x (:pos-x robot))
-                    y (offset-y (:pos-y robot))]
-                (fill-square x y (* robot-display-radius 2) color)
-                (draw-damage-marks x y idx (:damage robot))
+                    y (offset-y (:pos-y robot))
+                    shape (robot-shape idx)]
+                (fill-body shape x y color)
+                (draw-damage-marks shape x y idx (:damage robot))
                 (stroke-circle x y (* robot-display-radius 0.6) (* gun-display-width 0.3))
                 (draw-line-polar x y (:aim robot) gun-display-length gun-display-width color)))
             (draw-shell [shell]

@@ -402,6 +402,13 @@ modification. The small stroked circle near the body center
 shapes. Collisions still feel right (they're still circle-circle under the
 hood). Damage marks still look right on each shape.
 
+**Resolved during implementation (see Slice D addendum, §8):** a single
+`body-path` helper builds each shape's canvas path and serves both the
+body fill and the damage-mark clip region; the diamond's vertex radius is
+inflated 1.2× for visual parity with the square; the gun stub is unchanged
+across shapes (it fits inside every silhouette); mark centers get a
+per-shape offset bound so clipping rarely eats them.
+
 ---
 
 ### Slice E — Particle-based robot death animation (LOCKED)
@@ -744,3 +751,28 @@ recommendations:
 - Verified via state-injection screenshots (all five damage tiers,
   close-ups per robot) plus a full driver battle: zero console errors,
   suites green.
+
+### Slice D addendum (landed 2026-07-11)
+
+- Shape palette `[:square :circle :diamond]` by `idx mod 3`, per the
+  locked decision. `robot-shape` is public in `canvas.cljs` alongside
+  `robot-colors`.
+- **Single path helper.** `body-path` builds the canvas path for a
+  shape; `fill-body` fills it and `draw-damage-marks` reuses it as a
+  clip region (`save`/`clip`/`restore`), so marks are confined to any
+  silhouette without per-shape mark logic. The old `fill-square` helper
+  was removed.
+- **Diamond sizing:** at the same vertex radius a diamond has half the
+  square's area and read noticeably smaller, so its vertex radius is
+  inflated 1.2×. Corners overhang the 7m collision circle by ~1.4m
+  (square corners already overhang more); within the accepted
+  visual/collision disagreement.
+- **Mark offset bounds per shape:** mark centers stay within
+  0.7·r (square), 0.6·r (circle), 0.55·r (diamond) so the clip rarely
+  swallows a mark; the clip is the backstop for the segment ends.
+- **Gun stub:** unchanged across shapes. Its 0.6·r radius fits inside
+  the circle (r), the square (inradius r), and the inflated diamond
+  (inradius ≈ 0.85·r), so per-shape sizing wasn't warranted.
+- Verified via injected-damage screenshots: all three shapes render,
+  colors and desaturation unchanged, marks clip correctly on circle and
+  diamond. Zero console errors; suites green.
