@@ -171,26 +171,25 @@ This project is a partial reimplementation of the original Apple IIc game from 1
 
 - 256×256 arena, robot physics (position/aim/velocity), shell trajectories with timed fuses
 - Assembler/VM: full instruction set, label resolution, call stack, accumulator semantics
-- Registers: A–W/Z storage, X/Y read-only, AIM/SPEEDX/SPEEDY/DAMAGE, SHOT with cooldown, INDEX/DATA, RANDOM
+- Registers: A–W/Z storage, X/Y read-only, AIM/SPEEDX/SPEEDY/DAMAGE, SHOT with cooldown, INDEX/DATA, RANDOM, RADAR (ray-cast scan)
 - Combat: shell explosions with quadratic damage falloff (`30 * max(0, 1 - d/21)²` within 21m), self-damage allowed, robot death (`:alive?` flag), victory/tie detection
-- Frontend: canvas renderer, animation loop with fast-forward, program loading, victory overlay, robot-status legend
+- Wall collisions: clamping + slide behavior with first-contact damage (`MAX-WALL-DAMAGE 15.0`, quadratic in perpendicular speed)
+- Robot-robot collisions: circle-circle detection with velocity resolution and quadratic damage in approach speed (`MAX-COLLISION-DAMAGE 25.0`)
+- Frontend: canvas renderer, animation loop with fast-forward, program loading, robot-status legend, restart UX (Enter / canvas click), program-name input validation
+- Visual polish: per-tick visual damage (desaturation + procedural marks), per-robot body shapes (square / circle / diamond), particle-based death animation, DOM victory overlay with leaderboard + Play Again
+- Audio: Web Audio API sound effects with a persistent on/off toggle (localStorage-backed)
 
 ### Category 1 — Defined in manual, not yet implemented
 
-These have explicit manual descriptions and TODO comments in code:
+These have explicit manual descriptions but are not yet implemented:
 
-1. **RADAR register** — Manual: directional beam, negative return on robot hit, positive on wall/miss. Stub exists in `register.cljc`.
-2. **Wall collisions** — Manual states walls prevent passage and cause damage. TODOs in `robot.cljc`. Constants defined: `MAX-WALL-DAMAGE 15.0`, `V-MAX 25.5`.
-3. **Collision damage by angle** — Current: flat 1-point damage. Manual: head-on = 25% damage scaled by angle. Constant defined: `MAX-COLLISION-DAMAGE 25.0`.
-4. **Scoring system** — Manual: 1 point per destroyed opponent per survivor, cumulative across battles. Not implemented.
-5. **Multi-battle matches** — Manual options 7 and 8 (schedule/resume matches). Not implemented.
-6. **Assembler errors** — Manual lists 8 specific errors. Current: generic "Invalid word or symbol".
-7. **Number range validation** — Manual specifies –1024..+1024 as valid range (LARGE NUMBER error). No validation in assembler.
-8. **Program length cap** — Manual: 256 instruction maximum. Not enforced.
-9. **Recursion prevention** — Call-stack model implies no recursion; not explicitly prevented.
-10. **Test bench / simulator** — Manual chapter: step-through, register tracer, fake radar/damage keys. No UI exists.
-11. **Sound on/off toggle** — Manual "option 4". Audio wired but no UI control.
-12. **AIM-aligned shell origin** — `shell.cljc` TODO: start shells at robot radius offset. Currently starts at center.
+1. **Scoring system** — Manual: 1 point per destroyed opponent per survivor, cumulative across battles. Not implemented.
+2. **Multi-battle matches** — Manual options 7 and 8 (schedule/resume matches). Not implemented.
+3. **Assembler errors** — Manual lists 8 specific errors. Current: generic "Invalid word or symbol".
+4. **Number range validation** — Manual specifies –1024..+1024 as valid range (LARGE NUMBER error). No validation in assembler.
+5. **Program length cap** — Manual: 256 instruction maximum. Not enforced.
+6. **Recursion prevention** — Call-stack model implies no recursion; not explicitly prevented.
+7. **Test bench / simulator** — Manual chapter: step-through, register tracer, fake radar/damage keys. No UI exists.
 
 ### Category 2a — Decisions made (constants in `constants.cljc`)
 
@@ -199,8 +198,10 @@ Arbitrary values chosen where the manual is silent. Revisit if play-testing sugg
 - **Cannon reload**: `GAME-SECONDS-PER-SHOT 20.0` (manual: "cooling period")
 - **Shell speed**: `SHELL-SPEED 25.0` m/s (manual silent on velocity)
 - **Damage falloff**: Quadratic, `MAX-BLAST-DAMAGE 30.0`, `BLAST-RADIUS 21.0`
-- **Collision formula**: `MAX-COLLISION-DAMAGE 25.0`, `V-MAX 25.5`, scales as `(approach_speed/51)²`
-- **Wall damage**: `MAX-WALL-DAMAGE 15.0`, scales as `(v_perp/25.5)²`
+- **Collision formula**: `MAX-COLLISION-DAMAGE 25.0`, `V-MAX 25.5`, scales as `(approach_speed/51)²` (manual: head-on = 25% scaled by angle)
+- **Wall damage**: `MAX-WALL-DAMAGE 15.0`, scales as `(v_perp/25.5)²`, applied once on first contact; motion clamps + slides along the wall
+- **Radar geometry**: single ray (not a wedge) cast along the RADAR direction
+- **Radar return**: negative distance to the nearest alive robot's disc if hit, otherwise the positive distance to the arena wall the ray exits
 - **Robot size**: `ROBOT-RADIUS 7.0` m (manual claims 1.5m square — discrepancy unresolved)
 - **VM speed**: 1 instruction per world tick (manual gives no CPU/world-time ratio)
 - **Tick rate**: `*GAME-SECONDS-PER-TICK* 0.033` (~30 Hz)
@@ -212,6 +213,6 @@ Arbitrary values chosen where the manual is silent. Revisit if play-testing sugg
 
 These require choices when implementing remaining features:
 
-1. **Radar beam geometry** — Single ray vs. wedge width? Affects detection difficulty.
-2. **Radar wall return** — Manual implies positive number = wall distance, never explicit.
-3. **Robot-shell overlap** — Does a shell explode at t=0 if fired into own body while moving?
+1. **Shell origin & robot-shell overlap** — Shells currently spawn at the firing robot's center (`shell.cljc` TODO: offset by `ROBOT-RADIUS` along AIM so they emerge from the muzzle). The manual specifies only the shell's explosion distance and direction, never its origin. Once the origin moves to the robot's edge, the coupled question becomes: does a shell explode at t=0 if fired into its own body while moving?
+
+   This question has no answer in the original game because it couldn't arise there. The 1982 version ran visibly discrete and event-driven — robot states snapped forward one tick at a time, with collision and detonation sounds firing as events — so a shell was never a continuous trajectory the engine held mid-flight. There was no state in which "the shell currently overlaps the robot that fired it" existed to be resolved. Our continuous per-tick physics, a 7m robot disc, and allowed self-damage are what together manufacture the intermediate moments where the question exists; none of the three come from the manual. (Note the substrate here is still discrete — the VM and world advance in ticks of `*GAME-SECONDS-PER-TICK*`; the continuity lives only in the rendering and per-tick integration layered on top, which is exactly where this question lives too.)
