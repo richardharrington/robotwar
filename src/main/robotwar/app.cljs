@@ -1,5 +1,6 @@
 (ns robotwar.app
   (:require [clojure.string :as str]
+            [robotwar.audio :as audio]
             [robotwar.canvas :as canvas]
             [robotwar.constants :refer [*GAME-SECONDS-PER-TICK*]]
             [robotwar.legend :as legend]
@@ -46,21 +47,6 @@
                         robots)
           :shell-count (count shells)
           :next-shell-id next-shell-id})))
-
-(defonce sound-state (atom {:shell-release nil :idx 0}))
-
-(defn init-sounds! []
-  (let [supports-ogg? (not= "" (.canPlayType (js/Audio.) "audio/ogg"))
-        src (if supports-ogg? "audio/trprsht1.ogg" "audio/trprsht1.mp3")
-        els (vec (repeatedly 40 #(js/Audio. src)))]
-    (swap! sound-state assoc :shell-release els :idx 0)))
-
-(defn play-shell-release! []
-  (let [{:keys [shell-release idx]} @sound-state]
-    (when (seq shell-release)
-      (-> (.play (nth shell-release idx))
-          (.catch (fn [_] nil)))
-      (swap! sound-state assoc :idx (mod (inc idx) (count shell-release))))))
 
 (defn show-input-error! [msg]
   (when-let [el (.getElementById js/document "inputError")]
@@ -128,7 +114,7 @@
       (canvas/animate-world! (or previous-world world) next-world)
       (legend/update-legend! next-world)
       (when (not= (:next-shell-id (or previous-world world)) (:next-shell-id next-world))
-        (play-shell-release!))
+        (audio/play! :shell-fire))
       (if (:result next-world)
         (swap! state assoc :running? false)
         (swap! state assoc :raf-id (js/requestAnimationFrame loop-step))))))
@@ -188,6 +174,7 @@
   (when (= 13 (.-which event))
     (.stopPropagation event)
     (.preventDefault event)
+    (audio/ensure-audio!)
     (let [raw-names (parse-program-names (.. event -target -value))
           program-names (if (:manifest @state) (valid-program-names raw-names) raw-names)]
       (if (< (count program-names) 2)
@@ -219,7 +206,7 @@
 
 (defn ^:export init []
   (.log js/console "RobotWar CLJS booted.")
-  (init-sounds!)
+  (audio/preload!)
   (.addEventListener js/document "keydown" on-keydown)
   (wire-input!)
   (load-manifest!))

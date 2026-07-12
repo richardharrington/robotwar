@@ -205,6 +205,16 @@ sound; no console errors; rapid-fire shooting overlaps cleanly (the original
 pool was 40 deep — Web Audio is effectively unbounded, so this should
 trivially pass).
 
+**Resolved during implementation (see Slice A addendum, §8):** namespace is
+`src/main/robotwar/audio.cljs`; sound id `:shell-fire`; cache atom is local
+to `audio.cljs`; ogg-with-mp3-fallback `canPlayType` check preserved;
+autoplay bootstrap is option (a) — the context is built in the program-input
+Enter handler; preload fetches raw `ArrayBuffer`s at page load and decoding
+is deferred until the context exists (a constraint discovered in
+implementation: `decodeAudioData` requires a context, and it detaches its
+input `ArrayBuffer`, so each fetch result is decoded exactly once). A master
+`GainNode` is already in place for Slice B's mixing.
+
 ---
 
 ### Slice B — Sound effects (LOCKED)
@@ -592,3 +602,43 @@ When all six slices are done, the project should:
   `:died-at-tick`) explicitly noted in the slice that added them.
 - Still pass all existing Tier 1 tests (`clj -M:test` and the CLJS test
   build green).
+
+---
+
+## 8. Implementation addendums
+
+One addendum per slice, appended as each slice lands.
+
+### Slice A addendum (landed 2026-07-11)
+
+Implemented as specified, with all TACTICAL items resolved per the
+recommendations:
+
+- New namespace `src/main/robotwar/audio.cljs` owns everything:
+  a local `audio-state` atom (`:context`, `:master-gain`, `:raw-data`,
+  `:buffers`), `preload!`, `ensure-audio!`, and `play!`. No audio state
+  in the app `state` atom.
+- **Autoplay bootstrap:** option (a). `app.cljs`'s
+  `on-program-input-keydown` calls `audio/ensure-audio!` on every Enter
+  press — the first such press is the battle-start gesture. Subsequent
+  calls no-op.
+- **Preload split into fetch + decode.** The plan's "fetch/decode at page
+  load" had a wrinkle: `decodeAudioData` needs an `AudioContext`, which
+  can't exist before the first gesture. So `preload!` (called from `init`)
+  fetches raw `ArrayBuffer`s only; `ensure-audio!` decodes whatever has
+  arrived when the context is created, and later-arriving fetches decode
+  themselves on completion. `decodeAudioData` detaches its input buffer,
+  so `decode!` removes the raw entry from the atom before decoding —
+  each buffer is decoded exactly once.
+- **Format selection:** kept the `canPlayType`-based ogg/mp3 check from
+  the old pool code (via a throwaway `js/Audio.` used only for sniffing).
+- **Sound ids:** `:shell-fire` for `audio/trprsht1`. The naming scheme
+  from the plan (`:shell-explosion`, `:wall-crash`, `:robot-collision`,
+  `:robot-death`) is reserved for Slice B.
+- A master `GainNode` sits between source nodes and the destination from
+  day one, so Slice B's volume mixing has its insertion point ready.
+- Deleted: `sound-state` atom, `init-sounds!`, `play-shell-release!`,
+  and the 40-element `<audio>` pool in `app.cljs`.
+- Verified: full battle run via the `run-robotwar` driver with zero
+  console errors; JVM + CLJS test suites green. (Audible behavior is
+  unverifiable headless; the play path executes without errors.)
