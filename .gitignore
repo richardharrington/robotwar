@@ -16,5 +16,9 @@ pom.xml.asc
 robotwar.iml
 .idea/
 .shadow-cljs/
+.clj-kondo/.cache/
+.cpcache/
+.lsp/
+notes.txt
 node_modules/
 public/js/cljs-runtime/
