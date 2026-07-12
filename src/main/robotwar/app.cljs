@@ -5,6 +5,7 @@
             [robotwar.canvas :as canvas]
             [robotwar.constants :refer [*GAME-SECONDS-PER-TICK*]]
             [robotwar.legend :as legend]
+            [robotwar.victory :as victory]
             [robotwar.world :as world]))
 
 (def manifest-url "/programs/programs-live.json")
@@ -126,6 +127,7 @@
 (defn restart-game! []
   (stop-game)
   (canvas/clear-animations!)
+  (victory/hide!)
   (swap! state assoc :world nil :tick-count 0)
   (when-let [canvas-el (.getElementById js/document "canvas")]
     (set! (.. canvas-el -style -opacity) "0"))
@@ -156,13 +158,14 @@
 (defn game-over-step
   "Post-victory wind-down: the engine no longer ticks, but death
   animations run in wall time and must play out. Keep redrawing until
-  they're done."
+  they're done, then bring up the victory overlay."
   [_timestamp]
   (let [{:keys [world]} @state]
     (when world
       (canvas/animate-world! world world)
-      (when (canvas/animations-active?)
-        (swap! state assoc :raf-id (js/requestAnimationFrame game-over-step))))))
+      (if (canvas/animations-active?)
+        (swap! state assoc :raf-id (js/requestAnimationFrame game-over-step))
+        (victory/show! world restart-game!)))))
 
 (defn loop-step [timestamp]
   (when (:running? @state)

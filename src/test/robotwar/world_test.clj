@@ -155,3 +155,31 @@
                  :next-shell-id 0}
           next-world (tick-combined-world world)]
       (is (nil? (:result next-world))))))
+
+(deftest tick-counter-test
+  (testing "init-world starts the tick counter at 0 and ticking increments it"
+    (let [world (init-world ["" ""])]
+      (is (= 0 (:tick world)))
+      (is (= 1 (:tick (tick-combined-world world))))
+      (is (= 2 (:tick (tick-combined-world (tick-combined-world world)))))))
+
+  (testing "worlds built without a :tick key default to 0 before incrementing"
+    (let [world {:shells {} :robots [(make-test-robot 0 100.0 100.0 100.0)
+                                     (make-test-robot 1 200.0 200.0 100.0)]
+                 :next-shell-id 0}]
+      (is (= 1 (:tick (tick-combined-world world)))))))
+
+(deftest died-at-tick-test
+  (testing "a robot dying records the tick it died on"
+    (let [world (assoc-in (init-world ["" ""]) [:robots 0 :damage] 0.0)
+          next-world (tick-combined-world world)]
+      (is (= false (get-in next-world [:robots 0 :alive?])))
+      (is (= 1 (get-in next-world [:robots 0 :died-at-tick])))
+      (is (nil? (get-in next-world [:robots 1 :died-at-tick])))))
+
+  (testing "died-at-tick is not overwritten on later ticks"
+    (let [world (assoc-in (init-world ["" "" ""]) [:robots 0 :damage] 0.0)
+          w1 (tick-combined-world world)
+          w2 (tick-combined-world w1)]
+      (is (= 1 (get-in w2 [:robots 0 :died-at-tick])))
+      (is (= 2 (:tick w2))))))

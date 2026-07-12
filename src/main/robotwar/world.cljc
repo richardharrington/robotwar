@@ -15,8 +15,9 @@
     (when (> program-count 5)
       (throw (ex-info "Robot world supports at most 5 programs" 
                       {:error :too-many-programs :count program-count})))
-    {:shells {} 
+    {:shells {}
      :next-shell-id 0
+     :tick 0
      :robots (vec (map-indexed (fn [idx program]
                                  (robot/init-robot 
                                    idx 
@@ -37,7 +38,8 @@
 
 (defn tick-combined-world
   [starting-world]
-  (let [alive-indices (vec (keep-indexed (fn [idx robot]
+  (let [tick (inc (:tick starting-world 0))
+        alive-indices (vec (keep-indexed (fn [idx robot]
                                            (when (:alive? robot) idx))
                                          (:robots starting-world)))
         {:keys [shells next-shell-id] :as ticked-robots-world}
@@ -80,8 +82,8 @@
         dead-marked-world
         (let [robots (:robots damaged-world)
               new-robots (mapv (fn [robot]
-                                 (if (<= (:damage robot) 0.0)
-                                   (assoc robot :alive? false)
+                                 (if (and (:alive? robot) (<= (:damage robot) 0.0))
+                                   (assoc robot :alive? false :died-at-tick tick)
                                    robot))
                                robots)]
           (assoc damaged-world :robots new-robots))
@@ -93,6 +95,6 @@
                  (= 1 (count alive-robots)) {:winner (:idx (first alive-robots))}
                  (zero? (count alive-robots)) {:game-over? true}
                  :else nil)]
-    (assoc dead-marked-world :result result :just-died just-died-idxs :shells live-shells)))
+    (assoc dead-marked-world :result result :just-died just-died-idxs :shells live-shells :tick tick)))
 
 (def build-combined-worlds (partial iterate tick-combined-world))

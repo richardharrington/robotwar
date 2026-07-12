@@ -1,6 +1,5 @@
 (ns robotwar.canvas
-  (:require [clojure.string :as str]
-            [robotwar.constants :refer [ROBOT-RADIUS ROBOT-RANGE-X ROBOT-RANGE-Y]]))
+  (:require [robotwar.constants :refer [ROBOT-RADIUS ROBOT-RANGE-X ROBOT-RANGE-Y]]))
 
 (def robot-colors ["#fa2d0b" "#0bfaf7" "#faf20b" "#e312f0" "#4567fb"])
 (def shell-color "#ffffff")
@@ -276,28 +275,7 @@
                (draw-robot robot idx "#fff")
                (draw-robot robot idx (damage-color idx (:damage robot))))))
          (tick-animations!)
-         (draw-death-animations)
-         (when-let [result (:result current-world)]
-           (let [program-names (:program-names current-world)]
-             (if (:winner result)
-               (let [text (or (get program-names (:winner result))
-                              (str "ROBOT " (:winner result) " WINS"))
-                     color (nth robot-colors (:winner result))]
-                 (set! (.-font ctx) "48px 'Data 70', monospace")
-                 (set! (.-textAlign ctx) "center")
-                 (set! (.-textBaseline ctx) "middle")
-                 (set! (.-fillStyle ctx) color)
-                 (.fillText ctx text (/ width 2) (/ height 2)))
-               (let [names (keep #(get program-names %) (:just-died current-world))
-                     names-str (when (seq names) (str/join ", " names))]
-                 (set! (.-font ctx) "48px 'Data 70', monospace")
-                 (set! (.-textAlign ctx) "center")
-                 (set! (.-textBaseline ctx) "middle")
-                 (set! (.-fillStyle ctx) "#ffffff")
-                 (.fillText ctx "TIE" (/ width 2) (/ height 2))
-                 (when names-str
-                   (set! (.-font ctx) "24px 'Data 70', monospace")
-                   (.fillText ctx names-str (/ width 2) (+ (/ height 2) 50))))))))})))
+         (draw-death-animations))})))
 
 (defonce anim-instance (atom nil))
 

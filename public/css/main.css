@@ -105,6 +105,84 @@ p  {
     transition: opacity 0.5s ease;
 
 }
+.victory-overlay {
+    position: absolute;
+    inset: 5px;
+    border-radius: 15px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 26px;
+    text-align: center;
+    background-color: rgba(0, 0, 0, 0.85);
+    color: #3ef74e;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s;
+}
+.victory-overlay.visible {
+    opacity: 1;
+    visibility: visible;
+}
+/* subtle CRT scanlines */
+.victory-overlay::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 15px;
+    background: repeating-linear-gradient(
+        0deg,
+        rgba(62, 247, 78, 0.06) 0px,
+        rgba(62, 247, 78, 0.06) 1px,
+        transparent 1px,
+        transparent 4px
+    );
+    pointer-events: none;
+}
+.victory-title {
+    font-size: 44px;
+}
+.victory-leaderboard {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    font-size: 18px;
+}
+.victory-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+.victory-row.dead {
+    opacity: 0.55;
+}
+.victory-swatch {
+    flex: none;
+    width: 16px;
+    height: 16px;
+}
+.victory-name {
+    min-width: 150px;
+    text-align: left;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.victory-status {
+    min-width: 180px;
+    text-align: right;
+}
+.victory-button {
+    font-family: "Data 70";
+    font-size: 20px;
+    color: #000;
+    background-color: #3ef74e;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 20px;
+    cursor: pointer;
+}
 #programsInput {
     display: block;
     width: 500px;

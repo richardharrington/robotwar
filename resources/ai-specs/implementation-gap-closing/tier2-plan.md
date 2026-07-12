@@ -563,6 +563,17 @@ again" button. Clicking "Play again" returns to the input form (or however
 Tier 1 wired restart). Try a tie scenario and confirm it displays
 appropriately.
 
+**Resolved during implementation (see Slice F addendum, §8):** new
+`robotwar.victory` namespace renders into a static `#victoryOverlay` div
+inside `.canvas-wrap`; CSS lives in `public/css/main.css` (300ms fade,
+scanline `::after` layer); the overlay appears after the Slice E death
+animation finishes (from `game-over-step`), reading as the curtain coming
+down; `:died-at-tick` required adding a `:tick` counter to the engine
+world map (the plan assumed a tick number existed engine-side; it only
+lived in app state). Play Again button + the Tier 1 Enter key both
+restart; the Tier 1 click-canvas-to-restart path is superseded because
+the overlay now covers the canvas.
+
 ---
 
 ## 6. Consolidated list of decisions
@@ -827,3 +838,51 @@ recommendations:
   (flash → ring+sparks → dispersal → clean tail, ~900ms) and a
   four-robot simultaneous kill that ends the battle (all four bursts
   play out under the victory text). Zero console errors; suites green.
+
+### Slice F addendum (landed 2026-07-11)
+
+- **Engine hook was two lines, not one.** The plan said recording
+  `:died-at-tick` was a one-line change, but the engine world had no
+  tick counter — the tick count lived only in the app-state atom. Added
+  `:tick` to the world map (`0` at `init-world`, incremented at the top
+  of `tick-combined-world`, defaulting to 0 for worlds built without
+  it, e.g. hand-rolled test worlds) and `:died-at-tick tick` on the
+  death-marking branch. That branch also gained an `(:alive? robot)`
+  guard so a dead robot's `:died-at-tick` isn't overwritten on later
+  ticks (dead robots keep damage ≤ 0). JVM tests + a CLJS smoke test
+  cover both.
+- **DOM structure:** a static `<div id="victoryOverlay">` inside
+  `.canvas-wrap` (so it positions over the canvas, `inset: 5px` to sit
+  within the border); a new `robotwar.victory` namespace builds its
+  children — `.victory-title`, `.victory-leaderboard` of `.victory-row`s
+  (swatch / name / "ALIVE|DESTROYED · N TICKS"), and a PLAY AGAIN
+  `.victory-button`. Rows ordered winner first, then ticks survived
+  descending; dead rows dimmed (same language as the legend).
+- **Timing:** the overlay appears from `game-over-step` once Slice E's
+  death animations finish (~900ms after the fatal blow), then fades in
+  over 300ms — the battle-ending explosion plays out on a clear canvas
+  before the curtain drops.
+- **Style:** terminal-vintage per the locked decision — Data 70 font
+  inherited, `#3ef74e` green on `rgba(0,0,0,0.85)`, winner title in the
+  winner's palette color (white for TIE), and the optional CRT touch: a
+  `repeating-linear-gradient` scanline `::after` layer.
+- **Restart affordance:** the PLAY AGAIN button calls the same
+  `restart-game!` path as Tier 1's Enter key, which still works. The
+  Tier 1 click-the-canvas restart is effectively superseded — the
+  overlay intercepts those clicks. `restart-game!` now also hides the
+  overlay.
+- **Canvas text overlay removed** from `canvas.cljs` (the ECHO-WINS /
+  TIE `fillText` block), along with its `clojure.string` require.
+- Verified headlessly: winner scenario (correct name/color, leaderboard
+  ordered winner-first, ticks shown), tie scenario (white TIE, all rows
+  dimmed), Play Again returns to the input form with focus, zero
+  console errors, 45s natural battle clean, both suites green.
+
+### Tier 2 complete
+
+All §7 end-state criteria verified 2026-07-11: Web Audio only (no
+`HTMLAudioElement` pool), five mixed sounds, persistent toggle, shape
+variety + desaturation + stable marks + hit flash, particle death
+animation with clean teardown, DOM victory overlay with leaderboard and
+Play Again, no new dependencies, engine changes limited to the `:tick` /
+`:died-at-tick` hook, JVM + CLJS suites green.

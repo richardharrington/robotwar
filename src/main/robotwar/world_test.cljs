@@ -31,6 +31,15 @@
       (is (= true (get-in next-world [:robots 1 :alive?])))
       (is (= {:winner 1} (:result next-world))))))
 
+(deftest world-died-at-tick-smoke-test
+  (testing "tick counter advances and deaths record died-at-tick in CLJS"
+    (let [world (assoc-in (init-world ["" ""]) [:robots 0 :damage] 0.0)
+          next-world (tick-combined-world world)]
+      (is (= 0 (:tick world)))
+      (is (= 1 (:tick next-world)))
+      (is (= 1 (get-in next-world [:robots 0 :died-at-tick])))
+      (is (nil? (get-in next-world [:robots 1 :died-at-tick]))))))
+
 (deftest world-tie-smoke-test
   (testing "tie detection with just-died indices in CLJS"
     (let [robot0 (robot/init-robot 0 "" {:pos-x 100.0 :pos-y 100.0 :aim 0.0 :damage 0.0})
