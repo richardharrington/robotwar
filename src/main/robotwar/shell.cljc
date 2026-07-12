@@ -10,7 +10,7 @@
   [pos-x pos-y aim id distance]
   ; TODO: make the starting point dependent upon the robot radius,
   ; which should be in constants.
-  (let [{unit-x :x unit-y :y} (physics/decompose-angle aim)] 
+  (let [{unit-x :x unit-y :y} (physics/decompose-angle aim)]
     {:id id
      :pos-x pos-x
      :pos-y pos-y
@@ -18,7 +18,7 @@
      :v-y (* unit-y SHELL-SPEED)
      :dest-x (+ pos-x (* unit-x distance))
      :dest-y (+ pos-y (* unit-y distance))
-     :exploded false})) 
+     :exploded false}))
 
 (defn tick-shell
   [{:keys [pos-x pos-y v-x v-y dest-x dest-y exploded] :as shell}]

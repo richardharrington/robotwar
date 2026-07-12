@@ -42,7 +42,7 @@
 (defn update-shot-timer
   "takes a robot and returns one with the :shot-timer updated"
   [{shot-timer :shot-timer :as robot}]
-  (merge robot {:shot-timer 
+  (merge robot {:shot-timer
                 (max (- shot-timer *GAME-SECONDS-PER-TICK*) 0.0)}))
 
 (defn- wall-damage
@@ -59,17 +59,17 @@
   (let [max-accel-x (rw-copy-sign MAX-ACCEL desired-v-x)
         max-accel-y (rw-copy-sign MAX-ACCEL desired-v-y)
         {raw-pos-x :d, raw-v-x :v} (physics/d-and-v-given-desired-v
-                                     pos-x
-                                     v-x
-                                     desired-v-x
-                                     max-accel-x
-                                     *GAME-SECONDS-PER-TICK*)
+                                    pos-x
+                                    v-x
+                                    desired-v-x
+                                    max-accel-x
+                                    *GAME-SECONDS-PER-TICK*)
         {raw-pos-y :d, raw-v-y :v} (physics/d-and-v-given-desired-v
-                                     pos-y
-                                     v-y
-                                     desired-v-y
-                                     max-accel-y
-                                     *GAME-SECONDS-PER-TICK*)
+                                    pos-y
+                                    v-y
+                                    desired-v-y
+                                    max-accel-y
+                                    *GAME-SECONDS-PER-TICK*)
         hit-left?   (<= raw-pos-x 0.0)
         hit-right?  (>= raw-pos-x ROBOT-RANGE-X)
         hit-top?    (<= raw-pos-y 0.0)
@@ -157,24 +157,24 @@
         init-robots (mapv #(if (:alive? %) (assoc % :colliding-with #{}) %) robots)
         {:keys [robots damage]}
         (reduce
-          (fn [{:keys [robots damage] :as acc} [a-idx b-idx]]
-            (let [a (robots a-idx)
-                  b (robots b-idx)
-                  dx (- (:pos-x b) (:pos-x a))
-                  dy (- (:pos-y b) (:pos-y a))
-                  d2 (+ (* dx dx) (* dy dy))]
-              (if (< d2 min-d2)
-                (let [was-touching? (contains? (old-touching a-idx) b-idx)
-                      {new-a :a new-b :b delta :damage} (resolve-collision-pair a b was-touching?)
-                      new-a (update new-a :colliding-with conj b-idx)
-                      new-b (update new-b :colliding-with conj a-idx)]
-                  {:robots (assoc robots a-idx new-a b-idx new-b)
-                   :damage (-> damage
-                               (update a-idx (fnil + 0.0) delta)
-                               (update b-idx (fnil + 0.0) delta))})
-                acc)))
-          {:robots init-robots :damage {}}
-          pairs)]
+         (fn [{:keys [robots damage] :as acc} [a-idx b-idx]]
+           (let [a (robots a-idx)
+                 b (robots b-idx)
+                 dx (- (:pos-x b) (:pos-x a))
+                 dy (- (:pos-y b) (:pos-y a))
+                 d2 (+ (* dx dx) (* dy dy))]
+             (if (< d2 min-d2)
+               (let [was-touching? (contains? (old-touching a-idx) b-idx)
+                     {new-a :a new-b :b delta :damage} (resolve-collision-pair a b was-touching?)
+                     new-a (update new-a :colliding-with conj b-idx)
+                     new-b (update new-b :colliding-with conj a-idx)]
+                 {:robots (assoc robots a-idx new-a b-idx new-b)
+                  :damage (-> damage
+                              (update a-idx (fnil + 0.0) delta)
+                              (update b-idx (fnil + 0.0) delta))})
+               acc)))
+         {:robots init-robots :damage {}}
+         pairs)]
     (mapv (fn [r]
             (if-let [d (get damage (:idx r))]
               (update r :damage - d)
@@ -188,17 +188,17 @@
   (if (not (:alive? robot))
     world
     (let [ticked-world             (brain/tick-brain
-                                     robot
-                                     world
-                                     register/read-register
-                                     register/write-register)
+                                    robot
+                                    world
+                                    register/read-register
+                                    register/write-register)
           shot-timer-updated-world (update-robot
-                                     robot-idx
-                                     ticked-world
-                                     update-shot-timer)
+                                    robot-idx
+                                    ticked-world
+                                    update-shot-timer)
           moved-world              (update-robot
-                                     robot-idx
-                                     shot-timer-updated-world
-                                     move-robot)]
+                                    robot-idx
+                                    shot-timer-updated-world
+                                    move-robot)]
       moved-world)))
 

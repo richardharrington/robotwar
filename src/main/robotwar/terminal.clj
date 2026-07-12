@@ -17,7 +17,7 @@
                           :timestamp (int (* idx tick-duration 1000))}))
                  worlds)))
 
-(defn near-point [[pos-x pos-y] [x y]] 
+(defn near-point [[pos-x pos-y] [x y]]
   (and (= (int pos-x) x)
        (= (int pos-y) y)))
 
@@ -31,22 +31,22 @@
         scale-y #(* % (/ print-robot-range-y ROBOT-RANGE-Y))
         field (for [y (range print-robot-range-y), x (range print-robot-range-x)]
                 (or (some (fn [{:keys [idx pos-x pos-y]}]
-                        (when (near-point [(scale-x pos-x) (scale-y pos-y)] [x y])
-                          (str "(" idx ")")))
-                      robots)
+                            (when (near-point [(scale-x pos-x) (scale-y pos-y)] [x y])
+                              (str "(" idx ")")))
+                          robots)
                     "   "))]
     (str header-footer
-         "\n" 
+         "\n"
          (join "\n" (map #(join (apply str %) (repeat 2 vert-border-char))
-                         (partition print-robot-range-x field))) 
-         "\n" 
+                         (partition print-robot-range-x field)))
+         "\n"
          header-footer)))
 
 (defn display-robots-info [{idx :idx :as world} time-since-start fps]
   (doseq [robot-idx (range (count (:robots world)))]
-    (println (apply format 
-                    "%d: x %.1f, y %.1f, v-x %.1f, v-y %.1f, desired-v-x %.1f, desired-v-y %.1f" 
-                    (map #(get-in world [:robots robot-idx %]) 
+    (println (apply format
+                    "%d: x %.1f, y %.1f, v-x %.1f, v-y %.1f, desired-v-x %.1f, desired-v-y %.1f"
+                    (map #(get-in world [:robots robot-idx %])
                          [:idx :pos-x :pos-y :v-x :v-y :desired-v-x :desired-v-y]))))
   (println (format "Animation frame rate: %.1f frames per second", fps))
   (println "Round number:" idx)
@@ -62,23 +62,23 @@
     (loop [[world :as worlds] initial-worlds
            frame-start starting-instant]
       (println (arena-text-grid world print-robot-range-x print-robot-range-y))
-      (display-robots-info world (time/interval starting-instant frame-start) fps) 
+      (display-robots-info world (time/interval starting-instant frame-start) fps)
       (let [desired-next-frame-calc-start (time/plus frame-start frame-period)
             this-instant (time/now)
             next-frame-calc-start (if (time/after? this-instant desired-next-frame-calc-start)
                                     this-instant
                                     (do
-                                      (-> (time/interval 
-                                            this-instant 
-                                            desired-next-frame-calc-start)
+                                      (-> (time/interval
+                                           this-instant
+                                           desired-next-frame-calc-start)
                                           (time/in-msecs)
                                           (Thread/sleep))
                                       desired-next-frame-calc-start))
             animation-timestamp (time/in-msecs (time/interval
-                                                 starting-instant
-                                                 next-frame-calc-start))]
-        (recur (drop-while #(< (:timestamp %) animation-timestamp) 
+                                                starting-instant
+                                                next-frame-calc-start))]
+        (recur (drop-while #(< (:timestamp %) animation-timestamp)
                            worlds)
                next-frame-calc-start)))))
-                           
+
 

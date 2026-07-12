@@ -39,7 +39,7 @@
   [angle-in-degrees]
   (let [angle (rw-to-radians (robotwar-deg->clojure-deg angle-in-degrees))]
     {:x (rw-cos angle)
-     :y (rw-sin angle)})) 
+     :y (rw-sin angle)}))
 
 ; classical mechanics functions
 

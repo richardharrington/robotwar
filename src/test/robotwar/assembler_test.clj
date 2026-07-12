@@ -19,62 +19,62 @@
                         {:token-str "TO"}
                         {:token-str "AIM"}]])
 
-(def lexed-tokens1 [[{:token-str "IF"} 
-                     {:token-str "DAMAGE"} 
-                     {:token-str "#"} 
-                     {:token-str "D"} 
-                     {:token-str "GOTO"} 
+(def lexed-tokens1 [[{:token-str "IF"}
+                     {:token-str "DAMAGE"}
+                     {:token-str "#"}
+                     {:token-str "D"}
+                     {:token-str "GOTO"}
                      {:token-str "MOVE"}]])
 
-(def lexed-tokens2 [[{:token-str "AIM"} 
-                     {:token-str "-"} 
-                     {:token-str "17"} 
-                     {:token-str "TO"} 
+(def lexed-tokens2 [[{:token-str "AIM"}
+                     {:token-str "-"}
+                     {:token-str "17"}
+                     {:token-str "TO"}
                      {:token-str "AIM"}]])
 
-(def lexed-tokens3 [[{:token-str "IF"} 
-                     {:token-str "X"} 
-                     {:token-str "<"} 
-                     {:token-str "-"} 
-                     {:token-str "5"} 
-                     {:token-str "GOTO"} 
+(def lexed-tokens3 [[{:token-str "IF"}
+                     {:token-str "X"}
+                     {:token-str "<"}
+                     {:token-str "-"}
+                     {:token-str "5"}
+                     {:token-str "GOTO"}
                      {:token-str "SCAN"}]])
 
-(def lexed-tokens4 [[{:token-str "AIM"} 
-                     {:token-str "@"} 
-                     {:token-str "17"} 
-                     {:token-str "TO"} 
+(def lexed-tokens4 [[{:token-str "AIM"}
+                     {:token-str "@"}
+                     {:token-str "17"}
+                     {:token-str "TO"}
                      {:token-str "AIM"}]])
 
-(def parsed-tokens2 [{:val "AIM", :type :register} 
-                     {:val "-", :type :command} 
-                     {:val 17, :type :number} 
-                     {:val "TO", :type :command} 
+(def parsed-tokens2 [{:val "AIM", :type :register}
+                     {:val "-", :type :command}
+                     {:val 17, :type :number}
+                     {:val "TO", :type :command}
                      {:val "AIM", :type :register}])
 
-(def parsed-tokens3 [{:val "IF", :type :command} 
-                     {:val "X", :type :register} 
-                     {:val "<", :type :command} 
-                     {:val "-", :type :command} 
-                     {:val 5, :type :number} 
-                     {:val "GOTO", :type :command} 
+(def parsed-tokens3 [{:val "IF", :type :command}
+                     {:val "X", :type :register}
+                     {:val "<", :type :command}
+                     {:val "-", :type :command}
+                     {:val 5, :type :number}
+                     {:val "GOTO", :type :command}
                      {:val "SCAN", :type :label}])
 
 (def parsed-tokens4 {:val "Invalid word or symbol", :type :error})
 
-(def minus-sign-disambiguated-tokens3 [{:val "IF", :type :command} 
-                                       {:val "X", :type :register} 
-                                       {:val "<", :type :command} 
-                                       {:val -5, :type :number} 
-                                       {:val "GOTO", :type :command} 
+(def minus-sign-disambiguated-tokens3 [{:val "IF", :type :command}
+                                       {:val "X", :type :register}
+                                       {:val "<", :type :command}
+                                       {:val -5, :type :number}
+                                       {:val "GOTO", :type :command}
                                        {:val "SCAN", :type :label}])
 
-(def minus-sign-disambiguated-tokens6 [{:val "WAIT", :type :label} 
-                                       {:val "IF", :type :command} 
-                                       {:val "X", :type :register} 
-                                       {:val "<", :type :command} 
-                                       {:val -5, :type :number} 
-                                       {:val "GOTO", :type :command} 
+(def minus-sign-disambiguated-tokens6 [{:val "WAIT", :type :label}
+                                       {:val "IF", :type :command}
+                                       {:val "X", :type :register}
+                                       {:val "<", :type :command}
+                                       {:val -5, :type :number}
+                                       {:val "GOTO", :type :command}
                                        {:val "SCAN", :type :label}])
 
 (def minus-sign-disambiguated-tokens7 [{:val "ENDSUB", :type :command}
@@ -82,20 +82,20 @@
                                        {:val "TO", :type :command}
                                        {:val "Y", :type :register}])
 
-(def instr-pairs3 [[{:type :command, :val "IF"} 
-                    {:type :register, :val "X"}] 
-                   [{:type :command, :val "<"} 
-                    {:type :number, :val -5}] 
-                   [{:type :command, :val "GOTO"} 
+(def instr-pairs3 [[{:type :command, :val "IF"}
+                    {:type :register, :val "X"}]
+                   [{:type :command, :val "<"}
+                    {:type :number, :val -5}]
+                   [{:type :command, :val "GOTO"}
                     {:type :label, :val "SCAN"}]])
 
-(def instr-pairs6 [[{:val "WAIT", :type :label} 
-                    nil] 
-                   [{:val "IF", :type :command} 
-                    {:val "X", :type :register}] 
-                   [{:val "<", :type :command} 
-                    {:val -5, :type :number}] 
-                   [{:val "GOTO", :type :command} 
+(def instr-pairs6 [[{:val "WAIT", :type :label}
+                    nil]
+                   [{:val "IF", :type :command}
+                    {:val "X", :type :register}]
+                   [{:val "<", :type :command}
+                    {:val -5, :type :number}]
+                   [{:val "GOTO", :type :command}
                     {:val "SCAN", :type :label}]])
 
 (def instr-pairs7 [[{:val "ENDSUB", :type :command} nil]
@@ -104,23 +104,23 @@
                    [{:val "TO", :type :command}
                     {:val "Y", :type :register}]])
 
-(def labels-mapped3 {:labels {}, 
-                     :instrs [[{:type :command, :val "IF"} 
-                               {:type :register, :val "X"}] 
-                              [{:type :command, :val "<"} 
-                               {:type :number, :val -5}] 
-                              [{:type :command, :val "GOTO"} 
+(def labels-mapped3 {:labels {},
+                     :instrs [[{:type :command, :val "IF"}
+                               {:type :register, :val "X"}]
+                              [{:type :command, :val "<"}
+                               {:type :number, :val -5}]
+                              [{:type :command, :val "GOTO"}
                                {:type :label, :val "SCAN"}]]})
 
-(def labels-mapped6 {:labels {"WAIT" 0}, 
-                     :instrs [[{:type :command, :val "IF"} 
-                               {:type :register, :val "X"}] 
-                              [{:type :command, :val "<"} 
-                               {:type :number, :val -5}] 
-                              [{:type :command, :val "GOTO"} 
+(def labels-mapped6 {:labels {"WAIT" 0},
+                     :instrs [[{:type :command, :val "IF"}
+                               {:type :register, :val "X"}]
+                              [{:type :command, :val "<"}
+                               {:type :number, :val -5}]
+                              [{:type :command, :val "GOTO"}
                                {:type :label, :val "SCAN"}]]})
 
-(def multi-line-assembled 
+(def multi-line-assembled
   {:labels {},
    :instrs
    [[{:val "IF", :type :command}
@@ -142,9 +142,8 @@
     [{:val "GOTO", :type :command}
      {:val "SCAN", :type :label}]]})
 
-(def multi-line-assembled-error 
+(def multi-line-assembled-error
   {:val "Invalid word or symbol", :type :error})
-
 
 ; And now for the tests.
 ;
@@ -162,13 +161,13 @@
 
 (deftest lex-simple
   (testing "lexing of simple line"
-    (is (= (lex [line-no-comments1]) 
+    (is (= (lex [line-no-comments1])
            lexed-tokens1))))
 
 (deftest lex-scrunched-chars
   (testing "lexing with no whitespace between operators and operands"
     (is (= (lex [line-no-comments2])
-           lexed-tokens2)))) 
+           lexed-tokens2))))
 
 (deftest lex-negative-numbers
   (testing "lexing with unary negative operator"

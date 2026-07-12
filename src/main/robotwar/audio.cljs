@@ -139,19 +139,19 @@
 
 (defn- synthesize-sfx! []
   (render-offline! :robot-collision 0.22
-    (fn [ctx]
-      (add-noise-burst! ctx {:duration 0.18 :cutoff-start 700 :gain 0.7})
-      (add-sine-drop! ctx {:duration 0.22 :freq-start 160 :freq-end 70 :gain 0.8})))
+                   (fn [ctx]
+                     (add-noise-burst! ctx {:duration 0.18 :cutoff-start 700 :gain 0.7})
+                     (add-sine-drop! ctx {:duration 0.22 :freq-start 160 :freq-end 70 :gain 0.8})))
   (render-offline! :wall-crash 0.3
-    (fn [ctx]
-      (add-noise-burst! ctx {:duration 0.28 :cutoff-start 320 :gain 0.9})
-      (add-sine-drop! ctx {:duration 0.3 :freq-start 100 :freq-end 45 :gain 0.8})))
+                   (fn [ctx]
+                     (add-noise-burst! ctx {:duration 0.28 :cutoff-start 320 :gain 0.9})
+                     (add-sine-drop! ctx {:duration 0.3 :freq-start 100 :freq-end 45 :gain 0.8})))
   (render-offline! :robot-death 1.6
-    (fn [ctx]
-      (add-metal-partials! ctx {:freqs [523 1247 2861] :duration 0.5 :gain 0.2})
-      (add-noise-burst! ctx {:duration 1.2 :cutoff-start 2400 :cutoff-end 90 :gain 0.8})
-      (add-sine-drop! ctx {:duration 1.1 :freq-start 210 :freq-end 30 :gain 0.9})
-      (add-noise-burst! ctx {:duration 1.6 :cutoff-start 120 :gain 0.6}))))
+                   (fn [ctx]
+                     (add-metal-partials! ctx {:freqs [523 1247 2861] :duration 0.5 :gain 0.2})
+                     (add-noise-burst! ctx {:duration 1.2 :cutoff-start 2400 :cutoff-end 90 :gain 0.8})
+                     (add-sine-drop! ctx {:duration 1.1 :freq-start 210 :freq-end 30 :gain 0.9})
+                     (add-noise-burst! ctx {:duration 1.6 :cutoff-start 120 :gain 0.6}))))
 
 ;; ---------------------------------------------------------------------
 ;; Sound on/off toggle (persisted)

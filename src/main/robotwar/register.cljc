@@ -4,10 +4,10 @@
             [robotwar.physics :as physics]
             [robotwar.shell :as shell]))
 
-(def reg-names [ "DATA"
-                 "A" "B" "C" "D" "E" "F" "G" "H" "I" "J" "K" "L" "M"
-                 "N" "O" "P" "Q" "R" "S" "T" "U" "V" "W" "X" "Y" "Z"
-                 "AIM" "SHOT" "RADAR" "DAMAGE" "SPEEDX" "SPEEDY" "RANDOM" "INDEX" ])
+(def reg-names ["DATA"
+                "A" "B" "C" "D" "E" "F" "G" "H" "I" "J" "K" "L" "M"
+                "N" "O" "P" "Q" "R" "S" "T" "U" "V" "W" "X" "Y" "Z"
+                "AIM" "SHOT" "RADAR" "DAMAGE" "SPEEDX" "SPEEDY" "RANDOM" "INDEX"])
 
 (defn path-to-robot [robot-idx]
   [:robots robot-idx])
@@ -50,18 +50,18 @@
   ; rounded to an integer
   (fn [{:keys [robot-idx field-name multiplier]} world]
     (rw-round (/ (get-in
-                 world
-                 (path-to-robot-field robot-idx field-name))
-               multiplier))))
+                  world
+                  (path-to-robot-field robot-idx field-name))
+                 multiplier))))
 
 (def robot-field-write-mixin
   ; returns a world with the value of a field in the robot hash map altered
   ; (with the number being cast to double before being pushed)
   (fn [{:keys [robot-idx field-name multiplier]} world data]
     (assoc-in
-      world
-      (path-to-robot-field robot-idx field-name)
-      (double (* data multiplier)))))
+     world
+     (path-to-robot-field robot-idx field-name)
+     (double (* data multiplier)))))
 
 (defrecord StorageRegister [robot-idx reg-name val])
 (defrecord ReadWriteRobotFieldRegister [robot-idx field-name multiplier])
@@ -83,13 +83,13 @@
                            (when (and (:alive? other)
                                       (not= (:idx other) robot-idx))
                              (physics/ray-disc-hit-distance
-                               px py dx dy
-                               (:pos-x other) (:pos-y other)
-                               ROBOT-RADIUS)))
+                              px py dx dy
+                              (:pos-x other) (:pos-y other)
+                              ROBOT-RADIUS)))
                          (:robots world))
         closest-robot (when (seq robot-hits) (apply min robot-hits))
         wall-dist (physics/ray-arena-exit-distance
-                    px py dx dy ROBOT-RANGE-X ROBOT-RANGE-Y)]
+                   px py dx dy ROBOT-RANGE-X ROBOT-RANGE-Y)]
     (rw-round (if closest-robot (- closest-robot) wall-dist))))
 
 #?(:clj
@@ -109,25 +109,25 @@
      (extend AimRegister
        IReadRegister {:read-register robot-field-read-mixin}
        IWriteRegister {:write-register (fn [{:keys [robot-idx field-name multiplier]} world data]
-                                        (assoc-in world
-                                                  (path-to-robot-field robot-idx field-name)
-                                                  (mod (double (* data multiplier)) 360)))})
+                                         (assoc-in world
+                                                   (path-to-robot-field robot-idx field-name)
+                                                   (mod (double (* data multiplier)) 360)))})
      (extend ShotRegister
        IReadRegister {:read-register robot-field-read-mixin}
        IWriteRegister {:write-register (fn [{:keys [robot-idx field-name]}
                                             {:keys [shells next-shell-id] :as world}
                                             data]
-                                        (let [{:keys [pos-x pos-y aim shot-timer] :as robot}
-                                              (get-in world (path-to-robot robot-idx))]
-                                          (if (> shot-timer 0)
-                                            world
-                                            (let [world-with-new-shot-timer
-                                                  (assoc-in world
-                                                            (path-to-robot-field robot-idx :shot-timer)
-                                                            GAME-SECONDS-PER-SHOT)]
-                                              (assoc world-with-new-shot-timer
-                                                     :shells (assoc shells next-shell-id (shell/init-shell pos-x pos-y aim next-shell-id data))
-                                                     :next-shell-id (inc next-shell-id))))))})
+                                         (let [{:keys [pos-x pos-y aim shot-timer] :as robot}
+                                               (get-in world (path-to-robot robot-idx))]
+                                           (if (> shot-timer 0)
+                                             world
+                                             (let [world-with-new-shot-timer
+                                                   (assoc-in world
+                                                             (path-to-robot-field robot-idx :shot-timer)
+                                                             GAME-SECONDS-PER-SHOT)]
+                                               (assoc world-with-new-shot-timer
+                                                      :shells (assoc shells next-shell-id (shell/init-shell pos-x pos-y aim next-shell-id data))
+                                                      :next-shell-id (inc next-shell-id))))))})
      (extend RadarRegister
        IReadRegister {:read-register radar-scan}
        IWriteRegister {:write-register (fn [{:keys [robot-idx reg-name]} world data]
@@ -151,29 +151,29 @@
      (extend-type AimRegister
        IReadRegister (read-register [this world] (robot-field-read-mixin this world))
        IWriteRegister (write-register [this world data]
-                       (assoc-in world
-                                 (path-to-robot-field (:robot-idx this) (:field-name this))
-                                 (mod (double (* data (:multiplier this))) 360))))
+                        (assoc-in world
+                                  (path-to-robot-field (:robot-idx this) (:field-name this))
+                                  (mod (double (* data (:multiplier this))) 360))))
      (extend-type ShotRegister
        IReadRegister (read-register [this world] (robot-field-read-mixin this world))
        IWriteRegister (write-register [this {:keys [shells next-shell-id] :as world} data]
-                       (let [{:keys [pos-x pos-y aim shot-timer] :as robot}
-                             (get-in world (path-to-robot (:robot-idx this)))]
-                         (if (> shot-timer 0)
-                           world
-                           (let [world-with-new-shot-timer
-                                 (assoc-in world
-                                           (path-to-robot-field (:robot-idx this) :shot-timer)
-                                           GAME-SECONDS-PER-SHOT)]
-                             (assoc world-with-new-shot-timer
-                                    :shells (assoc shells next-shell-id (shell/init-shell pos-x pos-y aim next-shell-id data))
-                                    :next-shell-id (inc next-shell-id)))))))
+                        (let [{:keys [pos-x pos-y aim shot-timer] :as robot}
+                              (get-in world (path-to-robot (:robot-idx this)))]
+                          (if (> shot-timer 0)
+                            world
+                            (let [world-with-new-shot-timer
+                                  (assoc-in world
+                                            (path-to-robot-field (:robot-idx this) :shot-timer)
+                                            GAME-SECONDS-PER-SHOT)]
+                              (assoc world-with-new-shot-timer
+                                     :shells (assoc shells next-shell-id (shell/init-shell pos-x pos-y aim next-shell-id data))
+                                     :next-shell-id (inc next-shell-id)))))))
      (extend-type RadarRegister
        IReadRegister (read-register [this world] (radar-scan this world))
        IWriteRegister (write-register [this world data]
-                       (assoc-in world
-                                 (path-to-val (:robot-idx this) (:reg-name this))
-                                 (mod (double data) 360))))))
+                        (assoc-in world
+                                  (path-to-val (:robot-idx this) (:reg-name this))
+                                  (mod (double data) 360))))))
 
 (defn get-target-register
   "helper function for DataRegister record"
@@ -183,17 +183,17 @@
 
 (defrecord DataRegister [robot-idx index-reg-name]
   IReadRegister
-    (read-register
+  (read-register
       ; returns the number stored in whatever register
       ; is pointed to by the index-reg-name register
-      [this world]
-      (read-register (get-target-register world robot-idx index-reg-name) world))
+    [this world]
+    (read-register (get-target-register world robot-idx index-reg-name) world))
   IWriteRegister
-    (write-register
+  (write-register
       ; returns a world with the number in the register pointed to
       ; by the index-reg-name register updated with the data argument to write-register
-      [this world data]
-      (write-register (get-target-register world robot-idx index-reg-name) world data)))
+    [this world data]
+    (write-register (get-target-register world robot-idx index-reg-name) world data)))
 
 (defn init-registers
   "AIM, INDEX, SPEEDX and SPEEDY.
@@ -202,7 +202,7 @@
   Likewise, SPEEDX and SPEEDY are used later in tick-robot to determine
   the appropriate acceleration, which may have to applied over several ticks."
   [robot-idx]
-  (let [storage-registers (for [reg-name [ "A" "B" "C" "D" "E" "F" "G" "H" "I" "J" "K" "L"
+  (let [storage-registers (for [reg-name ["A" "B" "C" "D" "E" "F" "G" "H" "I" "J" "K" "L"
                                           "M" "N" "O" "P" "Q" "R" "S" "T" "U" "V" "W" "Z"]]
                             {reg-name (->StorageRegister robot-idx reg-name 0)})
         read-only-registers (for [[reg-name robot-field mult] [["X"      :pos-x  1.0]

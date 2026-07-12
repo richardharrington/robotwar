@@ -1,0 +1,7 @@
+{
+  "files.trimTrailingWhitespace": true,
+  "editor.formatOnSave": true,
+  "[clojure]": {
+    "editor.formatOnSave": true
+  }
+}

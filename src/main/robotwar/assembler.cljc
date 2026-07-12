@@ -1,8 +1,8 @@
 (ns robotwar.assembler
   (:require [clojure.string :refer [join split]]))
 
-(def op-commands    [ "-" "+" "*" "/" "=" "#" "<" ">" ])
-(def word-commands  [ "TO" "IF" "GOTO" "GOSUB" "ENDSUB" ])
+(def op-commands    ["-" "+" "*" "/" "=" "#" "<" ">"])
+(def word-commands  ["TO" "IF" "GOTO" "GOSUB" "ENDSUB"])
 
 (def commands (concat op-commands word-commands))
 
@@ -77,11 +77,11 @@
          [valid-word       :identifier]
          [return-err       :error]]]
     (some
-      (fn [[parser token-type]]
-        (when-let [token-val (parser token-str)]
-          (dissoc (into token {:val token-val, :type token-type})
-                  :token-str)))
-      parser-priority)))
+     (fn [[parser token-type]]
+       (when-let [token-val (parser token-str)]
+         (dissoc (into token {:val token-val, :type token-type})
+                 :token-str)))
+     parser-priority)))
 
 (defn parse-line
   "takes a line of tokens and runs each token through parse-token for the first
@@ -96,12 +96,12 @@
       parsed-tokens
       (let [{token-type :type token-val :val :as parsed-token} (parse-token token)]
         (case token-type
-         :error parsed-token
-         (:command :number) (recur tail (conj parsed-tokens parsed-token))
-         :identifier (if (or (= (count initial-tokens) 1)
-                             (#{"GOTO" "GOSUB"} (:val (last parsed-tokens))))
-                       (recur tail (conj parsed-tokens (assoc parsed-token :type :label)))
-                       (recur tail (conj parsed-tokens (assoc parsed-token :type :register)))))))))
+          :error parsed-token
+          (:command :number) (recur tail (conj parsed-tokens parsed-token))
+          :identifier (if (or (= (count initial-tokens) 1)
+                              (#{"GOTO" "GOSUB"} (:val (last parsed-tokens))))
+                        (recur tail (conj parsed-tokens (assoc parsed-token :type :label)))
+                        (recur tail (conj parsed-tokens (assoc parsed-token :type :register)))))))))
 
 (defn parse
   "take the lines of tokens and converts them to :val and :type format.
@@ -150,12 +150,11 @@
       (let [{:keys [type val]} token]
         (cond
           (or (= type :number) (= type :register))
-            (recur tail (conj result [(into token {:val ",", :type :command}) token]))
+          (recur tail (conj result [(into token {:val ",", :type :command}) token]))
           (or (= type :label) (and (= type :command) (= val "ENDSUB")))
-            (recur tail (conj result [token nil]))
+          (recur tail (conj result [token nil]))
           (= type :command)
-            (recur (rest tail) (conj result [token (first tail)])))))))
-
+          (recur (rest tail) (conj result [token (first tail)])))))))
 
 ; TODO: preserve :line and :pos metadata with labels,
 ; when labels are transferred from the instruction list to the label map

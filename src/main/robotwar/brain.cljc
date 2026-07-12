@@ -38,7 +38,7 @@
   "takes a robot and a world. returns a world.
 
   Only the brain (the internal state of the robot)
-  will be different in the new world we pass back, for all of the operations 
+  will be different in the new world we pass back, for all of the operations
   except 'TO', which may also alter the external state of the robot, or the wider world.
 
   (returns the current state of the world untouched if the instruction pointer
@@ -65,8 +65,8 @@
           ("=" ">" "<" "#")  (if ((op-map command) acc (resolve arg))
                                (assoc-world-brain {:instr-ptr (inc instr-ptr)})
                                (assoc-world-brain {:instr-ptr (+ instr-ptr 2)}))
-          "TO"               (write-register 
-                               (registers (:val arg))
-                               (assoc-world-brain {:instr-ptr (inc instr-ptr)})
-                               acc))))))
+          "TO"               (write-register
+                              (registers (:val arg))
+                              (assoc-world-brain {:instr-ptr (inc instr-ptr)})
+                              acc))))))
 

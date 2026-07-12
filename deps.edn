@@ -3,7 +3,11 @@
         org.clojure/clojurescript {:mvn/version "1.11.132"}
         thheller/shadow-cljs {:mvn/version "2.28.20"}
         clj-time/clj-time {:mvn/version "0.15.2"}}
- :aliases {:test {:extra-paths ["src/test"]
+ :aliases {:lint {:extra-deps {clj-kondo/clj-kondo {:mvn/version "2023.12.15"}}
+                  :main-opts ["-m" "clj-kondo.main"]}
+           :cljfmt {:deps {dev.weavejester/cljfmt {:mvn/version "0.16.4"}}
+                    :ns-default cljfmt.tool}
+           :test {:extra-paths ["src/test"]
                   :extra-deps {io.github.cognitect-labs/test-runner
                                {:git/tag "v0.5.1" :git/sha "dfb30dd"}}
                   :main-opts ["-m" "cognitect.test-runner" "-d" "src/test"]}}}

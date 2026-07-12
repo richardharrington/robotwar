@@ -17,7 +17,7 @@
       (is (= (read-register (new-registers "A") new-world)
              42))
       (is (= (get-in new-registers ["A" :val])
-             42))))) 
+             42)))))
 
 (deftest index-data-pair-test
   (testing "registers whose index numbers are push to INDEX can
@@ -34,7 +34,7 @@
              100)))))
 
 (deftest random-test
-  (testing "write to random register's :val field, 
+  (testing "write to random register's :val field,
            and read a series of numbers all different
            from random register"
     (let [new-world (write-register (registers "RANDOM") world 1000)

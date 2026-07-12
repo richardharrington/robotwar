@@ -1,6 +1,6 @@
 (ns robotwar.world
   (:require [robotwar.constants :refer [ROBOT-RANGE-X ROBOT-RANGE-Y
-                                         MAX-BLAST-DAMAGE BLAST-RADIUS]]
+                                        MAX-BLAST-DAMAGE BLAST-RADIUS]]
             [robotwar.robot :as robot]
             [robotwar.shell :as shell]
             [robotwar.physics :as physics]))
@@ -10,22 +10,22 @@
   [programs]
   (let [program-count (count programs)]
     (when (< program-count 2)
-      (throw (ex-info "Robot world requires at least 2 programs" 
+      (throw (ex-info "Robot world requires at least 2 programs"
                       {:error :insufficient-programs :count program-count})))
     (when (> program-count 5)
-      (throw (ex-info "Robot world supports at most 5 programs" 
+      (throw (ex-info "Robot world supports at most 5 programs"
                       {:error :too-many-programs :count program-count})))
     {:shells {}
      :next-shell-id 0
      :tick 0
      :robots (vec (map-indexed (fn [idx program]
-                                 (robot/init-robot 
-                                   idx 
-                                   program 
-                                   {:pos-x (rand ROBOT-RANGE-X)
-                                    :pos-y (rand ROBOT-RANGE-Y)
-                                    :aim 0.0
-                                    :damage 100.0}))
+                                 (robot/init-robot
+                                  idx
+                                  program
+                                  {:pos-x (rand ROBOT-RANGE-X)
+                                   :pos-y (rand ROBOT-RANGE-Y)
+                                   :aim 0.0
+                                   :damage 100.0}))
                                programs))}))
 
 (defn- shell-damage
@@ -43,15 +43,15 @@
                                            (when (:alive? robot) idx))
                                          (:robots starting-world)))
         {:keys [shells next-shell-id] :as ticked-robots-world}
-          (reduce (fn [{robots :robots :as world} robot-idx]
-                    (robot/tick-robot (robots robot-idx) world))
-                  starting-world
-                  alive-indices)
+        (reduce (fn [{robots :robots :as world} robot-idx]
+                  (robot/tick-robot (robots robot-idx) world))
+                starting-world
+                alive-indices)
         collided-world (update ticked-robots-world :robots robot/collision-pass)
         ticked-shells (into {} (for [[id shell] shells
-                                   :let [ticked (shell/tick-shell shell)]
-                                   :when ticked]
-                               [id ticked]))
+                                     :let [ticked (shell/tick-shell shell)]
+                                     :when ticked]
+                                 [id ticked]))
         live-shells (into {} (remove (fn [[_ s]] (:exploded s)) ticked-shells))
         exploded-shells (vals (filter (fn [[_ s]] (:exploded s)) ticked-shells))
         damage-per-robot
