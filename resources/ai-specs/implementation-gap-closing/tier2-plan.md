@@ -5,10 +5,13 @@ sits on top of it — proper audio infrastructure, sound effects for the events
 Tier 1 fires, a more legible damage state on robots, per-robot visual identity,
 a real death animation, and a styled victory screen.
 
-Use this as the source of truth for design decisions. Flagged **TACTICAL**
-items are deliberately left to the implementer to decide in context. Flagged
-**TO DECIDE** items are open questions the executor should answer (often with a
-recommendation attached) before or during the relevant slice.
+Use this as the source of truth for design decisions. All previously-open
+design questions were resolved and locked with the project owner on
+2026-07-11; nothing in this plan requires further human input. Flagged
+**TACTICAL** items are deliberately left to the implementer to decide in
+context — each carries a recommendation that is a sound default. Follow the
+recommendation unless the code in front of you argues otherwise, and note
+any deviation in the commit message.
 
 ---
 
@@ -87,8 +90,8 @@ These apply across multiple slices.
 The slices below are achievable with the existing toolchain: plain CLJS,
 Web Audio API (a browser standard, no library), and the existing Canvas 2D
 context. No `howler.js`, no particle library, no animation framework. If a
-slice feels like it wants a dependency, surface that as a TACTICAL note for
-discussion rather than just adding one.
+slice feels like it wants a dependency, do not add one — solve it within the
+existing toolchain and note the friction in the commit message.
 
 ### 4.2 Engine vs. presentation split
 All Tier 2 work is presentation-layer. Engine code in `.cljc` files should
@@ -168,7 +171,7 @@ audio infrastructure first lets B target the new API directly.
 5. Delete the pooled `Audio` code and the `:shell-release` / `:idx` keys
    from `sound-state`.
 
-**TO DECIDE — autoplay-policy bootstrap.** Most browsers block `AudioContext`
+**TACTICAL — autoplay-policy bootstrap.** Most browsers block `AudioContext`
 construction (or leave it suspended) until a user gesture. The existing pool
 doesn't hit this because `<audio>.play()` from a keydown handler already
 counts as a gesture. With Web Audio we need to either:
@@ -180,7 +183,7 @@ Recommendation: (a). The first user interaction is the Enter keypress that
 starts a battle; constructing the context there is simple and avoids a
 suspended-context state machine. Document this in the namespace docstring.
 
-**TO DECIDE — preload timing.** Buffer fetch/decode could happen at page
+**TACTICAL — preload timing.** Buffer fetch/decode could happen at page
 load, on first battle start, or lazily per sound. Recommendation: kick off
 all `fetch`es at page load (background, ignore failures), but make `play!`
 tolerant of "buffer not yet ready" (just no-op). This gets sounds ready
@@ -204,7 +207,7 @@ trivially pass).
 
 ---
 
-### Slice B — Sound effects (PARTIALLY LOCKED)
+### Slice B — Sound effects (LOCKED)
 
 **Goal:** Add SFX for the four "something happened" events Tier 1 introduces:
 shell explosion, robot-robot collision, wall crash, and robot death. Add a
@@ -219,20 +222,21 @@ sound on/off toggle in the UI.
 - A sound on/off toggle ships as part of this slice (manual's "Option 4",
   README Category 1 #14).
 
-**TO DECIDE — source of the other three SFX.** Two viable approaches:
-- (a) CC0 / open-license files from freesound.org or opengameart.org. Quick
-  to source, characterful.
-- (b) Procedural synthesis via Web Audio: a short filtered-noise burst plus
-  a low sine for thuds, harsher for the wall crash.
-Recommendation: hybrid. Use a single short synthesized "thud" function for
-`:robot-collision` and `:wall-crash` (with different filter cutoffs / pitches
-so they're distinguishable but obviously cousins). Use a sourced file for
-`:robot-death` because the death animation deserves a real, dramatic boom
-that synthesis won't easily match. Re-using `concuss5` for both shell
-explosion and robot death is also viable but reduces distinctness; prefer a
-separate death sound.
+**Decision (locked) — all three new SFX are synthesized.** No new audio
+assets are added and nothing is downloaded; `:robot-collision`,
+`:wall-crash`, and `:robot-death` are all generated procedurally via Web
+Audio. Use a single short synthesized "thud" function for `:robot-collision`
+and `:wall-crash` (with different filter cutoffs / pitches so they're
+distinguishable but obviously cousins). `:robot-death` gets its own bigger
+synthesis: longer (~1–2 seconds) and clearly weightier than the
+shell-explosion file — e.g. a layered filtered-noise burst, a low sine
+pitch-drop, and a decaying rumble — with a mechanical/metallic character to
+match the robot aesthetic. TACTICAL: exact synthesis recipes and parameters,
+and whether synthesized sounds are rendered once into cached `AudioBuffer`s
+(via `OfflineAudioContext`) or built from live nodes at each play — tune by
+ear until all three are distinct from each other and from `concuss5`.
 
-**TO DECIDE — volume mixing.** Without any mixing, an explosion will sound
+**TACTICAL — volume mixing.** Without any mixing, an explosion will sound
 the same loudness as a robot-collision thud, which is wrong. Options:
 - (a) A single master `GainNode` between source nodes and destination, with
   per-sound `gainNode.gain.value` set at play time from a static volume map.
@@ -242,26 +246,16 @@ Recommendation: (a). It's a few extra lines and lets us re-tune mix in code
 without touching assets. Define a `sound-volumes` map alongside the buffer
 cache.
 
-**TO DECIDE — death-sound asset selection.** If we go with a sourced file,
-the implementer picks something CC0 from freesound.org / opengameart.org and
-commits it to `public/audio/` next to the existing sounds. Recommendation:
-prefer a 1–2 second mechanical/metallic explosion (not a generic "boom") to
-match the robot aesthetic. The implementer makes the call; surface the choice
-in the commit message.
-
 **Decisions (locked) — sound on/off toggle:**
 - Single boolean in the audio module's state, defaulting to `true`.
 - `play!` short-circuits when the toggle is off (no source node created).
 - UI: a small button or icon somewhere unobtrusive (HTML, not canvas).
 
-**TO DECIDE — toggle UI placement and styling.** It needs to be visible
-during battle but not in the way. Options: a small speaker icon in a corner
-of the canvas overlay; a button next to the program-name input that persists
-during the battle; a keyboard shortcut (matching the manual's literal "press
-4") plus a small status indicator. Recommendation: a small button overlaid
+**Decision (locked) — toggle UI placement.** A small speaker button overlaid
 top-right of the canvas, plus a "4" keypress shortcut that toggles the same
-state (nod to the manual without forcing the keyboard-only path). Persist the
-state to `localStorage` so the user's choice survives reloads.
+state (nod to the manual's literal "press 4" without forcing the
+keyboard-only path). It should be visible during battle but not in the way.
+Persist the state to `localStorage` so the user's choice survives reloads.
 
 **Engine hook needed:** Slice B needs to know when each event fires. Most of
 these are already implied by Tier 1's state diffs:
@@ -303,17 +297,13 @@ procedural marks ("cracks", "dents") accumulate on the robot body.
 - Marks add detail when you look closely.
 - Together they make damage legible without numbers or HUD bars.
 
-**TO DECIDE — discrete tiers vs. continuous interpolation.** Three options:
-- (a) Continuous: damage value maps directly to a saturation value via a
-  function. Smooth, but the change is too subtle to notice frame-to-frame.
-- (b) 3–4 discrete tiers (e.g. 100, 75, 50, 25 → tier 0–3). Visible "stage
-  drops" become meaningful events.
-- (c) Continuous color, discrete mark count.
-Recommendation: (c). Lets the desaturation be smooth (no jarring snaps) while
-the marks have a clear "I just took a noticeable hit" feel. Mark count steps
-at e.g. every 20 points of damage lost.
+**Decision (locked) — continuous color, discrete marks.** The damage value
+maps continuously to a saturation value (smooth desaturation, no jarring
+snaps), while the damage-mark count steps in discrete increments — one step
+per ~20 points of damage lost — so a noticeable hit visibly adds marks and
+carries a clear "I just took a real hit" feel.
 
-**TO DECIDE — mark stability over time.** A damage mark added at damage=80
+**TACTICAL — mark stability over time.** A damage mark added at damage=80
 should still be in the same place at damage=40, not re-rolled each frame.
 Random-per-frame is unpleasant sparkle. Two ways to achieve stability:
 - (a) Store mark positions on the robot map when damage drops.
@@ -324,7 +314,7 @@ Recommendation: (b). No engine-state change required, and it's free: the
 canvas function takes `(idx, damage)` and produces the same marks every time
 for the same inputs. See §4.4.
 
-**TO DECIDE — mark style.** Short dark line segments, small dark dots, a
+**TACTICAL — mark style.** Short dark line segments, small dark dots, a
 mix? Should they be inside the robot silhouette only, or allowed to overhang
 the edges? Recommendation: short dark line segments (1–2 pixels wide,
 3–5 pixels long), rotated at fixed-per-mark angles, clipped to the robot
@@ -362,12 +352,12 @@ original 1981 game (verified from screenshots — see
   non-circle renders (~3m, ~1% of arena width) is acceptable — confirmed.
 - Per-robot color from `robot-colors` is unchanged.
 
-**TO DECIDE — shape palette.** Smaller is better; we want robots to be
-distinguishable at a glance, not novel. Recommendation: `[:square :circle
-:diamond]`. Three shapes are enough at 5 robots; if two robots share a shape
-they still differ by color.
+**Decision (locked) — shape palette.** `[:square :circle :diamond]`, chosen
+by `idx mod 3`. Three shapes are enough at 5 robots; if two robots share a
+shape they still differ by color. We want robots distinguishable at a
+glance, not novel.
 
-**TO DECIDE — gun rendering across shapes.** The gun is currently a line
+**TACTICAL — gun rendering across shapes.** The gun is currently a line
 drawn from the robot center; this works for any body shape with no
 modification. The small stroked circle near the body center
 (`canvas.cljs:64`) might want different sizing per shape — TACTICAL.
@@ -402,7 +392,7 @@ debris particles fanning outward.
 - Tier 1's `:alive?` flag stays the authoritative "is this robot still in
   the battle" signal. The animation lives entirely in presentation state.
 
-**TO DECIDE — animation state ownership.** Particles are presentation, not
+**TACTICAL — animation state ownership.** Particles are presentation, not
 engine. Options:
 - (a) A separate atom in `canvas.cljs` (or a new `animations.cljs`) that
   tracks live particle sets keyed by robot index.
@@ -412,17 +402,18 @@ Recommendation: (a). Keeps engine pure and isolates particle state next to
 the code that draws it. The animation loop in `app.cljs` calls a
 `canvas/tick-animations!` (or similar) each frame, after the world tick.
 
-**TO DECIDE — when to spawn.** The animation needs to fire on the *transition*
+**Decision (locked) — when to spawn.** The animation fires on the *transition*
 from alive→dead, not every frame the robot is dead. The animation loop in
 `app.cljs` already diffs previous-world vs current-world for the shell sound
 trigger; do the same for robots: when a robot's `:alive?` flips, spawn a
 particle set for its index and play the death sound.
 
-**TO DECIDE — particle count and lifetime.** Affects perceived weight of the
+**TACTICAL — particle count and lifetime.** Affects perceived weight of the
 animation. Too few = unimpressive; too many = chaotic and slow. Starting
 recommendation: 20–40 particles per death, ~800ms lifetime. Tune in place.
 
-**TO DECIDE — body-to-particles transition.** As written, when `:alive?` flips
+**Decision (locked) — body-to-particles transition: the implementer owns the
+visual judgment.** Background: when `:alive?` flips
 false the robot body vanishes *immediately* on the same frame the particles
 spawn. To the eye this can read less like "the robot exploded" and more like
 "the robot teleported and someone independently threw sparks at the spot" —
@@ -437,16 +428,17 @@ bridge this:
 - (c) Single-frame white-flash of the robot's silhouette on the death tick
   (matching the existing hit-flash language in `canvas.cljs:91-93`) before
   vanishing. Cheap; reads as "violent flash + particles."
-Recommendation: mock up (a) first and judge whether the disconnection
-actually bothers the eye. If it does, prefer (b) — it composes naturally
-with the existing shell visual language. (c) is a fallback if (b) feels too
-slow.
+Locked process: implement (a) first, run the app, and judge the result
+yourself from screenshots (or captured frames around the death tick) — do
+not ask a human. If the disconnection between body and particles reads
+badly, upgrade to (b) — it composes naturally with the existing shell visual
+language. (c) is a fallback if (b) feels too slow. State which option
+shipped, and why, in the commit message.
 
-**TO DECIDE — bells and whistles.** Screen shake on the arena and lingering
-scorch marks at the death position are explicitly optional extras on top of
-the particle/ring/flash core. Recommendation: ship without them in the first
-pass; add only if the base animation feels underwhelming. Each is its own
-follow-up half-slice.
+**Decision (locked) — bells and whistles are deferred.** Screen shake on the
+arena and lingering scorch marks at the death position are out of scope for
+Tier 2. Ship the particle/ring/flash core only; each extra is its own
+follow-up half-slice for a later pass.
 
 **Shape of the work:**
 1. Define a particle record / map shape. TACTICAL: shape and which fields
@@ -459,8 +451,8 @@ follow-up half-slice.
    and call `spawn-death-particles!` + the death sound.
 5. Replace the "stop rendering dead robots" placeholder behavior with the
    new animation. Whether the robot body is rendered at all during the
-   animation (and how) is the subject of the "body-to-particles transition"
-   TO DECIDE above. Once the animation is over the robot doesn't render.
+   animation (and how) is governed by the "body-to-particles transition"
+   decision above. Once the animation is over the robot doesn't render.
 6. Once particles for a robot are all expired, the canvas is clean for that
    index again.
 
@@ -488,37 +480,26 @@ on the match, not text scribbled in the corner.
 - The Tier 1 canvas-text overlay is removed in this slice (the new overlay
   supersedes it).
 
-**TO DECIDE — basic stats to surface.** Beyond the winner name, what else?
-Candidates: ticks survived, total damage dealt, kill count (= number of
-opponents the winner damaged-to-death), shell count fired. Recommendation:
-ticks survived + kill count. They're trivially derivable from world history
-(if we keep one) or by tracking a kill counter on each robot. Damage dealt
-requires more bookkeeping; defer unless cheap.
+**Decision (locked) — stats to surface.** Ticks survived, alongside the
+winner name and color swatch. Kill counts, damage dealt, and shell counts
+are deferred — they need attribution bookkeeping that stays out of Tier 2.
 
-**TO DECIDE — visual style.** Two reasonable directions:
-- (a) Terminal-vintage, matching the rest of the page's aesthetic — green
-  monospace text on dark, maybe a CRT scanline effect.
-- (b) Modern minimal — clean type, big winner name, simple layout.
-Recommendation: (a). The existing site has retro chrome (`fonts/`, the
-instruction-box animation, etc.); a modern victory screen would clash.
+**Decision (locked) — visual style: terminal-vintage.** Green monospace text
+on dark, matching the rest of the page's aesthetic — the existing site has
+retro chrome (`fonts/`, the instruction-box animation, etc.), so a modern
+victory screen would clash. A subtle CRT touch (e.g. scanlines) is welcome
+but optional — TACTICAL.
 
-**TO DECIDE — per-robot leaderboard.** A small table listing all robots
-ordered by performance (winner first, then by ticks survived). More
-interesting; takes more space; matters more if scoring + multi-battle
-matches are added later. Recommendation: include a minimal leaderboard
-(robot name, color swatch, alive/dead). Skip per-robot stats columns until
-scoring lands.
+**Decision (locked) — per-robot leaderboard.** Include a minimal
+leaderboard: robot name, color swatch, alive/dead status, ordered winner
+first then by ticks survived. No per-robot stats columns until scoring
+lands.
 
-**TO DECIDE — engine hooks for stats.** If we want "ticks survived" and
-"kill count", we need:
-- Tick count at death → either record `:died-at-tick` on the robot when it
-  dies, or compute from world history.
-- Kill count → bump a counter on the killer when a death is attributed.
-The Tier 1 victory-detection step already iterates robots and counts the
-living — extending it to record a `:died-at-tick` is a one-line change.
-Kill attribution needs whoever fired the killing shell (or caused the
-killing collision) to be known. Recommendation: track `:died-at-tick` (free).
-Defer kill attribution to a later slice if it would balloon scope.
+**Decision (locked) — engine hooks for stats.** Record `:died-at-tick` on
+the robot when it dies. The Tier 1 victory-detection step already iterates
+robots and counts the living — extending it to record `:died-at-tick` is a
+one-line change. Kill attribution (knowing who fired the killing shell or
+caused the killing collision) is deferred; do not add it in Tier 2.
 
 **TACTICAL:**
 - DOM structure: a single `div.victory-overlay` with semantic children.
@@ -537,56 +518,54 @@ appropriately.
 
 ---
 
-## 6. Consolidated list of decisions for the executor
+## 6. Consolidated list of decisions
 
-For convenience, every **TO DECIDE** and **TACTICAL** flag in one place.
+For convenience, every decision in one place. There are no open questions;
+do not ask a human for input during implementation.
 
-### Open questions (TO DECIDE)
-1. Slice A — autoplay-policy bootstrap timing (rec: build context on first
-   gesture).
-2. Slice A — sound preload timing (rec: page-load fetch, tolerant `play!`).
-3. Slice B — source of `:robot-collision` / `:wall-crash` / `:robot-death`
-   SFX (rec: synthesize the thuds, source-file the death).
-4. Slice B — volume mixing approach (rec: per-sound `GainNode` from a
-   static map).
-5. Slice B — death-sound asset selection (rec: 1–2s mechanical/metallic
-   explosion).
-6. Slice B — sound on/off toggle UI placement (rec: top-right canvas
-   overlay + `4` keypress, `localStorage` persistence).
-7. Slice C — discrete-tier vs. continuous damage visualization (rec:
-   continuous color, discrete marks).
-8. Slice C — mark stability over time (rec: deterministic from
-   `(idx, damage)`).
-9. Slice C — mark visual style (rec: short dark line segments, clipped to
-   silhouette).
-10. Slice D — shape palette (rec: `[:square :circle :diamond]`).
-11. Slice D — per-shape gun-stub sizing (TACTICAL).
-12. Slice E — animation state ownership (rec: separate atom in
-    `canvas.cljs`).
-13. Slice E — particle count and lifetime (rec: 20–40 particles, ~800ms;
-    tune in place).
-14. Slice E — body-to-particles transition (rec: try immediate-vanish first;
-    fall back to brief body fade + scale-up, or a single-frame white-flash,
-    if the disconnection between body and particles bothers the eye).
-15. Slice E — bells and whistles (screen shake, scorch marks) — rec: defer.
-16. Slice F — basic stats to surface (rec: ticks survived + kill count if
-    cheap).
-17. Slice F — visual style (rec: terminal-vintage).
-18. Slice F — per-robot leaderboard inclusion (rec: minimal, no stats
-    columns yet).
-19. Slice F — engine hooks for stats (rec: track `:died-at-tick`, defer
-    kill attribution).
+### Locked decisions (human-decided 2026-07-11 — do not re-open)
+1. Slice A — Web Audio API directly, no dependencies; lazy `AudioContext`
+   on first user gesture; fetch/decode-once buffer cache; fresh source node
+   per playback.
+2. Slice B — all three new SFX (`:robot-collision`, `:wall-crash`,
+   `:robot-death`) are synthesized via Web Audio; no new audio assets, no
+   downloads. Death sound is longer/weightier with a mechanical character.
+3. Slice B — sound toggle: top-right speaker button over the canvas + `4`
+   keypress shortcut, persisted to `localStorage`, default on.
+4. Slice C — continuous color desaturation + discrete damage-mark steps
+   (~every 20 damage lost); existing hit-flash preserved.
+5. Slice D — shape palette `[:square :circle :diamond]` chosen by
+   `idx mod 3`; collision stays circle-circle.
+6. Slice E — spawn on the alive→dead transition detected in the per-frame
+   world diff; death sound fires once at animation start.
+7. Slice E — body-to-particles transition: implement immediate-vanish
+   first; the implementer judges the result from screenshots and upgrades
+   to body fade+scale-up (then single-frame white-flash) if the
+   body/particle disconnect reads badly.
+8. Slice E — screen shake and scorch marks deferred out of Tier 2.
+9. Slice F — terminal-vintage visual style.
+10. Slice F — stats: ticks survived; minimal leaderboard (name, swatch,
+    alive/dead, winner first); `:died-at-tick` engine hook; kill
+    attribution deferred.
 
-### Implementer's choice (TACTICAL)
-- Slice A — namespace file location, sound-id naming, cache-atom ownership,
-  audio format selection mechanism.
-- Slice B — engine `:last-damage-cause` (or equivalent) tagging if Tier 1
-  didn't already do it.
-- Slice C — color space / palette format for desaturation.
+### Implementer's choice (TACTICAL — recommendations attached in each slice)
+- Slice A — autoplay bootstrap timing (rec: build context on first
+  gesture), preload timing (rec: page-load fetch, tolerant `play!`),
+  namespace file location, sound-id naming, cache-atom ownership, audio
+  format selection mechanism.
+- Slice B — volume mixing (rec: per-sound `GainNode` values from a static
+  map), synthesis recipes/parameters and buffer-vs-live-node rendering,
+  engine `:last-damage-cause` (or equivalent) tagging if Tier 1 didn't
+  already do it.
+- Slice C — mark stability (rec: derive deterministically from
+  `(idx, damage)`), mark visual style (rec: short dark line segments
+  clipped to silhouette), color space / palette format for desaturation.
 - Slice D — gun-stub sizing per shape.
-- Slice E — particle record shape and fields.
+- Slice E — animation state ownership (rec: separate atom in
+  `canvas.cljs`), particle count/lifetime (rec: 20–40 particles, ~800ms;
+  tune in place), particle record shape and fields.
 - Slice F — DOM structure, CSS file edits, in-animation timing, restart
-  affordance placement.
+  affordance placement, optional CRT touches.
 
 ---
 
