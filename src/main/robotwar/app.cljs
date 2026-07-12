@@ -1,5 +1,6 @@
 (ns robotwar.app
-  (:require [clojure.string :as str]
+  (:require [clojure.set :as set]
+            [clojure.string :as str]
             [robotwar.audio :as audio]
             [robotwar.canvas :as canvas]
             [robotwar.constants :refer [*GAME-SECONDS-PER-TICK*]]
@@ -48,6 +49,50 @@
           :shell-count (count shells)
           :next-shell-id next-shell-id})))
 
+(defn- new-contact?
+  "true when any robot's contact set (e.g. :touching-walls or
+  :colliding-with) gained a member this frame — the same transition the
+  engine keys first-contact damage on."
+  [prev-robots next-robots contact-key]
+  (boolean
+   (some (fn [[prev next]]
+           (seq (set/difference (or (contact-key next) #{})
+                                (or (contact-key prev) #{}))))
+         (map vector prev-robots next-robots))))
+
+(defn play-battle-sfx!
+  "Diff the previous frame's world against the current one and fire a
+  sound for each battle event: shell fired, shell exploded, robot-robot
+  collision, wall crash, robot death. At most one sound per event type
+  per frame — simultaneous events of the same type would just stack
+  identical waveforms."
+  [prev-world next-world]
+  (when (and prev-world next-world (not (identical? prev-world next-world)))
+    (let [prev-robots (:robots prev-world)
+          next-robots (:robots next-world)
+          next-shells (:shells next-world)]
+      (when (not= (:next-shell-id prev-world) (:next-shell-id next-world))
+        (audio/play! :shell-fire))
+      (when (some (fn [[id _]] (not (contains? next-shells id)))
+                  (:shells prev-world))
+        (audio/play! :shell-explosion))
+      (when (new-contact? prev-robots next-robots :colliding-with)
+        (audio/play! :robot-collision))
+      (when (new-contact? prev-robots next-robots :touching-walls)
+        (audio/play! :wall-crash))
+      (when (some (fn [[prev next]] (and (:alive? prev) (not (:alive? next))))
+                  (map vector prev-robots next-robots))
+        (audio/play! :robot-death)))))
+
+(defn update-sound-toggle-button! []
+  (when-let [el (.getElementById js/document "soundToggle")]
+    (set! (.-textContent el) (if (audio/sound-enabled?) "🔊" "🔇"))))
+
+(defn toggle-sound! []
+  (audio/ensure-audio!)
+  (audio/toggle-sound!)
+  (update-sound-toggle-button!))
+
 (defn show-input-error! [msg]
   (when-let [el (.getElementById js/document "inputError")]
     (set! (.-textContent el) msg)))
@@ -70,6 +115,8 @@
     (set! (.. canvas-el -style -opacity) "0"))
   (when-let [legend-el (.getElementById js/document "legend")]
     (set! (.. legend-el -style -opacity) "0"))
+  (when-let [toggle-el (.getElementById js/document "soundToggle")]
+    (set! (.. toggle-el -style -opacity) "0"))
   (when-let [instruction-box (.querySelector js/document ".instruction-box")]
     (set! (.. instruction-box -style -height) ""))
   (clear-input-error!)
@@ -77,11 +124,13 @@
     (.focus input-el)))
 
 (defn on-keydown [event]
-  (let [k (.-which event)]
+  (let [k (.-which event)
+        typing? (= "INPUT" (.. event -target -tagName))]
     (cond
       (and (= k 13) (game-over?)) (restart-game!)
       (= k 37) (swap! state update :fast-forward #(max 1 (dec %)))
       (= k 39) (swap! state update :fast-forward #(min max-fast-forward (inc %)))
+      (and (= k 52) (not typing?)) (toggle-sound!)
       :else nil)))
 
 (defn on-canvas-click [_event]
@@ -113,8 +162,7 @@
              :last-frame-time timestamp)
       (canvas/animate-world! (or previous-world world) next-world)
       (legend/update-legend! next-world)
-      (when (not= (:next-shell-id (or previous-world world)) (:next-shell-id next-world))
-        (audio/play! :shell-fire))
+      (play-battle-sfx! (or previous-world world) next-world)
       (if (:result next-world)
         (swap! state assoc :running? false)
         (swap! state assoc :raf-id (js/requestAnimationFrame loop-step))))))
@@ -139,7 +187,9 @@
      (when-let [canvas-el (.getElementById js/document "canvas")]
        (set! (.. canvas-el -style -opacity) "1"))
      (when-let [legend-el (.getElementById js/document "legend")]
-       (set! (.. legend-el -style -opacity) "1")))
+       (set! (.. legend-el -style -opacity) "1"))
+     (when-let [toggle-el (.getElementById js/document "soundToggle")]
+       (set! (.. toggle-el -style -opacity) "1")))
    500)
   (.blur input-el))
 
@@ -188,7 +238,9 @@
   (when-let [input-el (.getElementById js/document "programsInput")]
     (.addEventListener input-el "keydown" on-program-input-keydown))
   (when-let [canvas-el (.getElementById js/document "canvas")]
-    (.addEventListener canvas-el "click" on-canvas-click)))
+    (.addEventListener canvas-el "click" on-canvas-click))
+  (when-let [toggle-el (.getElementById js/document "soundToggle")]
+    (.addEventListener toggle-el "click" (fn [_] (toggle-sound!)))))
 
 (defn render-program-names! [manifest]
   (when-let [names-el (.getElementById js/document "programNames")]
@@ -207,6 +259,7 @@
 (defn ^:export init []
   (.log js/console "RobotWar CLJS booted.")
   (audio/preload!)
+  (update-sound-toggle-button!)
   (.addEventListener js/document "keydown" on-keydown)
   (wire-input!)
   (load-manifest!))

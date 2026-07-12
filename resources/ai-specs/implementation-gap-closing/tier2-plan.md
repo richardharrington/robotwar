@@ -283,6 +283,17 @@ shells exploding produce the concuss sound; robots bumping each other or a
 wall produce the thud; a robot dying produces the death sound. Toggle off,
 nothing plays. Toggle on, sounds resume. Reload page — toggle state persists.
 
+**Resolved during implementation (see Slice B addendum, §8):** no engine
+hook was needed — the engine's existing `:touching-walls` and
+`:colliding-with` sets are exactly the transition signals the SFX need,
+so `:last-damage-cause` tagging was never added. Event detection is a
+presentation-layer world diff in `app.cljs` (`play-battle-sfx!`).
+Synthesized sounds are rendered once at page load into cached
+`AudioBuffer`s via `OfflineAudioContext` (exempt from autoplay policy).
+Volume mixing is per-play `GainNode`s fed from a static `sound-volumes`
+map. Toggle is `:enabled?` in the audio atom, persisted under
+localStorage key `robotwar-sound-enabled`.
+
 ---
 
 ### Slice C — Visual damage representation (LOCKED)
@@ -642,3 +653,55 @@ recommendations:
 - Verified: full battle run via the `run-robotwar` driver with zero
   console errors; JVM + CLJS test suites green. (Audible behavior is
   unverifiable headless; the play path executes without errors.)
+
+### Slice B addendum (landed 2026-07-11)
+
+- **No engine hook.** The plan flagged a possible `:last-damage-cause`
+  tag; it turned out to be unnecessary. Tier 1's engine already tracks
+  `:touching-walls` and `:colliding-with` sets per robot and keys
+  first-contact damage on their transitions — diffing those same sets
+  between the previous and current frame in `app.cljs` yields exactly
+  the wall-crash and robot-collision events. Death is the `:alive?`
+  true→false flip; shell explosion is a shell id present in the previous
+  frame's `:shells` and gone from the current one (the same diff the
+  canvas uses for the explosion visual); shell fire is the
+  `:next-shell-id` bump. All five live in `play-battle-sfx!`, called
+  once per frame from `loop-step`. At most one sound per event type per
+  frame — simultaneous same-type events would just stack identical
+  waveforms. Note: because the diff granularity is a *frame* (which can
+  span several ticks at high fast-forward), same-type events inside one
+  frame coalesce; this is inaudible in practice.
+- **Synthesis:** all three procedural sounds are rendered once at page
+  load into `AudioBuffer`s via `OfflineAudioContext` (mono, 44.1kHz) and
+  cached in the same buffer map as decoded files, so `play!` treats them
+  uniformly. `OfflineAudioContext` is exempt from autoplay policy, so
+  this needs no gesture. Recipes (in `audio.cljs`):
+  - `:robot-collision` — 0.22s: noise burst through a 700Hz lowpass +
+    sine drop 160→70Hz. Short and knocky.
+  - `:wall-crash` — 0.3s: the same thud recipe, duller and longer —
+    320Hz lowpass, sine 100→45Hz.
+  - `:robot-death` — 1.6s, layered: inharmonic sine partials
+    (523/1247/2861Hz, fast decay) for a metallic clang, a noise burst
+    with the lowpass swept 2400→90Hz, a deep sine drop 210→30Hz, and a
+    long 120Hz-lowpassed rumble.
+  All parameters were set by construction, not by ear — headless
+  verification can't hear. They follow the plan's character brief
+  (cousin thuds; weightier mechanical death); a by-ear tuning pass is
+  cheap if the mix sounds off.
+- **Volume mixing:** option (a) — a static `sound-volumes` map
+  (`:shell-fire` 0.7, `:shell-explosion` 1.0, `:robot-collision` 0.5,
+  `:wall-crash` 0.45, `:robot-death` 1.0) applied via a per-play
+  `GainNode` routed into Slice A's master gain.
+- **Toggle:** `:enabled?` in the audio-state atom, default true,
+  persisted under localStorage key `robotwar-sound-enabled` (guarded
+  with try/catch for storage-disabled browsers). `play!` short-circuits
+  when off. UI is a `#soundToggle` button (🔊/🔇) absolutely positioned
+  top-right over the canvas in a new `.canvas-wrap` relative wrapper;
+  it fades in/out with the canvas on battle start/restart. The `4` key
+  toggles the same state unless focus is in a text input (so typing
+  program names can't flip it). Clicking/keying the toggle also calls
+  `ensure-audio!` — it's a user gesture, so it can bootstrap the
+  context even before the first battle.
+- Verified headlessly with a scripted browser run: button + `4` key
+  toggle correctly, state persists across reload, battle runs with zero
+  console errors. JVM + CLJS suites green.
