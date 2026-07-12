@@ -201,7 +201,8 @@
 
 (deftest valid-word-fail-because-starts-with-number
   (testing "word not valid because starts with number"
-    (is (= (valid-word "7BEATLES")))))
+    (is (= (valid-word "7BEATLES")
+           nil))))
 
 (deftest valid-word-success
   (testing "valid word"
