@@ -30,18 +30,35 @@
 
 (def robot-colors-hsl (mapv hex->hsl robot-colors))
 
-(defn damage-color
-  "The robot's display color: its palette hue with saturation scaled
-  linearly by damage (100 = fully saturated, 0 = grey)."
+(def max-edge-darkening
+  "how much darker the body gradient's rim can get at maximum damage —
+  a soft secondary cue; the center always stays the exact legend color"
+  0.35)
+
+(defn- damage-lost [damage]
+  (/ (- 100 (max 0 (min 100 damage))) 100))
+
+(defn edge-color
+  "the rim color of the body's radial gradient: the palette color with
+  lightness scaled down in proportion to damage lost"
   [idx damage]
-  (let [{:keys [h s l]} (nth robot-colors-hsl idx)
-        health (/ (max 0 (min 100 damage)) 100)]
-    (str "hsl(" h "," (* s health) "%," l "%)")))
+  (let [{:keys [h s l]} (nth robot-colors-hsl idx)]
+    (str "hsl(" h "," s "%," (* l (- 1 (* max-edge-darkening (damage-lost damage)))) "%)")))
 
 (def damage-per-mark 20)
 
 (defn damage-mark-count [damage]
   (js/Math.floor (/ (- 100 (max 0 (min 100 damage))) damage-per-mark)))
+
+(defn damage-tier
+  "escalation tier for the current mark count: 1 = dents, 2 = cracks,
+  3 = cracks + blotches + silhouette notches. All marks render in the
+  current tier's style (they upgrade in place at tier crossings)."
+  [mark-count]
+  (cond (>= mark-count 4) 3
+        (>= mark-count 2) 2
+        (pos? mark-count) 1
+        :else 0))
 
 (defn- rand01
   "Deterministic pseudo-random [0,1) from a numeric seed — the classic
@@ -132,8 +149,19 @@
         shell-display-radius (scale-x (* ROBOT-RADIUS 0.3))
         gun-display-length (scale-x (* ROBOT-RADIUS 1.4))
         gun-display-width (scale-x (* ROBOT-RADIUS 0.5))
-        ctx (.getContext canvas "2d")]
+        ctx (.getContext canvas "2d")
+        ;; robot bodies are composed on this scratch canvas so tier-3
+        ;; notches can erase through the silhouette (destination-out)
+        ;; without punching holes in whatever the main canvas already
+        ;; drew underneath (scorch marks, overlapping robots)
+        sprite-size (* robot-display-radius 4)
+        sprite-half (/ sprite-size 2)
+        sprite-canvas (.createElement js/document "canvas")
+        sctx (do (set! (.-width sprite-canvas) sprite-size)
+                 (set! (.-height sprite-canvas) sprite-size)
+                 (.getContext sprite-canvas "2d"))]
     (set! (.-lineCap ctx) "square")
+    (set! (.-lineCap sctx) "square")
     (letfn [(fill-circle [x y r color]
               (set! (.-fillStyle ctx) color)
               (.beginPath ctx)
@@ -153,61 +181,141 @@
                 (.moveTo ctx x y)
                 (.lineTo ctx (+ x dx) (+ y dy))
                 (.stroke ctx)))
-            (body-path [shape x y]
+            (body-path [c shape x y]
               ;; the diamond's vertex radius is inflated for visual
               ;; parity — at equal radius it reads much smaller than the
               ;; square (half the area). Collision stays circle-circle
               ;; at ROBOT-RADIUS regardless.
               (let [r robot-display-radius
                     dr (* r 1.2)]
-                (.beginPath ctx)
+                (.beginPath c)
                 (case shape
-                  :square (.rect ctx (- x r) (- y r) (* r 2) (* r 2))
-                  :circle (.arc ctx x y r 0 (* js/Math.PI 2) true)
-                  :diamond (doto ctx
+                  :square (.rect c (- x r) (- y r) (* r 2) (* r 2))
+                  :circle (.arc c x y r 0 (* js/Math.PI 2) true)
+                  :diamond (doto c
                              (.moveTo x (- y dr))
                              (.lineTo (+ x dr) y)
                              (.lineTo x (+ y dr))
                              (.lineTo (- x dr) y)
                              (.closePath)))))
-            (fill-body [shape x y color]
-              (set! (.-fillStyle ctx) color)
-              (body-path shape x y)
-              (.fill ctx))
-            (draw-damage-marks [shape x y idx damage]
-              ;; short dark line segments, one per damage-per-mark points
-              ;; lost; geometry is a pure function of (idx, mark-number)
-              ;; so existing marks stay put as damage keeps dropping.
-              ;; Clipped to the body silhouette; mark centers also stay
-              ;; within a per-shape offset bound so few get clipped away.
+            (edge-distance [shape angle]
+              ;; distance from body center to the silhouette edge along
+              ;; a ray at the given angle
+              (let [r robot-display-radius
+                    ca (js/Math.abs (js/Math.cos angle))
+                    sa (js/Math.abs (js/Math.sin angle))]
+                (case shape
+                  :circle r
+                  :square (/ r (max ca sa))
+                  :diamond (/ (* r 1.2) (+ ca sa)))))
+            (body-gradient [cx cy idx damage]
+              ;; center is always the exact palette color (matching the
+              ;; legend swatch); the rim darkens with damage, capped by
+              ;; max-edge-darkening
+              (let [grad (.createRadialGradient sctx cx cy 0 cx cy
+                                                (* robot-display-radius 1.3))]
+                (.addColorStop grad 0 (nth robot-colors idx))
+                (.addColorStop grad 0.4 (nth robot-colors idx))
+                (.addColorStop grad 1 (edge-color idx damage))
+                grad))
+            (crack-arm [c mx my base-angle seed segs]
+              ;; one jagged arm wandering out from the mark point
+              (.moveTo c mx my)
+              (loop [i 0, px mx, py my, a base-angle]
+                (when (< i segs)
+                  (let [len (+ 3.5 (* 4 (rand01 (+ seed (* i 5.1)))))
+                        a' (+ a (* 1.4 (- (rand01 (+ seed (* i 5.1) 2.2)) 0.5)))
+                        nx (+ px (* len (js/Math.cos a')))
+                        ny (+ py (* len (js/Math.sin a')))]
+                    (.lineTo c nx ny)
+                    (recur (inc i) nx ny a')))))
+            (draw-damage-marks [c x y shape idx mark-count tier]
+              ;; one mark per damage-per-mark points lost; geometry is a
+              ;; pure function of (idx, mark-number) so existing marks
+              ;; stay put as damage keeps dropping, and only their
+              ;; rendering style changes when the tier escalates.
+              ;; Caller clips to the body silhouette; mark centers also
+              ;; stay within a per-shape offset bound.
+              (let [max-offset (* robot-display-radius
+                                  (case shape :square 0.7 :circle 0.6 :diamond 0.55))]
+                (dotimes [k mark-count]
+                  (let [seed (+ (* idx 97.13) (* k 17.77))
+                        mx (+ x (* max-offset (- (* 2 (rand01 seed)) 1)))
+                        my (+ y (* max-offset (- (* 2 (rand01 (+ seed 1.3))) 1)))
+                        angle (* js/Math.PI (rand01 (+ seed 2.6)))]
+                    (if (= tier 1)
+                      ;; dents: short thick dashes
+                      (let [half-len (+ 4 (* 3 (rand01 (+ seed 3.9))))
+                            dx (* half-len (js/Math.cos angle))
+                            dy (* half-len (js/Math.sin angle))]
+                        (set! (.-strokeStyle c) "rgba(0,0,0,0.75)")
+                        (set! (.-lineWidth c) 3)
+                        (.beginPath c)
+                        (.moveTo c (- mx dx) (- my dy))
+                        (.lineTo c (+ mx dx) (+ my dy))
+                        (.stroke c))
+                      ;; cracks: two jagged arms radiating from the dent
+                      ;; point, the second shorter and roughly opposite
+                      (do
+                        (set! (.-strokeStyle c) "rgba(0,0,0,0.8)")
+                        (set! (.-lineWidth c) 2)
+                        (.beginPath c)
+                        (crack-arm c mx my angle seed 3)
+                        (crack-arm c mx my (+ angle js/Math.PI 0.4) (+ seed 9.7) 2)
+                        (.stroke c)))
+                    ;; heavy damage: the latest marks also burn a dark
+                    ;; blotch around their crack
+                    (when (and (= tier 3) (>= k 3))
+                      (let [br (* robot-display-radius
+                                  (+ 0.3 (* 0.2 (rand01 (+ seed 4.4)))))
+                            grad (.createRadialGradient c mx my 0 mx my br)]
+                        (.addColorStop grad 0 "rgba(0,0,0,0.65)")
+                        (.addColorStop grad 1 "rgba(0,0,0,0)")
+                        (set! (.-fillStyle c) grad)
+                        (.beginPath c)
+                        (.arc c mx my br 0 (* js/Math.PI 2) true)
+                        (.fill c)))))))
+            (punch-notches [c x y shape idx mark-count]
+              ;; tier 3 only: bite chunks out of the silhouette edge, one
+              ;; per mark beyond the third. Erases sprite pixels only —
+              ;; the main canvas underneath is untouched.
+              (set! (.-globalCompositeOperation c) "destination-out")
+              (dotimes [k mark-count]
+                (when (>= k 3)
+                  (let [seed (+ (* idx 97.13) (* k 17.77))
+                        angle (* 2 js/Math.PI (rand01 (+ seed 5.8)))
+                        d (edge-distance shape angle)
+                        nr (* robot-display-radius
+                              (+ 0.2 (* 0.12 (rand01 (+ seed 6.9)))))]
+                    (.beginPath c)
+                    (.arc c (+ x (* d (js/Math.cos angle)))
+                          (+ y (* d (js/Math.sin angle)))
+                          nr 0 (* js/Math.PI 2) true)
+                    (.fill c))))
+              (set! (.-globalCompositeOperation c) "source-over"))
+            (draw-body-sprite [shape idx damage flash?]
               (let [mark-count (damage-mark-count damage)
-                    max-offset (* robot-display-radius
-                                  (case shape :square 0.7 :circle 0.6 :diamond 0.55))
-                    half-len 4]
+                    tier (damage-tier mark-count)]
+                (.clearRect sctx 0 0 sprite-size sprite-size)
+                (body-path sctx shape sprite-half sprite-half)
+                (set! (.-fillStyle sctx)
+                      (if flash? "#fff" (body-gradient sprite-half sprite-half idx damage)))
+                (.fill sctx)
                 (when (pos? mark-count)
-                  (.save ctx)
-                  (body-path shape x y)
-                  (.clip ctx)
-                  (set! (.-strokeStyle ctx) "rgba(0,0,0,0.75)")
-                  (set! (.-lineWidth ctx) 2)
-                  (dotimes [k mark-count]
-                    (let [seed (+ (* idx 97.13) (* k 17.77))
-                          mx (+ x (* max-offset (- (* 2 (rand01 seed)) 1)))
-                          my (+ y (* max-offset (- (* 2 (rand01 (+ seed 1.3))) 1)))
-                          angle (* js/Math.PI (rand01 (+ seed 2.6)))
-                          dx (* half-len (js/Math.cos angle))
-                          dy (* half-len (js/Math.sin angle))]
-                      (.beginPath ctx)
-                      (.moveTo ctx (- mx dx) (- my dy))
-                      (.lineTo ctx (+ mx dx) (+ my dy))
-                      (.stroke ctx)))
-                  (.restore ctx))))
-            (draw-robot [robot idx color]
+                  (.save sctx)
+                  (body-path sctx shape sprite-half sprite-half)
+                  (.clip sctx)
+                  (draw-damage-marks sctx sprite-half sprite-half shape idx mark-count tier)
+                  (.restore sctx)
+                  (when (= tier 3)
+                    (punch-notches sctx sprite-half sprite-half shape idx mark-count)))))
+            (draw-robot [robot idx flash?]
               (let [x (offset-x (:pos-x robot))
                     y (offset-y (:pos-y robot))
-                    shape (robot-shape idx)]
-                (fill-body shape x y color)
-                (draw-damage-marks shape x y idx (:damage robot))
+                    shape (robot-shape idx)
+                    color (if flash? "#fff" (nth robot-colors idx))]
+                (draw-body-sprite shape idx (:damage robot) flash?)
+                (.drawImage ctx sprite-canvas (- x sprite-half) (- y sprite-half))
                 (stroke-circle x y (* robot-display-radius 0.6) (* gun-display-width 0.3))
                 (draw-line-polar x y (:aim robot) gun-display-length gun-display-width color)))
             (draw-shell [shell]
@@ -269,11 +377,11 @@
                (explode-shell shell))))
          (doseq [[idx robot] (map-indexed vector (:robots current-world))]
            (when (:alive? robot)
-             ;; hit flash (event cue) composes with desaturation (state
-             ;; cue): a wounded robot still flashes white on a new hit
-             (if (not= (:damage (get-in previous-world [:robots idx])) (:damage robot))
-               (draw-robot robot idx "#fff")
-               (draw-robot robot idx (damage-color idx (:damage robot))))))
+             ;; hit flash (event cue) composes with the damage rendering
+             ;; (state cue): a wounded robot still flashes white on a new hit
+             (draw-robot robot idx
+                         (not= (:damage (get-in previous-world [:robots idx]))
+                               (:damage robot)))))
          (tick-animations!)
          (draw-death-animations))})))
 
