@@ -1,0 +1,42 @@
+
+                             ; SWEEPER-LEAD: like sweeper, but after a
+                             ; contact it re-pings to see which way the
+                             ; target is drifting across the beam, and
+                             ; leads its shot in that direction.
+
+      0 TO S                 ; S = radar bearing
+      4 TO RANDOM            ; jittered sweep step, see sweeper.rw
+
+  LOOP
+      S + 4 + RANDOM TO S    ; advance the sweep 4..7 degrees
+      S TO RADAR
+      RADAR TO R
+      IF R < 0 GOTO CHECK
+      GOTO LOOP
+
+  CHECK
+      S TO RADAR             ; re-ping the same bearing
+      RADAR TO T
+      IF T < 0 GOTO FIRE     ; still in the beam: fire straight
+      S + 8 TO RADAR         ; drifted ahead of the sweep?
+      RADAR TO T
+      IF T < 0 GOTO LEAD
+      S - 8 TO RADAR         ; or behind it?
+      RADAR TO T
+      IF T < 0 GOTO LAG
+      GOTO LOOP              ; lost it; resume the sweep
+
+  FIRE
+      S TO AIM
+      0 - T TO SHOT
+      GOTO LOOP
+
+  LEAD
+      S + 16 TO AIM          ; aim past the drift and let it walk in
+      0 - T TO SHOT
+      GOTO LOOP
+
+  LAG
+      S - 16 TO AIM
+      0 - T TO SHOT
+      GOTO LOOP

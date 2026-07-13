@@ -1,0 +1,52 @@
+
+                             ; CAMPER: races to the top-left corner so
+                             ; nothing can get behind it, then sweeps a
+                             ; 90-degree arc (east through south) in
+                             ; 3-degree steps, firing at contacts. At the
+                             ; end of each arc it checks it hasn't been
+                             ; knocked out of the corner.
+
+      15 TO A                ; corner coordinates
+      15 TO B
+      4 TO RANDOM            ; arc-phase jitter: reads give 0..3
+
+  MOVE
+      IF A # X GOSUB MOVEX   ; recalibrate SPEEDX while off-target
+      TO N                   ; no-op else-branch
+      IF B # Y GOSUB MOVEY
+      IF A = X GOTO CAMP     ; arrived: start sniping
+      GOTO MOVE
+
+  MOVEX
+      A - X TO SPEEDX
+      ENDSUB
+
+  MOVEY
+      B - Y TO SPEEDY
+      ENDSUB
+
+  CAMP
+      0 TO SPEEDX
+      0 TO SPEEDY
+      82 + RANDOM TO S       ; sweep bearing, ~82..185 degrees;
+                             ; jittered phase so a distant stationary
+                             ; target can't hide between rays forever
+
+  SWEEP
+      S + 3 TO S
+      IF S > 185 GOTO RESET
+      S TO RADAR
+      RADAR TO R
+      IF R < 0 GOTO FIRE
+      GOTO SWEEP
+
+  RESET
+      82 + RANDOM TO S       ; re-jitter the arc phase
+      IF A # X GOTO MOVE     ; bumped out of the corner? go back
+      IF B # Y GOTO MOVE
+      GOTO SWEEP
+
+  FIRE
+      S TO AIM
+      0 - R TO SHOT
+      GOTO SWEEP

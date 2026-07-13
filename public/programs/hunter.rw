@@ -1,0 +1,96 @@
+
+                             ; HUNTER: sweeps until it finds a target,
+                             ; then charges along the contact bearing,
+                             ; re-pinging as it goes, and opens fire once
+                             ; within 40 meters. There is no trig in this
+                             ; language, so CHASE converts a bearing into
+                             ; X/Y speeds using a triangle-wave
+                             ; approximation of sine (TENT).
+
+      0 TO S                 ; S = radar bearing, kept near 0..360
+      4 TO RANDOM            ; jittered sweep step, see sweeper.rw
+
+  LOOP
+      0 TO SPEEDX            ; stop while scanning
+      0 TO SPEEDY
+
+  SWEEP
+      S + 4 + RANDOM TO S    ; advance the sweep 4..7 degrees
+      IF S < 360 GOTO SCAN
+      0 TO S
+
+  SCAN
+      S TO RADAR
+      RADAR TO R
+      IF R < 0 GOTO FOUND
+      GOTO SWEEP
+
+  FOUND
+      0 - R TO R             ; R = positive range to target
+
+  TRACK
+      IF R < 40 GOTO KILL    ; close enough: open fire
+      GOSUB CHASE
+
+  PING
+      S TO RADAR             ; still in the beam?
+      RADAR TO T
+      IF T < 0 GOTO HOLD
+      S - 6 TO RADAR         ; nearby probes to reacquire
+      RADAR TO T
+      IF T < 0 GOTO LEFT
+      S + 6 TO RADAR
+      RADAR TO T
+      IF T < 0 GOTO RIGHT
+      GOTO LOOP              ; lost it: stop and sweep again
+
+  HOLD
+      0 - T TO R
+      GOTO TRACK
+
+  LEFT
+      S - 6 TO S
+      GOTO HOLD
+
+  RIGHT
+      S + 6 TO S
+      GOTO HOLD
+
+  KILL
+      IF R > 24 GOTO AIMED   ; never burst a shell on our own chassis
+      25 TO R
+  AIMED
+      S TO AIM
+      R TO SHOT
+      GOSUB CHASE            ; keep bearing down on it
+      GOTO PING
+
+  CHASE                      ; set X/Y speeds toward bearing S
+      S TO G
+      GOSUB TENT
+      H + H TO SPEEDX        ; speed x = 2 * tent(S)
+      S + 90 TO G
+      GOSUB TENT
+      0 - H - H TO SPEEDY    ; speed y = -2 * tent(S + 90)
+      ENDSUB
+
+  TENT                       ; H = triangle wave of G (degrees):
+                             ; 0 -> 0, 90 -> 90, 180 -> 0, 270 -> -90.
+                             ; accepts G anywhere in -360..720
+      IF G < 0 GOTO TENTN
+      IF G < 360 GOTO TENTW
+      G - 360 TO G
+      GOTO TENTW
+  TENTN
+      G + 360 TO G
+  TENTW
+      IF G > 90 GOTO TENT2
+      G TO H
+      ENDSUB
+  TENT2
+      IF G > 270 GOTO TENT3
+      180 - G TO H
+      ENDSUB
+  TENT3
+      G - 360 TO H
+      ENDSUB

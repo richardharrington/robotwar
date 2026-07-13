@@ -1,0 +1,25 @@
+
+                             ; SWEEPER: stands still and sweeps its radar
+                             ; in 5-degree steps. On contact (RADAR reads
+                             ; negative when a robot is in the beam), aims
+                             ; along the radar bearing and fires a shell
+                             ; timed to burst at the reported distance.
+                             ; S grows without bound; RADAR and AIM both
+                             ; wrap it mod 360 internally. The step is
+                             ; jittered so two stationary robots can't
+                             ; leave each other between rays forever.
+
+      0 TO S                 ; S = radar bearing
+      4 TO RANDOM            ; RANDOM now reads as 0..3
+
+  LOOP
+      S + 4 + RANDOM TO S    ; advance the sweep 4..7 degrees
+      S TO RADAR             ; point the radar
+      RADAR TO R             ; scan: negative means a robot at range -R
+      IF R < 0 GOTO FIRE
+      GOTO LOOP
+
+  FIRE
+      S TO AIM               ; shoot along the radar bearing
+      0 - R TO SHOT          ; burst right on the contact
+      GOTO LOOP
