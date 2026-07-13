@@ -86,10 +86,17 @@
 ;; transition; ticked in wall-clock time inside animate-world, so it
 ;; runs at the same speed regardless of fast-forward.
 
-(def ^:private death-particle-count 30)
+(def ^:private death-particle-count 50)
 (def ^:private death-flash-ms 150)
 (def ^:private death-ring-ms 500)
-(def ^:private death-anim-ms 900)
+(def ^:private death-ring2-delay-ms 100)
+(def ^:private death-ring2-ms 600)
+(def ^:private death-anim-ms 1200)
+
+;; Screen shake on robot death: the whole arena canvas (never the page)
+;; jolts with a decaying sinusoid.
+(def ^:private shake-ms 300)
+(def ^:private shake-max-px 6)
 
 ;; Shell explosions follow the same wall-clock pattern: a warm fireball
 ;; disc that grows fast for the first grow-frac of its life, then fades
@@ -100,12 +107,20 @@
 (defonce death-animations (atom {}))
 (defonce shell-explosions (atom {}))
 
+;; Scorch marks are permanent presentation state: one per death site,
+;; drawn beneath everything for the rest of the battle. The shake state
+;; is nil or {:age-ms n :last-ms n}.
+(defonce scorch-marks (atom {}))
+(defonce shake-state (atom nil))
+
 (defn animations-active? []
   (boolean (or (seq @death-animations) (seq @shell-explosions))))
 
 (defn clear-animations! []
   (reset! death-animations {})
-  (reset! shell-explosions {}))
+  (reset! shell-explosions {})
+  (reset! scorch-marks {})
+  (reset! shake-state nil))
 
 (defn spawn-shell-explosion!
   "Register a shell blast at (x, y) in world meters, keyed by shell id."
@@ -114,9 +129,12 @@
          {:x x :y y :age-ms 0 :last-ms nil}))
 
 (defn spawn-death-animation!
-  "Register a death burst at (x, y) in world meters. Particle velocities
-  are deterministic per (robot-idx, particle-number) — §4.4."
+  "Register a death burst at (x, y) in world meters, plus a permanent
+  scorch mark there and a screen shake. Particle velocities are
+  deterministic per (robot-idx, particle-number) — §4.4."
   [robot-idx x y color]
+  (swap! scorch-marks assoc robot-idx {:x x :y y})
+  (reset! shake-state {:age-ms 0 :last-ms nil})
   (swap! death-animations assoc robot-idx
          {:x x
           :y y
@@ -130,7 +148,7 @@
                        speed (+ 20 (* 60 (rand01 (+ seed 1.7))))] ; m/s
                    {:vx (* speed (js/Math.cos angle))
                     :vy (* speed (js/Math.sin angle))
-                    :max-age-ms (+ 400 (* 500 (rand01 (+ seed 3.1))))
+                    :max-age-ms (+ 500 (* 700 (rand01 (+ seed 3.1))))
                     :color (if (zero? (mod k 3)) "#ffffff" color)})))}))
 
 (defn- tick-ages
@@ -148,7 +166,14 @@
 (defn- tick-animations! []
   (let [now (js/performance.now)]
     (swap! death-animations tick-ages now death-anim-ms)
-    (swap! shell-explosions tick-ages now shell-explosion-ms)))
+    (swap! shell-explosions tick-ages now shell-explosion-ms)
+    (swap! shake-state
+           (fn [s]
+             (when s
+               (let [last-ms (or (:last-ms s) now)
+                     age (+ (:age-ms s) (- now last-ms))]
+                 (when (< age shake-ms)
+                   {:age-ms age :last-ms now})))))))
 
 (defn animation [canvas]
   (let [width (.-width canvas)
@@ -341,6 +366,35 @@
                            (offset-y (:pos-y shell))
                            shell-display-radius
                            shell-color))
+            (draw-scorch-marks []
+              ;; ash-gray mottled stains (a main blob plus satellites),
+              ;; deterministic per robot idx; must be lighter than the
+              ;; black arena to read as soot
+              (doseq [[idx {:keys [x y]}] @scorch-marks]
+                (let [cx (offset-x x)
+                      cy (offset-y y)]
+                  (dotimes [k 4]
+                    (let [seed (+ (* idx 55.31) (* k 13.57))
+                          d (if (zero? k)
+                              0
+                              (* robot-display-radius
+                                 (+ 0.5 (* 0.8 (rand01 seed)))))
+                          ang (* 2 js/Math.PI (rand01 (+ seed 1.1)))
+                          bx (+ cx (* d (js/Math.cos ang)))
+                          by (+ cy (* d (js/Math.sin ang)))
+                          br (* robot-display-radius
+                                (if (zero? k)
+                                  1.4
+                                  (+ 0.3 (* 0.4 (rand01 (+ seed 2.2))))))
+                          grad (.createRadialGradient ctx bx by 0 bx by br)]
+                      (.addColorStop grad 0 (if (zero? k)
+                                              "rgba(95,85,70,0.6)"
+                                              "rgba(80,72,60,0.5)"))
+                      (.addColorStop grad 1 "rgba(60,55,45,0)")
+                      (set! (.-fillStyle ctx) grad)
+                      (.beginPath ctx)
+                      (.arc ctx bx by br 0 (* 2 js/Math.PI) true)
+                      (.fill ctx))))))
             (draw-shell-explosions []
               (doseq [[_ {:keys [x y age-ms]}] @shell-explosions]
                 (let [cx (offset-x x)
@@ -390,8 +444,8 @@
                       (fill-circle cx cy
                                    (* robot-display-radius (+ 1 (* 0.8 t)))
                                    "#ffffff")))
-                  ;; inner ring: same expand-and-fade language as
-                  ;; explode-shell, in the dead robot's color
+                  ;; inner ring: same expand-and-fade language as the
+                  ;; shell explosion, in the dead robot's color
                   (when (< age-ms death-ring-ms)
                     (let [t (/ age-ms death-ring-ms)]
                       (set! (.-globalAlpha ctx) (- 1 t))
@@ -400,6 +454,18 @@
                       (.beginPath ctx)
                       (.arc ctx cx cy
                             (* robot-display-radius (+ 1 (* 2.5 t)))
+                            0 (* 2 js/Math.PI) true)
+                      (.stroke ctx)))
+                  ;; second ring: a white echo, delayed, thinner, wider
+                  (when (and (>= age-ms death-ring2-delay-ms)
+                             (< age-ms (+ death-ring2-delay-ms death-ring2-ms)))
+                    (let [t (/ (- age-ms death-ring2-delay-ms) death-ring2-ms)]
+                      (set! (.-globalAlpha ctx) (* 0.8 (- 1 t)))
+                      (set! (.-strokeStyle ctx) "#ffffff")
+                      (set! (.-lineWidth ctx) 2)
+                      (.beginPath ctx)
+                      (.arc ctx cx cy
+                            (* robot-display-radius (+ 1 (* 3.5 t)))
                             0 (* 2 js/Math.PI) true)
                       (.stroke ctx)))
                   ;; sparks: position is a pure function of age —
@@ -418,7 +484,16 @@
                   (set! (.-globalAlpha ctx) 1))))]
       {:animate-world
        (fn [previous-world current-world]
+         (tick-animations!)
          (.clearRect ctx 0 0 width height)
+         (.save ctx)
+         ;; decaying-sinusoid shake offsets everything drawn this frame
+         (when-let [{age :age-ms} @shake-state]
+           (let [mag (* shake-max-px (- 1 (/ age shake-ms)))]
+             (.translate ctx
+                         (* mag (js/Math.sin (* age 0.09)))
+                         (* mag (js/Math.cos (* age 0.13))))))
+         (draw-scorch-marks)
          (let [current-shells (:shells current-world)
                previous-shells (:shells previous-world)]
            (doseq [[id shell] previous-shells]
@@ -434,9 +509,9 @@
              (draw-robot robot idx
                          (not= (:damage (get-in previous-world [:robots idx]))
                                (:damage robot)))))
-         (tick-animations!)
          (draw-shell-explosions)
-         (draw-death-animations))})))
+         (draw-death-animations)
+         (.restore ctx))})))
 
 (defonce anim-instance (atom nil))
 
