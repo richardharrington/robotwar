@@ -109,6 +109,14 @@
   (audio/toggle-sound!)
   (update-sound-toggle-button!))
 
+(defn set-program-input-enabled!
+  "The programs input stays live during a battle (typing a new lineup
+  restarts immediately), but is disabled while the victory overlay is
+  up so a new game can't start underneath it."
+  [enabled?]
+  (when-let [input-el (.getElementById js/document "programsInput")]
+    (set! (.-disabled input-el) (not enabled?))))
+
 (defn show-input-error! [msg]
   (when-let [el (.getElementById js/document "inputError")]
     (set! (.-textContent el) msg)))
@@ -138,6 +146,7 @@
   (when-let [instruction-box (.querySelector js/document ".instruction-box")]
     (set! (.. instruction-box -style -height) ""))
   (clear-input-error!)
+  (set-program-input-enabled! true)
   (when-let [input-el (.getElementById js/document "programsInput")]
     (.focus input-el)))
 
@@ -165,7 +174,8 @@
       (canvas/animate-world! world world)
       (if (canvas/animations-active?)
         (swap! state assoc :raf-id (js/requestAnimationFrame game-over-step))
-        (victory/show! world restart-game!)))))
+        (do (set-program-input-enabled! false)
+            (victory/show! world restart-game!))))))
 
 (defn loop-step [timestamp]
   (when (:running? @state)

@@ -195,6 +195,9 @@ p  {
     font-size: 24px;
     border: 0;
 }
+#programsInput:disabled {
+    opacity: 0.4;
+}
 #inputError {
     color: #fa2d0b;
     font-size: 18px;
