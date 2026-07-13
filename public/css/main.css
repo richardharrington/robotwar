@@ -189,11 +189,13 @@ p  {
     margin-top: 5px;
     margin-bottom: 15px;
     margin-left: 0;
+    padding: 4px 10px;
     background-color: #000;
     color: #3ef74e;
     font-family: "Data 70";
     font-size: 24px;
-    border: 0;
+    border: 1px solid #3ef74e;
+    border-radius: 6px;
 }
 #programsInput:disabled {
     opacity: 0.4;
