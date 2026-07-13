@@ -1,5 +1,6 @@
 (ns robotwar.canvas
-  (:require [robotwar.constants :refer [ROBOT-RADIUS ROBOT-RANGE-X ROBOT-RANGE-Y]]))
+  (:require [robotwar.constants :refer [BLAST-RADIUS ROBOT-RADIUS
+                                        ROBOT-RANGE-X ROBOT-RANGE-Y]]))
 
 (def robot-colors ["#fa2d0b" "#0bfaf7" "#faf20b" "#e312f0" "#4567fb"])
 (def shell-color "#ffffff")
@@ -90,13 +91,27 @@
 (def ^:private death-ring-ms 500)
 (def ^:private death-anim-ms 900)
 
+;; Shell explosions follow the same wall-clock pattern: a warm fireball
+;; disc that grows fast for the first grow-frac of its life, then fades
+;; in place, plus a thin shockwave ring that outruns it.
+(def ^:private shell-explosion-ms 500)
+(def ^:private shell-explosion-grow-frac 0.35)
+
 (defonce death-animations (atom {}))
+(defonce shell-explosions (atom {}))
 
 (defn animations-active? []
-  (boolean (seq @death-animations)))
+  (boolean (or (seq @death-animations) (seq @shell-explosions))))
 
 (defn clear-animations! []
-  (reset! death-animations {}))
+  (reset! death-animations {})
+  (reset! shell-explosions {}))
+
+(defn spawn-shell-explosion!
+  "Register a shell blast at (x, y) in world meters, keyed by shell id."
+  [shell-id x y]
+  (swap! shell-explosions assoc shell-id
+         {:x x :y y :age-ms 0 :last-ms nil}))
 
 (defn spawn-death-animation!
   "Register a death burst at (x, y) in world meters. Particle velocities
@@ -118,20 +133,22 @@
                     :max-age-ms (+ 400 (* 500 (rand01 (+ seed 3.1))))
                     :color (if (zero? (mod k 3)) "#ffffff" color)})))}))
 
-(defn- tick-animations!
+(defn- tick-ages
   "Advance every animation's age by wall-clock elapsed time and cull
-  finished ones."
-  []
+  ones older than max-ms."
+  [anims now max-ms]
+  (into {}
+        (keep (fn [[k anim]]
+                (let [last-ms (or (:last-ms anim) now)
+                      age (+ (:age-ms anim) (- now last-ms))]
+                  (when (< age max-ms)
+                    [k (assoc anim :age-ms age :last-ms now)]))))
+        anims))
+
+(defn- tick-animations! []
   (let [now (js/performance.now)]
-    (swap! death-animations
-           (fn [anims]
-             (into {}
-                   (keep (fn [[idx anim]]
-                           (let [last-ms (or (:last-ms anim) now)
-                                 age (+ (:age-ms anim) (- now last-ms))]
-                             (when (< age death-anim-ms)
-                               [idx (assoc anim :age-ms age :last-ms now)])))
-                         anims))))))
+    (swap! death-animations tick-ages now death-anim-ms)
+    (swap! shell-explosions tick-ages now shell-explosion-ms)))
 
 (defn animation [canvas]
   (let [width (.-width canvas)
@@ -146,6 +163,7 @@
         offset-x #(scale-x (+ ROBOT-RADIUS %))
         offset-y #(scale-y (+ ROBOT-RADIUS %))
         robot-display-radius (scale-x ROBOT-RADIUS)
+        blast-display-radius (scale-x BLAST-RADIUS)
         shell-display-radius (scale-x (* ROBOT-RADIUS 0.3))
         gun-display-length (scale-x (* ROBOT-RADIUS 1.4))
         gun-display-width (scale-x (* ROBOT-RADIUS 0.5))
@@ -323,11 +341,43 @@
                            (offset-y (:pos-y shell))
                            shell-display-radius
                            shell-color))
-            (explode-shell [shell]
-              (fill-circle (offset-x (:pos-x shell))
-                           (offset-y (:pos-y shell))
-                           (* shell-display-radius 10)
-                           shell-color))
+            (draw-shell-explosions []
+              (doseq [[_ {:keys [x y age-ms]}] @shell-explosions]
+                (let [cx (offset-x x)
+                      cy (offset-y y)
+                      t (/ age-ms shell-explosion-ms)
+                      grow-t (min 1.0 (/ t shell-explosion-grow-frac))
+                      ;; ease-out expansion; the disc's transparent rim
+                      ;; peaks exactly at BLAST-RADIUS, so the graphic
+                      ;; shows the true damage zone
+                      radius (* blast-display-radius
+                                (- 1 (let [u (- 1 grow-t)] (* u u))))
+                      alpha (if (< t shell-explosion-grow-frac)
+                              1.0
+                              (- 1 (/ (- t shell-explosion-grow-frac)
+                                      (- 1 shell-explosion-grow-frac))))]
+                  (when (pos? radius)
+                    (let [grad (.createRadialGradient ctx cx cy 0 cx cy radius)]
+                      (.addColorStop grad 0 "rgba(255,255,255,1)")
+                      (.addColorStop grad 0.25 "rgba(255,235,150,0.9)")
+                      (.addColorStop grad 0.6 "rgba(255,140,40,0.65)")
+                      (.addColorStop grad 1 "rgba(255,60,0,0)")
+                      (set! (.-globalAlpha ctx) alpha)
+                      (set! (.-fillStyle ctx) grad)
+                      (.beginPath ctx)
+                      (.arc ctx cx cy radius 0 (* 2 js/Math.PI) true)
+                      (.fill ctx)))
+                  ;; shockwave ring outrunning the disc — a decorative
+                  ;; transient allowed to travel past BLAST-RADIUS
+                  (set! (.-globalAlpha ctx) (- 1 t))
+                  (set! (.-strokeStyle ctx) "rgba(255,200,120,0.8)")
+                  (set! (.-lineWidth ctx) 2)
+                  (.beginPath ctx)
+                  (.arc ctx cx cy
+                        (* blast-display-radius (+ 0.3 (* 1.4 t)))
+                        0 (* 2 js/Math.PI) true)
+                  (.stroke ctx)
+                  (set! (.-globalAlpha ctx) 1))))
             (draw-death-animations []
               (doseq [[_ {:keys [x y color age-ms particles]}] @death-animations]
                 (let [cx (offset-x x)
@@ -374,7 +424,9 @@
            (doseq [[id shell] previous-shells]
              (if (contains? current-shells id)
                (draw-shell shell)
-               (explode-shell shell))))
+               ;; shells always detonate at their destination, so spawn
+               ;; there rather than at the last live position
+               (spawn-shell-explosion! id (:dest-x shell) (:dest-y shell)))))
          (doseq [[idx robot] (map-indexed vector (:robots current-world))]
            (when (:alive? robot)
              ;; hit flash (event cue) composes with the damage rendering
@@ -383,6 +435,7 @@
                          (not= (:damage (get-in previous-world [:robots idx]))
                                (:damage robot)))))
          (tick-animations!)
+         (draw-shell-explosions)
          (draw-death-animations))})))
 
 (defonce anim-instance (atom nil))
